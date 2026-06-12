@@ -381,7 +381,7 @@ async function run() {
     assert(desktopSummary.initial.primaryActionText.length > 0, "Today primary CTA should be visible");
     assert(desktopSummary.initial.atlasLinkExists === true, "Atlas should be available as a secondary route");
     assert(desktopSummary.initial.homeModuleCards === 0, "Today must not render equal module cards");
-    assert(desktopSummary.initial.courseMapSegments === 24, "Today should keep a compact 24-station progress preview");
+    assert(desktopSummary.initial.courseMapSegments === 0, "Today should not embed the full course map");
     assert(desktopSummary.initial.oldProfileKeyAfterStartup === null, "Production E2E should start without a legacy profile key");
     assert(desktopSummary.initial.oldProgressKeyAfterStartup === null, "Production E2E should start without a legacy progress key");
 
@@ -490,7 +490,7 @@ async function run() {
     assert(mobileSummary.home.title === "Сегодня", "Mobile should open in Today mode");
     assert(mobileSummary.home.todayScreen === true, "Mobile Today screen should render");
     assert(mobileSummary.home.moduleCards === 0, "Mobile Today must not render equal module cards");
-    assert(mobileSummary.home.courseMapSegments === 24, "Mobile Today should keep compact station progress");
+    assert(mobileSummary.home.courseMapSegments === 0, "Mobile Today should not embed the full course map");
     assert(mobileSummary.home.primaryBottom < 650, `Mobile primary CTA should be visible early, got ${mobileSummary.home.primaryBottom}`);
     assert(mobileSummary.home.hasHorizontalOverflow === false, "Mobile Today should not overflow horizontally");
     assert(mobileSummary.station.tabCount === 4, "Mobile station should render the 4-step route");
@@ -509,8 +509,6 @@ async function run() {
         return entry && ["error", "warning"].includes(entry.level);
       }
       if (event.method === "Runtime.consoleAPICalled") {
-        const firstArg = event.params?.args?.[0]?.value;
-        if (event.params?.type === "warning" && firstArg === "Nutrio timeout: legacy localStorage migration") return false;
         return ["error", "warning"].includes(event.params?.type);
       }
       return false;
