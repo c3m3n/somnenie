@@ -61,6 +61,10 @@ class Element {
     for (const child of children) this.appendChild(child);
   }
 
+  prepend(...children) {
+    this.children.unshift(...children);
+  }
+
   remove() {}
   click() {
     this.clicked = true;
@@ -450,7 +454,7 @@ assert(title.textContent === "Прогресс обучения", "Progress scre
 const profileCard = screen.children.find((child) => child.className === "profile-card");
 assert(profileCard, "Profile card is missing");
 const profileDashboardIndex = screen.children.findIndex((child) => child.className.includes("dashboard-card") && child.innerHTML.includes("Прогресс"));
-const profileReviewIndex = screen.children.findIndex((child) => child.className.includes("dashboard-card") && child.innerHTML.includes("Память слабых мест"));
+const profileReviewIndex = screen.children.findIndex((child) => child.className.includes("dashboard-card") && child.innerHTML.includes("<h2>Память</h2>"));
 const profileTakeawaysIndex = screen.children.findIndex((child) => child.className.includes("dashboard-card") && child.innerHTML.includes("История выводов"));
 const profilePhasesIndex = screen.children.findIndex((child) => child.className.includes("dashboard-card") && child.innerHTML.includes("Прогресс по фазам"));
 const profileCardIndex = screen.children.findIndex((child) => child === profileCard);
@@ -599,7 +603,7 @@ assert(quizIntro, "Quiz intro did not render");
 assert(quizIntro.innerHTML.includes("safety-note"), "Quiz intro should expose the medical safety boundary");
 assert(quizIntro.innerHTML.includes("7") && quizIntro.innerHTML.includes("автоматический балл"), "Quiz intro should explain scored questions");
 assert(quizIntro.innerHTML.includes("3") && quizIntro.innerHTML.includes("самопроверки"), "Quiz intro should explain self-check questions");
-assert(quizIntro.innerHTML.includes("слабые места") && quizIntro.innerHTML.includes("памяти"), "Quiz intro should explain weak-spot memory routing");
+assert(quizIntro.innerHTML.includes("материалы на повторение") && quizIntro.innerHTML.includes("сессии памяти"), "Quiz intro should explain memory routing");
 assert(quizIntro.innerHTML.includes("70%") && quizIntro.innerHTML.includes("5-8 мин"), "Quiz intro should explain success criteria and expected duration");
 assert(!screen.children.some((child) => child.className === "quiz-q"), "Quiz should not start before the intro button");
 lessonNav = screen.children.filter((child) => child.className === "lesson-nav").at(-1);
@@ -684,7 +688,7 @@ await reviewTab.onclick();
 assert(tabs.children.some((child) => child.dataset.file === "__review__" && child.classList.contains("active")), "Review tab should open the review screen");
 const memoryScreen = screen.children.find((child) => child.className === "review-card");
 const memoryScreenText = elementTreeText(memoryScreen);
-assert(memoryScreenText.includes("Память слабых мест"), "Review screen should use weak-spot memory terminology");
+assert(memoryScreenText.includes("Память") && memoryScreenText.includes("темы") && memoryScreenText.includes("закрепить"), "Review screen should use memory reinforcement terminology");
 assert(memoryScreenText.includes("Как тренируем"), "Memory screen should explain the review strategy");
 assert(memoryScreenText.includes("Исходный пример"), "Memory card should surface the original example as visible source context");
 assert(memoryScreenText.includes("интервал"), "Memory card should materialize the spaced-repetition interval");
