@@ -148,6 +148,13 @@
 
 * { box-sizing: border-box; }
 
+/* Доступность: видимый фокус-ринг для клавиатурной навигации. */
+:focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 html,
 body {
   width: 100%;
@@ -2135,20 +2142,26 @@ body::after {
   font-weight: 700;
 }
 
-.quiz-progress-track {
-  height: 7px;
+.quiz-progress-segments {
+  display: flex;
+  gap: 3px;
   margin: 9px 0 8px;
-  overflow: hidden;
-  border-radius: 999px;
-  background: #e8ede7;
 }
 
-.quiz-progress-track span {
-  display: block;
-  height: 100%;
-  border-radius: inherit;
-  background: var(--tab-active);
-  transition: width 160ms ease-out;
+.quiz-progress-segments i {
+  flex: 1 1 0;
+  height: 6px;
+  border-radius: 2px;
+  background: rgba(207, 201, 184, 0.16);
+}
+
+.quiz-progress-segments i.done {
+  background: var(--success);
+}
+
+.quiz-progress-segments i.current {
+  background: var(--ember);
+  box-shadow: 0 0 8px var(--ember-glow);
 }
 
 .quiz-q {
@@ -2604,23 +2617,23 @@ body::after {
   }
   .reader-concept-trail {
     margin-top: 8px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: 1fr;
     gap: 6px;
   }
   .reader-concept-trail .concept-node {
-    border-left: 0;
-    border-top: 2px solid var(--border);
-    padding: 6px 0 0;
+    border-left: 2px solid var(--border);
+    border-top: 0;
+    padding: 4px 0 4px 12px;
   }
   .reader-concept-trail .concept-node::after {
-    top: -6px;
-    left: 0;
+    display: none;
   }
   .reader-concept-trail .concept-node strong {
-    font-size: 0.74em;
+    font-size: 0.82em;
   }
   .reader-concept-trail .concept-node small {
-    display: none;
+    display: block;
+    font-size: 0.74em;
   }
   .source-cards {
     grid-template-columns: 1fr;

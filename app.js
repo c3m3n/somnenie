@@ -1911,10 +1911,6 @@ function appendModuleNavigation(mod, file, options = {}) {
   const nav = document.createElement("section");
   nav.className = "lesson-nav";
 
-  const route = document.createElement("div");
-  route.className = "lesson-route";
-  route.textContent = file === "__review__" ? "Закрепление" : "Маршрут: Материал -> Проверка -> Итог";
-
   const actions = document.createElement("div");
   actions.className = "lesson-nav-actions";
 
@@ -1922,7 +1918,7 @@ function appendModuleNavigation(mod, file, options = {}) {
   if (review) actions.appendChild(createLearningStepButton(review, "btn secondary compact", "Открыть"));
   if (next) actions.appendChild(createLearningStepButton(next, "btn compact lesson-nav-next", next.kind === "module" ? "Следующий модуль" : "Дальше"));
 
-  nav.append(route, actions);
+  nav.append(actions);
 
   if (mobilePrimary) {
     const sticky = createLearningStepButton(
@@ -2910,12 +2906,13 @@ async function showQuiz(mod) {
   function QuizProgressBar(q) {
     const progress = document.createElement("div");
     progress.className = "quiz-progress";
-    const percent = Math.round((idx / questions.length) * 100);
     progress.innerHTML =
       `<div class="quiz-progress-head">` +
         `<strong>Вопрос ${idx + 1} из ${questions.length}</strong>` +
       `</div>` +
-      `<div class="quiz-progress-track" aria-label="Прогресс проверки"><span style="width: ${percent}%"></span></div>` +
+      `<div class="quiz-progress-segments" role="img" aria-label="Вопрос ${idx + 1} из ${questions.length}">` +
+        questions.map((_, i) => `<i class="${i < idx ? "done" : i === idx ? "current" : ""}"></i>`).join("") +
+      `</div>` +
       `<div class="quiz-progress-stats">` +
       (answered
         ? `<span>верных ${correct} из ${gradedTotal}</span><span>${mistakes ? `ошибок ${mistakes}` : "без ошибок"}</span>`
