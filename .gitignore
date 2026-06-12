@@ -1,0 +1,13 @@
+.vercel
+
+# Local/internal work artifacts. Keep these on the workstation, not in the public repo.
+20.txt
+AGENTS.md
+TODO.md
+audit-plan.md
+audit/
+docs/
+style-lab/
+tools/style-lab-check.mjs
+tools/capture-userpath-screenshots.mjs
+.codex-shots/
