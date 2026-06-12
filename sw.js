@@ -1,6 +1,6 @@
 ﻿/* Service worker для офлайн-доступа. Кэширует оболочку приложения и учебный контент. */
 
-const VERSION = "nutrio-v12";
+const VERSION = "nutrio-v13";
 const SHELL_CACHE = `${VERSION}-shell`;
 const CONTENT_CACHE = `${VERSION}-content`;
 

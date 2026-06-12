@@ -18,6 +18,8 @@ const CONTENT_MANIFEST_PATH = "content/manifest.json";
 const QUIZ_PROGRESS_VERSION = 2;
 const REVIEW_SCHEMA_VERSION = 2;
 const COURSE_ID = "nutrition";
+const MIGRATION_TIMEOUT_MS = 4000;
+const CONTENT_FETCH_TIMEOUT_MS = 4000;
 const SAFETY_NOTE = "Учебный материал. Не заменяет врача, диагностику, лечение или индивидуальные рекомендации по питанию.";
 const PROFILE_LEVELS = {
   beginner: "Новичок",
@@ -79,6 +81,43 @@ function liveClockText() {
 
 function todayISO() {
   return reviewApi().toISODate(new Date());
+}
+
+async function withTimeoutFallback(promise, timeoutMs, fallback, label = "operation") {
+  if (!promise || typeof promise.then !== "function") return promise;
+  const timeout = new Promise((resolve) => {
+    setTimeout(() => {
+      console.warn(`Nutrio timeout: ${label}`);
+      resolve(fallback);
+    }, timeoutMs);
+  });
+  try {
+    return await Promise.race([promise, timeout]);
+  } catch (error) {
+    console.warn(`Nutrio ${label} failed`, error);
+    return fallback;
+  }
+}
+
+async function fetchWithTimeout(path, timeoutMs = CONTENT_FETCH_TIMEOUT_MS) {
+  if (!globalThis.fetch) return null;
+  if (typeof AbortController === "undefined") {
+    try {
+      return await fetch(path, { cache: "no-cache" });
+    } catch {
+      return null;
+    }
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(path, { cache: "no-cache", signal: controller.signal });
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 function moduleSignalNumber(mod) {
@@ -574,9 +613,9 @@ async function updateWeakSpot(id, q, isRight, chosenKey = null) {
 /* ---------- загрузка контента ---------- */
 
 async function fetchText(path) {
+  const res = await fetchWithTimeout(path);
+  if (!res || !res.ok) return null;
   try {
-    const res = await fetch(path);
-    if (!res.ok) return null;
     return await res.text();
   } catch {
     return null;
@@ -821,6 +860,31 @@ function metricHtml(tone, iconName, value, label) {
   return `<div class="metric ${tone}">${iconSvg(iconName, "metric-icon")}<strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span></div>`;
 }
 
+function progressActiveModuleHtml(mod, sessionPlan = null) {
+  if (!mod) {
+    return `<section class="progress-active-module is-complete">` +
+      `<div><span>Курс</span><strong>Все модули закрыты</strong></div>` +
+      `<p>Новые темы для закрепления появятся здесь, если после повторения останутся ошибки.</p>` +
+    `</section>`;
+  }
+
+  const pr = modProgress(mod.id);
+  const steps = [
+    { label: "Материал", done: Boolean(pr.theoryRead), active: !pr.theoryRead },
+    { label: "Проверка", done: isQuizCompletedProgress(pr), active: pr.theoryRead && !isQuizCompletedProgress(pr) },
+    { label: "Итог", done: Boolean(pr.takeaway), active: isQuizCompletedProgress(pr) && !pr.takeaway },
+  ];
+  const state = moduleCompletionScore(mod) > 0 || isQuizInProgress(pr) ? "в работе" : "следующий";
+  const planText = sessionPlan ? sessionMetaText(sessionPlan, mod) : continueLabel(mod);
+  return `<section class="progress-active-module">` +
+    `<div><span>${escapeHtml(mod.id)} · ${escapeHtml(state)}</span><strong>${escapeHtml(mod.title)}</strong></div>` +
+    `<p>${escapeHtml(planText)}</p>` +
+    `<div class="progress-active-steps">` +
+      steps.map((step) => `<span class="${step.done ? "done" : step.active ? "active" : ""}">${escapeHtml(step.label)}</span>`).join("") +
+    `</div>` +
+  `</section>`;
+}
+
 const CONCEPT_LEVELS = [
   {
     key: "nutrient",
@@ -917,12 +981,14 @@ function SourceCards(items) {
 
 function QuizDiagnosis({ question, chosenKey, isRight }) {
   const diagnosis = diagnoseQuestion(question, chosenKey, isRight);
+  const chosen = question.options?.find((opt) => opt.key === chosenKey);
+  const correct = question.options?.find((opt) => opt.key === question.answer);
   const block = document.createElement("div");
   block.className = `quiz-diagnosis ${isRight ? "is-right" : "is-wrong"}`;
   setElementAttr(block, "role", "status");
   setElementAttr(block, "aria-live", "polite");
   const icon = isRight ? "✓" : "×";
-  const verdict = isRight ? "Верно" : "Нужно уточнить";
+  const verdict = isRight ? "Верно" : "Не совсем";
   const head =
     `<div class="quiz-diagnosis-head">` +
       `<span class="feedback-mark" aria-hidden="true">${icon}</span>` +
@@ -936,6 +1002,13 @@ function QuizDiagnosis({ question, chosenKey, isRight }) {
       `<div><span>Уровень вопроса</span><strong>${escapeHtml(diagnosis.level.label)}</strong><p>${escapeHtml(diagnosis.level.description)}</p></div>` +
       `<div><span>${isRight ? "Что закрепить" : "Что спуталось"}</span><strong>${escapeHtml(diagnosis.mistakeType)}</strong><p>${escapeHtml(diagnosis.repair)}</p></div>` +
     `</div>`;
+  const answerCompare = !isRight
+    ? `<div class="quiz-diagnosis-compare">` +
+        `<div><span>Ваш ответ</span><strong>${chosen ? renderMarkdownInline(chosen.text) : "—"}</strong></div>` +
+        `<div><span>Правильный ответ</span><strong>${correct ? renderMarkdownInline(correct.text) : "—"}</strong></div>` +
+        `<div class="quiz-diagnosis-why"><span>Почему</span><p>${escapeHtml(diagnosis.repair)}</p></div>` +
+      `</div>`
+    : "";
   const explain = question.explain.trim()
     ? `<div class="quiz-diagnosis-explain-body">${renderMarkdown(question.explain.trim())}</div>`
     : "";
@@ -944,7 +1017,7 @@ function QuizDiagnosis({ question, chosenKey, isRight }) {
     block.innerHTML = head +
       `<details class="quiz-diagnosis-more"><summary>Разбор и что закрепить</summary>${grid}${explain}</details>`;
   } else {
-    block.innerHTML = head + grid +
+    block.innerHTML = head + answerCompare + grid +
       (explain ? `<details class="quiz-diagnosis-explain"><summary>Подробнее</summary>${explain}</details>` : "");
   }
   return block;
@@ -1170,7 +1243,7 @@ function sessionMetaText(plan, nextModule) {
   const count = plan?.reviews?.length || 0;
   if (count && plan.moduleStep) return `${count} ${pluralizeQuestions(count)} на повторение, затем ${plan.moduleStep.moduleId} · ~${plan.estimatedMinutes} мин`;
   if (count) return `${count} ${pluralizeQuestions(count)} на повторение · новый модуль не нужен`;
-  if (nextModule) return "очередь повторения пуста · только шаг модуля";
+  if (nextModule) return `Повторов пока нет. Следующий шаг — ${nextModule.id}.`;
   return "курс пройден · слабые места можно повторять в любой момент";
 }
 
@@ -1241,13 +1314,11 @@ async function showHome() {
   const intro = document.createElement("section");
   intro.className = "intro-card";
   intro.innerHTML =
-    `<header class="instrument-statusbar rise">` +
-      `<span class="led" aria-hidden="true"></span>` +
-      `<span class="instrument-brand">SOMNENIE</span>` +
-      `<span class="instrument-path">~/курс/нутрициология</span>` +
-      `<span class="instrument-clock" data-instrument-clock>--:--:--</span>` +
-    `</header>` +
-    `<p class="etch rise">нутрициология без <em>мифов</em></p>` +
+    `<section class="home-learning-lead rise">` +
+      `<p class="home-product-label">SOMNENIE</p>` +
+      `<h2>Нутрициология без мифов</h2>` +
+      `<p>Учебный тренажёр по нутрициологии: читать, проверять, закреплять.</p>` +
+    `</section>` +
     `<section class="next next-step-card rise">` +
       `<p class="ask">${escapeHtml(nextAsk)}</p>` +
       `<h3><b>${nextModule ? escapeHtml(nextModule.id) : "24/24"}</b> · ${escapeHtml(nextModule ? nextModule.title : nextLabel)}</h3>` +
@@ -1256,16 +1327,23 @@ async function showHome() {
     `</section>` +
     (summary.weakSpotTotal
       ? `<div class="home-review-strip">${iconSvg("review", "home-strip-icon")}<span>Повторение: ${summary.dueReviewTotal} сегодня · ${summary.weakSpotTotal} ${pluralizeQuestions(summary.weakSpotTotal)} в очереди</span></div>`
-      : `<div class="home-review-strip is-empty">${iconSvg("check", "home-strip-icon")}<span>Очередь повторения наполнится после первого теста</span></div>`) +
+      : `<div class="home-review-strip is-empty">${iconSvg("check", "home-strip-icon")}<span>${nextModule ? `Повторов пока нет. Начните ${escapeHtml(nextModule.id)}.` : "Повторов пока нет."}</span></div>`) +
     `<section class="matrix-block home-progress-compact rise" aria-label="Карта курса">` +
       `<div class="course-map instrument-matrix" aria-label="Карта прогресса по модулям: клик открывает модуль">${courseMapSegments(nextModule)}</div>` +
       `<div class="matrix-foot">` +
         `<span class="map-legend"><i class="legend-complete"></i>завершён <i class="legend-active"></i>в работе <i class="legend-review"></i>повторить <i class="legend-idle"></i>не начат</span>` +
       `</div>` +
-      `<div class="home-progress-text"><strong>${totalPercent}%</strong><span>${summary.completedSteps}/${summary.totalSteps} шагов курса завершено</span></div>` +
+      `<div class="home-progress-text${totalPercent ? "" : " is-empty"}"><strong>${totalPercent}%</strong><span>${summary.completedSteps}/${summary.totalSteps} шагов курса завершено</span></div>` +
       `<div class="course-progress" aria-label="Общий прогресс курса по шагам"><span style="width: ${totalPercent}%"></span></div>` +
     `</section>` +
     `<section class="ledger rise" aria-label="Фазы курса">${phaseLedgerRows(nextModule)}</section>` +
+    `<header class="instrument-statusbar rise">` +
+      `<span class="led" aria-hidden="true"></span>` +
+      `<span class="instrument-brand">SOMNENIE</span>` +
+      `<span class="instrument-path">~/курс/нутрициология</span>` +
+      `<span class="instrument-clock" data-instrument-clock>--:--:--</span>` +
+    `</header>` +
+    `<p class="etch rise">нутрициология без <em>мифов</em></p>` +
     `<div class="organism-wrap rise" aria-hidden="true"><pre id="organism"></pre></div>` +
     `<section class="console rise" aria-live="polite" aria-label="Состояние прибора"><div data-console-lines></div></section>` +
     safetyNoteHtml();
@@ -1520,9 +1598,9 @@ async function showProfile() {
   const dashboard = document.createElement("section");
   dashboard.className = "dashboard-card dashboard-primary";
   const dashboardMetrics = [
-    metricHtml("success", "check", `${summary.completedSteps}/${summary.totalSteps}`, "шагов завершено"),
-    metricHtml("info", "book", `${summary.theoryRead}/${summary.totalModules}`, "материалов"),
-    metricHtml("next", "quiz", `${summary.quizCompleted}/${summary.totalModules}`, "проверок"),
+    metricHtml(summary.completedSteps ? "success" : "empty", "check", `${summary.completedSteps}/${summary.totalSteps}`, "шагов завершено"),
+    metricHtml(summary.theoryRead ? "info" : "empty", "book", `${summary.theoryRead}/${summary.totalModules}`, "материалов"),
+    metricHtml(summary.quizCompleted ? "next" : "empty", "quiz", `${summary.quizCompleted}/${summary.totalModules}`, "проверок"),
   ];
   if (summary.quizCompleted) dashboardMetrics.push(metricHtml("success", "target", summary.averageScore, "средний лучший балл"));
   dashboard.innerHTML =
@@ -1530,6 +1608,7 @@ async function showProfile() {
     `<h2>Прогресс обучения</h2>` +
     `<div class="course-map instrument-matrix profile-matrix" aria-label="Матрица прогресса по модулям: клик открывает модуль">${courseMapSegments(nextModule)}</div>` +
     `<p class="matrix-explain">Каждая клетка — один из ${summary.totalModules} модулей. В каждом 3 шага: материал, проверка, итог — всего ${summary.totalSteps}.</p>` +
+    progressActiveModuleHtml(nextModule, sessionPlan) +
     `<div class="metric-grid">` +
     dashboardMetrics.join("") +
     `</div>`;
@@ -1971,6 +2050,51 @@ function enhanceMarkdownSections(container) {
   if (cards.length) appendReadingProgress(container, cards);
 }
 
+function enhanceResponsiveTables(container) {
+  if (!container || typeof container.querySelectorAll !== "function") return;
+
+  for (const table of Array.from(container.querySelectorAll("table"))) {
+    if (table.classList.contains("has-responsive-cards")) continue;
+    const allRows = Array.from(table.querySelectorAll("tr"));
+    if (allRows.length < 2) continue;
+
+    const headerRow = table.querySelector("thead tr") || allRows[0];
+    const headers = Array.from(headerRow.querySelectorAll("th, td"))
+      .map((cell) => plainText(cell.textContent || "").trim())
+      .filter(Boolean);
+    if (!headers.length) continue;
+
+    const bodyRows = Array.from(table.querySelectorAll("tbody tr"));
+    const rows = (bodyRows.length ? bodyRows : allRows.filter((row) => row !== headerRow))
+      .map((row) => Array.from(row.querySelectorAll("th, td")))
+      .filter((cells) => cells.length);
+    if (!rows.length) continue;
+
+    const cards = document.createElement("div");
+    cards.className = "responsive-table-cards";
+    setElementAttr(cards, "aria-label", "Таблица в виде карточек");
+
+    for (const cells of rows) {
+      const card = document.createElement("article");
+      card.className = "responsive-table-card";
+      for (let i = 0; i < cells.length; i++) {
+        const row = document.createElement("div");
+        row.className = "responsive-table-row";
+        const label = document.createElement("span");
+        label.textContent = headers[i] || `Колонка ${i + 1}`;
+        const value = document.createElement("strong");
+        value.innerHTML = cells[i].innerHTML;
+        row.append(label, value);
+        card.appendChild(row);
+      }
+      cards.appendChild(card);
+    }
+
+    table.classList.add("has-responsive-cards");
+    table.insertAdjacentElement("afterend", cards);
+  }
+}
+
 function decorateLessonCards(cards, mod) {
   let conceptTrailShown = false;
   for (let i = 0; i < cards.length; i++) {
@@ -2251,6 +2375,7 @@ function showMarkdown(mod, file) {
   div.className = "md";
   div.innerHTML = renderMarkdown(text);
   enhanceMarkdownSections(div);
+  enhanceResponsiveTables(div);
   $screen.innerHTML = "";
   if (isMaterialFile(file)) $screen.appendChild(MaterialSubnav(mod, file));
   $screen.appendChild(buildModuleReadingLayout(mod, file, div));
@@ -2915,8 +3040,8 @@ async function showQuiz(mod) {
       `</div>` +
       `<div class="quiz-progress-stats">` +
       (answered
-        ? `<span>верных ${correct} из ${gradedTotal}</span><span>${mistakes ? `ошибок ${mistakes}` : "без ошибок"}</span>`
-        : `<span>${gradedTotal} оцениваемых</span><span>${applicationTotal} для самопроверки</span>`) +
+        ? `<span>верных ${correct} из ${gradedTotal} · ${mistakes ? `ошибок ${mistakes}` : "без ошибок"}</span>`
+        : `<span>${gradedTotal} оцениваемых · ${applicationTotal} для самопроверки</span>`) +
       `</div>`;
     return progress;
   }
@@ -2967,7 +3092,7 @@ async function showQuiz(mod) {
         for (const [b, key, state] of optButtons) {
           if (key === q.answer) {
             b.classList.add("correct");
-            if (state) state.textContent = key === chosen ? "✓ Ваш ответ, правильный" : "✓ Правильный ответ";
+            if (state) state.textContent = key === chosen ? "✓ Ваш ответ, правильно" : "✓ Правильный ответ";
           } else if (key === chosen) {
             b.classList.add("wrong");
             if (state) state.textContent = "× Ваш ответ";
@@ -3299,7 +3424,7 @@ configureMarkedSecurity();
   $screen.innerHTML = `<div class="loading">Загрузка модулей…</div>`;
   try {
     await storageApi().init();
-    await storageApi().migrateFromLocalStorage();
+    await withTimeoutFallback(storageApi().migrateFromLocalStorage(), MIGRATION_TIMEOUT_MS, null, "legacy localStorage migration");
     await refreshStorageCache();
     const [loadedManifest, loadedCourse] = await Promise.all([loadContentManifest(), loadCourse()]);
     contentManifest = loadedManifest;

@@ -4400,3 +4400,641 @@ summary:focus-visible {
     min-height: 44px;
   }
 }
+
+/* ---------- UX repair pass: hybrid atmosphere + learning readability ---------- */
+
+body.mode-module::before,
+body.mode-session::before,
+body.mode-profile::before {
+  opacity: 0.08;
+}
+
+body.mode-home::before {
+  opacity: 0.46;
+}
+
+body.mode-module::after,
+body.mode-session::after,
+body.mode-profile::after {
+  opacity: 0.05;
+}
+
+body.mode-home::after {
+  opacity: 0.24;
+}
+
+body.mode-module .glow-pool,
+body.mode-session .glow-pool,
+body.mode-profile .glow-pool {
+  opacity: 0.35;
+}
+
+body.mode-module .sweep,
+body.mode-session .sweep,
+body.mode-profile .sweep,
+body.quiet .glow-pool {
+  display: none;
+}
+
+.mode-module .module-main .md,
+.mode-module .md {
+  max-width: min(72ch, calc(100vw - 28px));
+  padding: 28px clamp(22px, 4vw, 36px) 34px;
+  border-radius: 4px;
+  background: #f1eadc;
+  color: #27231c;
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.64;
+  letter-spacing: 0;
+  box-shadow: 0 0 0 1px rgba(40, 36, 28, 0.14), 0 18px 48px rgba(0, 0, 0, 0.38);
+}
+
+.mode-module .md *,
+.mode-module .quiz-q,
+.mode-module .quiz-q *,
+.mode-module .quiz-intro,
+.mode-module .quiz-intro *,
+.mode-module .quiz-result,
+.mode-module .quiz-result * {
+  letter-spacing: 0;
+}
+
+.mode-module .md p,
+.mode-module .md li {
+  margin-top: 0.7em;
+  margin-bottom: 0.7em;
+  color: #27231c;
+}
+
+.mode-module .md h1 {
+  margin-bottom: 0.6em;
+  color: #17140f;
+  font-family: var(--sans);
+  font-size: clamp(1.9rem, 4.8vw, 2.15rem);
+  line-height: 1.16;
+}
+
+.mode-module .md h2 {
+  margin-top: 1.55em;
+  margin-bottom: 0.55em;
+  color: #17140f;
+  font-family: var(--sans);
+  font-size: clamp(1.38rem, 3.8vw, 1.55rem);
+  line-height: 1.24;
+  border-bottom-color: rgba(40, 36, 28, 0.16);
+}
+
+.mode-module .md h3 {
+  color: #17140f;
+  font-family: var(--sans);
+  font-size: 1.12rem;
+  line-height: 1.32;
+}
+
+.mode-module .lesson-title-card {
+  padding: 0 0 18px;
+}
+
+.mode-module .lesson-section-card {
+  padding: 18px 0;
+}
+
+.mode-module .lesson-section-card + .lesson-section-card {
+  border-top-color: rgba(40, 36, 28, 0.16);
+}
+
+.mode-module .section-meta,
+.mode-module .reading-progress-label,
+.mode-module .material-subnav-label,
+.mode-module .q-kicker,
+.mode-module .quiz-progress-head strong,
+.mode-module .quiz-progress-stats,
+.mod-id,
+.module-state,
+.mod-progress,
+.phase-kicker,
+.phase-progress,
+.opt-state,
+.next .meta,
+.next-step-why {
+  font-family: var(--mono);
+}
+
+.mode-module .section-meta {
+  margin-bottom: 8px;
+  color: rgba(40, 36, 28, 0.62);
+  font-size: 0.72em;
+  letter-spacing: 0.04em;
+}
+
+.mode-module .section-memory,
+.mode-module .learning-note {
+  border-left-width: 3px;
+  background: rgba(40, 36, 28, 0.06);
+  color: #27231c;
+  font-family: var(--sans);
+  font-size: 0.93em;
+  line-height: 1.5;
+}
+
+.mode-module .learning-note-title,
+.mode-module .section-memory strong {
+  color: #8a4a2d;
+  font-family: var(--mono);
+  font-size: 0.82em;
+  letter-spacing: 0.03em;
+}
+
+.mode-module .reading-progress {
+  margin-bottom: 8px;
+  padding-bottom: 10px;
+}
+
+.mode-module .reading-progress-track {
+  background: rgba(40, 36, 28, 0.14);
+}
+
+.mode-module .reader-concept-trail {
+  margin: 10px 0 14px;
+}
+
+.mode-module .reader-concept-trail .concept-node {
+  border-top-width: 1px;
+  padding-top: 6px;
+}
+
+.mode-module .reader-concept-trail .concept-node strong {
+  color: #27231c;
+  font-size: 0.86em;
+}
+
+.mode-module .reader-concept-trail .concept-node small {
+  color: rgba(40, 36, 28, 0.68);
+  font-size: 0.74em;
+}
+
+.mode-module .reader-concept-trail .concept-node.active strong {
+  color: #8a4a2d;
+}
+
+.responsive-table-cards {
+  display: none;
+}
+
+.mode-module .md table.has-responsive-cards {
+  border-color: rgba(40, 36, 28, 0.2);
+  font-family: var(--sans);
+}
+
+.mode-module .md th,
+.mode-module .md td {
+  border-color: rgba(40, 36, 28, 0.2);
+  color: #27231c;
+  vertical-align: top;
+}
+
+.mode-module .md th {
+  background: rgba(40, 36, 28, 0.07);
+}
+
+.mode-module .safety-note,
+.mode-profile .safety-note,
+.mode-session .safety-note {
+  border: 1px solid rgba(70, 232, 150, 0.18);
+  border-left: 3px solid rgba(70, 232, 150, 0.6);
+  background: rgba(70, 232, 150, 0.07);
+  color: var(--dim);
+  font-family: var(--sans);
+  text-shadow: none;
+}
+
+.mode-module .md .safety-note {
+  color: #40392b;
+}
+
+.home-learning-lead {
+  margin: 18px 0 18px;
+}
+
+.home-product-label {
+  color: var(--ember);
+  font-family: var(--pixel);
+  font-size: 0.72em;
+  line-height: 1.5;
+  text-shadow: 0 0 8px rgba(255, 122, 77, 0.24);
+}
+
+.home-learning-lead h2 {
+  margin: 8px 0 8px;
+  color: var(--bone);
+  font-family: var(--sans);
+  font-size: clamp(1.85rem, 8vw, 2.55rem);
+  line-height: 1.08;
+}
+
+.home-learning-lead p:last-child {
+  max-width: 46ch;
+  color: var(--dim);
+  font-family: var(--sans);
+  font-size: 1.02em;
+  line-height: 1.48;
+}
+
+.mode-home .instrument-statusbar {
+  margin-top: 22px;
+  opacity: 0.62;
+}
+
+.mode-home .etch,
+.mode-home .organism-wrap,
+.mode-home .console {
+  opacity: 0.7;
+}
+
+.mode-home .next .meta,
+.mode-home .next-step-why,
+.mode-home .home-review-strip,
+.mode-home .home-progress-text span,
+.mode-profile .dashboard-next {
+  font-family: var(--sans);
+  letter-spacing: 0;
+}
+
+.mode-home .home-actions .btn,
+.quiz-next {
+  font-family: var(--sans);
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.mode-home .home-actions .btn {
+  text-transform: none;
+  text-shadow: none;
+}
+
+.mode-home .home-progress-text.is-empty strong {
+  color: var(--dimmer);
+  text-shadow: none;
+}
+
+.progress-active-module {
+  display: grid;
+  gap: 10px;
+  margin: 12px 0 14px;
+  padding: 12px;
+  border: 1px solid rgba(255, 122, 77, 0.28);
+  border-radius: 4px;
+  background: rgba(255, 122, 77, 0.06);
+}
+
+.progress-active-module span,
+.progress-active-module p {
+  color: var(--dim);
+}
+
+.progress-active-module strong {
+  display: block;
+  margin-top: 2px;
+  color: var(--bone);
+  font-family: var(--sans);
+  font-size: 1.02em;
+  line-height: 1.35;
+}
+
+.progress-active-module p {
+  margin: 0;
+  font-family: var(--sans);
+  line-height: 1.45;
+}
+
+.progress-active-steps {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.progress-active-steps span {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 6px 7px;
+  color: var(--dimmer);
+  font-family: var(--mono);
+  font-size: 0.78em;
+  text-align: center;
+}
+
+.progress-active-steps span.active {
+  border-color: rgba(255, 122, 77, 0.52);
+  color: var(--ember);
+}
+
+.progress-active-steps span.done {
+  border-color: rgba(70, 232, 150, 0.42);
+  color: var(--signal);
+}
+
+.metric.empty strong,
+.metric.empty .metric-icon {
+  color: var(--dimmer);
+  text-shadow: none;
+}
+
+.metric.empty span {
+  color: var(--dimmer);
+}
+
+.quiz-progress {
+  padding: 9px 11px;
+  border-color: rgba(255, 122, 77, 0.2);
+  background: rgba(12, 12, 10, 0.82);
+}
+
+.quiz-progress-segments {
+  gap: 4px;
+}
+
+.quiz-progress-segments i {
+  min-width: 0;
+  background: rgba(207, 201, 184, 0.2);
+}
+
+.quiz-progress-segments i.done {
+  background: var(--signal);
+}
+
+.quiz-progress-segments i.current {
+  background: var(--ember);
+  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.24), 0 0 6px rgba(255, 122, 77, 0.3);
+}
+
+.quiz-q,
+.quiz-intro,
+.quiz-result {
+  border-color: rgba(207, 201, 184, 0.16);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.24);
+}
+
+.quiz-q .q-text,
+.quiz-q .app-text,
+.opt-body,
+.quiz-intro p,
+.quiz-rules,
+.quiz-diagnosis-grid p,
+.quiz-diagnosis-compare,
+.application-prompt {
+  color: var(--bone);
+  font-family: var(--sans);
+}
+
+.q-kicker {
+  color: var(--dimmer);
+  letter-spacing: 0.04em;
+}
+
+.opt {
+  border-color: rgba(207, 201, 184, 0.18);
+  background: rgba(7, 7, 7, 0.58);
+}
+
+.opt.dimmed {
+  opacity: 0.72;
+}
+
+.opt.dimmed .opt-body {
+  color: var(--dim);
+}
+
+.opt.correct {
+  border-color: rgba(70, 232, 150, 0.62);
+  background: rgba(70, 232, 150, 0.11);
+}
+
+.opt.wrong {
+  border-color: rgba(255, 122, 77, 0.62);
+  background: rgba(255, 122, 77, 0.1);
+}
+
+.quiz-diagnosis {
+  border-color: rgba(70, 232, 150, 0.24);
+  background: rgba(7, 7, 7, 0.66);
+}
+
+.quiz-diagnosis.is-wrong {
+  border-color: rgba(255, 122, 77, 0.28);
+  border-left-color: var(--ember);
+  background: rgba(49, 25, 17, 0.58);
+}
+
+.quiz-diagnosis-head strong,
+.quiz-diagnosis-grid strong,
+.quiz-diagnosis-compare strong {
+  color: var(--bone);
+  font-family: var(--sans);
+}
+
+.quiz-diagnosis-head span,
+.quiz-diagnosis-grid span,
+.quiz-diagnosis-compare span {
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 0.78em;
+}
+
+.quiz-diagnosis-compare {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 122, 77, 0.18);
+}
+
+.quiz-diagnosis-compare div {
+  min-width: 0;
+}
+
+.quiz-diagnosis-compare strong {
+  display: block;
+  margin-top: 2px;
+  line-height: 1.42;
+}
+
+.quiz-diagnosis-why p {
+  margin: 2px 0 0;
+  color: var(--dim);
+}
+
+.quiz-diagnosis-more > summary,
+.quiz-diagnosis-explain summary {
+  color: var(--ember);
+  letter-spacing: 0;
+}
+
+.quiz-next {
+  border-color: rgba(255, 122, 77, 0.86);
+  font-size: 1em;
+  text-shadow: none;
+}
+
+@media (max-width: 720px) {
+  .mode-module .md table.has-responsive-cards {
+    display: none;
+  }
+
+  .mode-module .responsive-table-cards {
+    display: grid;
+    gap: 10px;
+    margin: 14px 0 18px;
+  }
+
+  .mode-module .responsive-table-card {
+    display: grid;
+    gap: 9px;
+    border: 1px solid rgba(40, 36, 28, 0.16);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.28);
+    padding: 12px;
+  }
+
+  .mode-module .responsive-table-row {
+    display: grid;
+    gap: 2px;
+  }
+
+  .mode-module .responsive-table-row + .responsive-table-row {
+    padding-top: 8px;
+    border-top: 1px solid rgba(40, 36, 28, 0.12);
+  }
+
+  .mode-module .responsive-table-row span {
+    color: rgba(40, 36, 28, 0.64);
+    font-family: var(--mono);
+    font-size: 0.76em;
+  }
+
+  .mode-module .responsive-table-row strong {
+    color: #27231c;
+    font-family: var(--sans);
+    font-size: 0.98em;
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 520px) {
+  #topbar {
+    min-height: 48px;
+    padding: 5px 10px;
+  }
+
+  #tabs {
+    top: 48px;
+    padding: 5px 10px;
+  }
+
+  #tabs button {
+    min-height: 38px;
+    padding: 6px 7px;
+    font-size: 0.72em;
+  }
+
+  .material-subnav {
+    margin-bottom: 8px;
+    padding: 4px 0;
+  }
+
+  .material-subtab {
+    min-height: 36px;
+    padding: 6px 8px;
+    font-size: 0.72em;
+  }
+
+  .mode-module .module-main .md,
+  .mode-module .md,
+  .mode-module .md.md-sectioned {
+    max-width: calc(100vw - 20px);
+    padding: 22px 20px 28px;
+    font-size: 16px;
+    line-height: 1.64;
+  }
+
+  .mode-module .md h1 {
+    font-size: 2rem;
+  }
+
+  .mode-module .md h2 {
+    font-size: 1.3rem;
+  }
+
+  .mode-module .lesson-section-card {
+    padding: 16px 0;
+  }
+
+  .reader-concept-trail {
+    grid-template-columns: 1fr;
+  }
+
+  .reader-concept-trail .concept-node {
+    border-top: 0;
+    border-left: 2px solid rgba(40, 36, 28, 0.18);
+    padding: 2px 0 2px 10px;
+  }
+
+  .reader-concept-trail .concept-node::after {
+    top: 8px;
+    left: -5px;
+  }
+
+  .quiz-progress-head,
+  .quiz-progress-stats {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .quiz-progress-stats {
+    display: block;
+    font-size: 0.78em;
+  }
+
+  .quiz-q,
+  .quiz-intro,
+  .quiz-result {
+    padding: 14px;
+  }
+
+  .quiz-next,
+  .quiz-q .quiz-next {
+    position: sticky;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    z-index: 20;
+    min-height: 46px;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.32);
+  }
+
+  .progress-active-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .home-learning-lead {
+    margin-top: 34px;
+  }
+
+  .home-learning-lead h2 {
+    font-size: 2rem;
+  }
+
+  .mode-home .instrument-statusbar,
+  .mode-home .etch,
+  .mode-home .organism-wrap,
+  .mode-home .console {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-pool,
+  .lamp,
+  .sweep {
+    display: none;
+  }
+}
