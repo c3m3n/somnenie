@@ -8,28 +8,87 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  // Источник истины для разбора test-файлов (content/MXX/quiz.md).
-  // Чистые функции без DOM: текст -> структура вопроса. Рендер живёт в app.js.
+  const REVIEW_SOURCE_BLOCKS = ["theory", "terms", "practice", "diagrams"];
+
+  function splitLines(text) {
+    return String(text || "").replace(/\r\n?/g, "\n").split("\n");
+  }
+
+  function normalizeSourceBlock(value, fallback = "theory") {
+    const normalized = String(value || "").trim().toLowerCase();
+    if (!normalized) return fallback;
+    const withoutExtension = normalized.replace(/\.md$/i, "");
+    const direct = REVIEW_SOURCE_BLOCKS.includes(withoutExtension) ? withoutExtension : null;
+    if (direct) return direct;
+    if (withoutExtension === "term" || withoutExtension === "glossary") return "terms";
+    return fallback;
+  }
+
+  function extractMetadataLine(line) {
+    const match = String(line || "").trim().match(/^\*\*([^*:]+?)\s*:\s*([^*]*)\*\*$/);
+    if (!match) return null;
+    const key = String(match[1] || "").trim().toLowerCase();
+    const value = String(match[2] || "").trim();
+    return { key, value };
+  }
+
+  function parseMetadata(body) {
+    const lines = splitLines(body);
+    const markers = [];
+    for (let i = 0; i < lines.length; i++) {
+      const metadata = extractMetadataLine(lines[i]);
+      if (!metadata) continue;
+      markers.push(Object.assign({ index: i }, metadata));
+    }
+    return { lines, markers };
+  }
+
+  function metadataValueFrom(markers, keyPredicate, startIndex = 0) {
+    return markers.find((entry, index) => index >= startIndex && keyPredicate(entry.key)) || null;
+  }
+
+  function parseSourceBlock(body, fallback = "theory") {
+    const { markers } = parseMetadata(body);
+    const sourceMeta = markers.find((marker) => marker.key === "sourceblock" || marker.key === "источник");
+    if (!sourceMeta) return fallback;
+    return normalizeSourceBlock(sourceMeta.value, fallback);
+  }
+
+  function parseAnswerText(markers, answerIndex, lines) {
+    if (answerIndex < 0) return "";
+    const nextMarker = markers[answerIndex + 1];
+    const end = nextMarker ? nextMarker.index : lines.length;
+    const pieces = [];
+    const current = markers[answerIndex];
+    if (current.value) pieces.push(current.value);
+    for (let i = current.index + 1; i < end; i++) {
+      if (lines[i] && lines[i].trim()) pieces.push(lines[i].trim());
+    }
+    return pieces.join(" ").trim();
+  }
 
   function parseQuiz(md) {
     if (!md) return [];
 
-    const blocks = String(md).split(/\r?\n---+\r?\n/);
+    const text = String(md);
+    const matches = Array.from(text.matchAll(/^##\s*Q(\d+)\s*\(([^)]+)\)\s*$/gm));
+    if (!matches.length) return [];
+
     const questions = [];
+    for (let index = 0; index < matches.length; index++) {
+      const match = matches[index];
+      const start = match.index + match[0].length;
+      const end = index + 1 < matches.length ? matches[index + 1].index : text.length;
+      const number = Number(match[1]);
+      const rawType = String(match[2] || "").trim();
+      const body = text.slice(start, end).trim();
+      const sourceBlock = parseSourceBlock(body, null);
 
-    for (const block of blocks) {
-      const head = block.match(/^##\s*Q(\d+)\s*\(([^)]+)\)\s*$/m);
-      if (!head) continue;
-
-      const number = Number(head[1]);
-      const rawType = head[2].trim();
-      const body = block.slice(head.index + head[0].length).trim();
-
-      if (rawType === "MCQ" || rawType === "True/False") {
-        const q = parseAutoQuestion(number, rawType, body);
+      if (/^MCQ$/i.test(rawType) || /^True\/False$/i.test(rawType)) {
+        const q = parseAutoQuestion(number, rawType, body, sourceBlock);
         if (q) questions.push(q);
-      } else if (rawType === "Применение") {
-        const q = parseApplicationQuestion(number, body);
+      } else {
+        const q = parseApplicationQuestion(number, body, sourceBlock);
         if (q) questions.push(q);
       }
     }
@@ -37,47 +96,90 @@
     return questions;
   }
 
-  function parseAutoQuestion(number, type, body) {
-    const answerMatch = body.match(/\*\*Правильный ответ:\s*(.+?)\*\*/);
-    if (!answerMatch) return null;
+  function parseAutoQuestion(number, type, body, sourceBlock = "theory") {
+    const data = parseMetadata(body);
+    const metadata = data.markers;
+    const lines = data.lines;
+    const answerIndex = metadata.findIndex((marker, markerIndex) => {
+      if (marker.key === "sourceblock" || marker.key === "источник") return false;
+      return marker.key.includes("ответ") || marker.key.includes("answer") || marker.key.includes("правильный");
+    });
+    const explanationIndex = metadata.findIndex((marker, markerIndex) => {
+      if (markerIndex === answerIndex) return false;
+      if (marker.key === "sourceblock" || marker.key === "источник") return false;
+      return marker.key.includes("объясн") || marker.key.includes("explain") || marker.key.includes("разбор");
+    });
 
-    const beforeAnswer = body.slice(0, answerMatch.index).trim();
-    const answerRaw = answerMatch[1].trim();
-    const explainMatch = body.match(/\*\*Объяснение:\*\*\s*([\s\S]*)$/);
-    const explain = explainMatch ? explainMatch[1].trim() : "";
+    const answerLineIndex = answerIndex >= 0 ? answerIndex : 0;
+    const beforeAnswer = lines.slice(0, metadata[answerLineIndex]?.index || lines.length).join("\n").trim();
+    const answerRaw = answerIndex >= 0 ? parseAnswerText(metadata, answerIndex, lines) : "";
 
-    let answer = null;
+    if (!beforeAnswer) return null;
+
     let options = [];
     let text = beforeAnswer;
+    let answer = null;
+    const normalizedType = String(type || "").toLowerCase();
 
-    if (type === "MCQ") {
-      options = Array.from(beforeAnswer.matchAll(/^([A-D])\.\s+(.+)$/gm), (m) => ({
-        key: m[1],
-        text: m[2].trim(),
-      }));
+    if (normalizedType === "mcq") {
+      const optionMatches = Array.from(beforeAnswer.matchAll(/^([A-D])\.\s+(.+)$/gm));
+      options = optionMatches.map((m) => ({ key: m[1], text: m[2].trim() }));
       text = beforeAnswer.replace(/^([A-D])\.\s+.+$/gm, "").trim();
-
-      const letter = answerRaw.match(/^([A-D])/i);
+      const letter = answerRaw.match(/([A-D])/i);
       answer = letter ? letter[1].toUpperCase() : null;
       if (!options.some((opt) => opt.key === answer)) return null;
     } else {
-      text = beforeAnswer.trim();
-      options = [{ key: true, text: "Верно" }, { key: false, text: "Неверно" }];
-      if (/НЕВЕРНО|False/i.test(answerRaw)) answer = false;
-      else if (/ВЕРНО|True/i.test(answerRaw)) answer = true;
+      options = [{ key: true, text: "Да" }, { key: false, text: "Нет" }];
+      if (/ложь|false/i.test(answerRaw)) answer = false;
+      else if (/истина|true/i.test(answerRaw)) answer = true;
+      if (answer === null) return null;
     }
 
-    if (answer === null || !text) return null;
-    return { kind: "auto", number, type, text, options, answer, explain };
+    const explainMarker = explanationIndex >= 0 ? metadata[explanationIndex] : null;
+    const explainLines = [];
+    if (explainMarker) {
+      if (explainMarker.value) explainLines.push(explainMarker.value);
+      const nextMarkerIndex = metadata[explanationIndex + 1]?.index || lines.length;
+      for (let i = explainMarker.index + 1; i < nextMarkerIndex; i++) {
+        if (lines[i] && lines[i].trim()) explainLines.push(lines[i].trim());
+      }
+    }
+    if (!explainLines.length && answerIndex >= 0) {
+      for (let i = (metadata[answerIndex]?.index || lines.length) + 1; i < lines.length; i++) {
+        if (lines[i] && lines[i].trim()) explainLines.push(lines[i].trim());
+      }
+    }
+
+    return {
+      kind: "auto",
+      number,
+      type,
+      text,
+      options,
+      answer,
+      explain: explainLines.join(" ").trim(),
+      sourceBlock: normalizeSourceBlock(sourceBlock, "theory"),
+    };
   }
 
-  function parseApplicationQuestion(number, body) {
-    const answerMatch = body.match(/\*\*Ответ и разбор:\*\*\s*/);
-    const text = answerMatch ? body.slice(0, answerMatch.index).trim() : body.trim();
-    const explain = answerMatch ? body.slice(answerMatch.index + answerMatch[0].length).trim() : "";
+  function parseApplicationQuestion(number, body, sourceBlock = "practice") {
+    const data = parseMetadata(body);
+    const metadata = data.markers;
+    const lines = data.lines;
+    const answerIndex = metadata.findIndex((marker) => marker.key !== "sourceblock" && marker.key !== "источник");
+    const text = lines.slice(0, metadata[answerIndex]?.index || lines.length).join("\n").trim();
+    const explain = parseAnswerText(metadata, Math.max(answerIndex, 0), lines);
 
     if (!text) return null;
-    return { kind: "application", number, type: "Применение", text, explain };
+
+    return {
+      kind: "application",
+      number,
+      type: "Применение",
+      text,
+      explain,
+      sourceBlock: normalizeSourceBlock(sourceBlock, "practice"),
+    };
   }
 
   return {
