@@ -1,6 +1,6 @@
 ﻿/* Service worker для офлайн-доступа. Кэширует оболочку приложения и учебный контент. */
 
-const VERSION = "nutrio-v11";
+const VERSION = "nutrio-v12";
 const SHELL_CACHE = `${VERSION}-shell`;
 const CONTENT_CACHE = `${VERSION}-content`;
 
@@ -79,8 +79,11 @@ self.addEventListener("install", (event) => {
     const shell = await caches.open(SHELL_CACHE);
     await shell.addAll(APP_SHELL);
     await precacheContentIndexes();
-    self.skipWaiting();
   })());
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {

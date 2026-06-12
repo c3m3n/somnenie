@@ -18,6 +18,7 @@ const CONTENT_MANIFEST_PATH = "content/manifest.json";
 const QUIZ_PROGRESS_VERSION = 2;
 const REVIEW_SCHEMA_VERSION = 2;
 const COURSE_ID = "nutrition";
+const SAFETY_NOTE = "Учебный материал. Не заменяет врача, диагностику, лечение или индивидуальные рекомендации по питанию.";
 const PROFILE_LEVELS = {
   beginner: "Новичок",
   familiar: "Уже изучал",
@@ -783,6 +784,10 @@ function setButtonContent(button, label, iconName = "arrow") {
   button.innerHTML = `${iconSvg(iconName, "btn-icon")}<span>${escapeHtml(label)}</span>`;
 }
 
+function safetyNoteHtml() {
+  return `<p class="safety-note">${escapeHtml(SAFETY_NOTE)}</p>`;
+}
+
 function tabVisual(file) {
   return {
     "theory.md": { icon: "book", tone: "info" },
@@ -804,7 +809,7 @@ function contentTabByFile(file) {
 }
 
 function moduleRouteTabForFile(file) {
-  if (file === "__review__") return { file: "__review__", label: "Слабые сигналы", files: ["__review__"], icon: "review", tone: "review" };
+  if (file === "__review__") return { file: "__review__", label: "Закрепление", files: ["__review__"], icon: "review", tone: "review" };
   return MODULE_ROUTE_TABS.find((tab) => tab.files.includes(file)) || contentTabByFile(file);
 }
 
@@ -1254,7 +1259,7 @@ async function showHome() {
       `<div class="course-progress" aria-label="Общий прогресс курса по шагам"><span style="width: ${totalPercent}%"></span></div>` +
     `</section>` +
     `<section class="ledger rise" aria-label="Фазы курса">${phaseLedgerRows(nextModule)}</section>` +
-    `<p class="disclaimer">учебный материал · не заменяет врача · прогресс живёт в этом браузере</p>`;
+    safetyNoteHtml();
 
   const actions = document.createElement("div");
   actions.className = "home-actions";
@@ -1511,19 +1516,10 @@ async function showProfile() {
     metricHtml("next", "quiz", `${summary.quizCompleted}/${summary.totalModules}`, "проверок"),
   ];
   if (summary.quizCompleted) dashboardMetrics.push(metricHtml("success", "target", summary.averageScore, "средний лучший балл"));
-  else dashboardMetrics.push(`<div class="metric empty">${iconSvg("target", "metric-icon")}<strong>После теста</strong><span>появится средний балл</span></div>`);
-  if (summary.weakSpotTotal) dashboardMetrics.push(metricHtml("review", "review", summary.weakSpotTotal, "тем для закрепления"));
-  dashboardMetrics.push(metricHtml("review", "review", reviewStats.dueToday, "вернутся сегодня"));
-  dashboardMetrics.push(metricHtml("success", "check", reviewStats.retired, "усвоено"));
   dashboard.innerHTML =
     `<div class="section-kicker">Где я</div>` +
     `<h2>Прогресс обучения</h2>` +
-    `<p class="muted">Курс считается по шагам: Материал, Проверка и Итог в каждом модуле. Блоки чтения и вопросы теста показывают только локальный прогресс.</p>` +
     `<div class="course-map instrument-matrix profile-matrix" aria-label="Матрица прогресса по модулям: клик открывает модуль">${courseMapSegments(nextModule)}</div>` +
-    `<div class="matrix-foot"><span class="lens-line">сигналы курса</span><span class="n">${signalCounterText(completedSignalCount())}</span></div>` +
-    `<p class="streak-line">${escapeHtml(streakLine(sessions))}</p>` +
-    `<div class="memory-calendar" aria-label="График памяти за последние 30 дней">${memoryDayCells(sessions)}</div>` +
-    `<p class="memory-caption">последние 30 дней · в работе ${reviewStats.active} · усвоено ${reviewStats.retired}</p>` +
     `<div class="metric-grid">` +
     dashboardMetrics.join("") +
     `</div>`;
@@ -1806,7 +1802,7 @@ function availableTabs(mod) {
 
 function availableModuleTabItems(mod) {
   const tabs = MODULE_ROUTE_TABS.filter((tab) => tab.files.some((file) => mod?.files?.[file] !== null));
-  if (mod && getVisibleWeakSpotCount(mod.id)) return [...tabs, { file: "__review__", label: "Сигналы", files: ["__review__"], icon: "review", tone: "review" }];
+  if (mod && getVisibleWeakSpotCount(mod.id)) return [...tabs, { file: "__review__", label: "Закрепление", files: ["__review__"], icon: "review", tone: "review" }];
   return tabs;
 }
 
@@ -1907,7 +1903,7 @@ function appendModuleNavigation(mod, file, options = {}) {
 
   const route = document.createElement("div");
   route.className = "lesson-route";
-  route.textContent = file === "__review__" ? "Слабые сигналы" : "Маршрут: Материал -> Проверка -> Итог";
+  route.textContent = file === "__review__" ? "Закрепление" : "Маршрут: Материал -> Проверка -> Итог";
 
   const actions = document.createElement("div");
   actions.className = "lesson-nav-actions";
@@ -2118,14 +2114,12 @@ function diagnoseQuestion(question, chosenKey, isRight) {
 
   if (!isRight && chosenLevel && chosenLevel.key !== level.key) {
     mistakeType = `${chosenLevel.label} принят за ${level.label.toLowerCase()}`;
-    repair = `Сравните выбранный уровень с правильным: сейчас нужен уровень "${level.label}", а не "${chosenLevel.label}".`;
+    repair = `Вывод сделан на уровне «${chosenLevel.label.toLowerCase()}», хотя вопрос — об уровне «${level.label.toLowerCase()}».`;
   }
 
   const summary = isRight
-    ? `Ответ совпал с уровнем "${level.label}".`
-    : chosenText
-      ? `Ваш ответ: ${chosenText}. Правильный ответ относится к уровню "${level.label}".`
-      : `Нужно восстановить уровень "${level.label}".`;
+    ? `Уровень вопроса: ${level.label.toLowerCase()}.`
+    : `Правильный уровень: ${level.label.toLowerCase()}.`;
 
   return { level, mistakeType, repair, summary };
 }
@@ -2328,7 +2322,7 @@ function buildModuleSidePanel(mod, file, content) {
     `</div>` +
     `</div>` +
     `<div class="side-step">${escapeHtml(stepText)}</div>` +
-    `<div class="trust-note">${iconSvg("book", "trust-icon")}<span>Образовательный материал. Источники и границы применимости — в конце блока.</span></div>`;
+    `<div class="trust-note">${iconSvg("book", "trust-icon")}<span>${escapeHtml(SAFETY_NOTE)} Источники и границы применимости — в конце блока.</span></div>`;
 
   const headings = extractLessonHeadings(content);
   if (headings.length) {
@@ -2575,7 +2569,7 @@ function sessionHeader(plan, index, total, results) {
       `<pre class="mini-organism" aria-hidden="true"></pre>` +
       `<div>` +
         `<div class="section-kicker">Сеанс памяти</div>` +
-        `<h2>${index < total ? `сигнал ${index + 1}/${total}` : "сеанс закрыт"}</h2>` +
+        `<h2>${index < total ? `повторение ${index + 1}/${total}` : "повторение завершено"}</h2>` +
         `<p>${plan.moduleStep ? `${total} ${pluralizeRepeats(total)} + ${plan.moduleStep.moduleId}` : `${total} ${pluralizeRepeats(total)}`}</p>` +
         `<div class="session-cells">${sessionProgressCells(total, index, results)}</div>` +
       `</div>` +
@@ -2652,9 +2646,13 @@ async function showReviewSession(plan) {
 
   function appendSessionNext(card) {
     const next = document.createElement("button");
+    let moving = false;
     next.className = "btn quiz-next";
-    setButtonContent(next, index + 1 < items.length ? "следующий сигнал" : "закрыть сеанс", "arrow");
+    setButtonContent(next, index + 1 < items.length ? "Следующее повторение" : "Завершить повторение", "arrow");
     next.onclick = runAsync(async () => {
+      if (moving) return;
+      moving = true;
+      next.disabled = true;
       index++;
       await renderCurrent();
     });
@@ -2674,6 +2672,7 @@ async function showReviewSession(plan) {
 
   function renderQuestionItem(root, item, mod, question) {
     const card = document.createElement("article");
+    let answeredThisReview = false;
     card.className = "quiz-q session-question";
     card.innerHTML =
       `<div class="weak-meta session-meta">` +
@@ -2694,23 +2693,31 @@ async function showReviewSession(plan) {
       state.className = "opt-state";
       b.append(body, state);
       b.onclick = runAsync(async () => {
+        if (answeredThisReview) return;
+        answeredThisReview = true;
+        for (const [button] of optButtons) button.disabled = true;
         const isRight = opt.key === question.answer;
-        const updated = await applySessionAnswer(item, isRight);
-        for (const [button, key, mark] of optButtons) {
-          button.disabled = true;
-          if (key === question.answer) {
-            button.classList.add("correct");
-            if (mark) mark.textContent = key === opt.key ? "✓ Ваш ответ, правильный" : "✓ Правильный ответ";
-          } else if (key === opt.key) {
-            button.classList.add("wrong");
-            if (mark) mark.textContent = "× Ваш ответ";
-          } else if (mark) {
-            mark.textContent = "Не выбран";
+        try {
+          const updated = await applySessionAnswer(item, isRight);
+          for (const [button, key, mark] of optButtons) {
+            if (key === question.answer) {
+              button.classList.add("correct");
+              if (mark) mark.textContent = key === opt.key ? "✓ Ваш ответ, правильный" : "✓ Правильный ответ";
+            } else if (key === opt.key) {
+              button.classList.add("wrong");
+              if (mark) mark.textContent = "× Ваш ответ";
+            } else if (mark) {
+              mark.textContent = "Не выбран";
+            }
           }
+          card.appendChild(sessionFeedbackLine(updated, isRight));
+          if (question.explain.trim()) card.appendChild(QuizDiagnosis({ question, chosenKey: opt.key, isRight }));
+          appendSessionNext(card);
+        } catch (error) {
+          answeredThisReview = false;
+          for (const [button] of optButtons) button.disabled = false;
+          throw error;
         }
-        card.appendChild(sessionFeedbackLine(updated, isRight));
-        if (question.explain.trim()) card.appendChild(QuizDiagnosis({ question, chosenKey: opt.key, isRight }));
-        appendSessionNext(card);
       });
       optButtons.push([b, opt.key, state]);
       card.appendChild(b);
@@ -2721,6 +2728,7 @@ async function showReviewSession(plan) {
 
   function renderConceptItem(root, item, mod) {
     const card = document.createElement("article");
+    let answeredThisConcept = false;
     card.className = "quiz-q session-question";
     card.innerHTML =
       `<div class="weak-meta session-meta">` +
@@ -2733,24 +2741,29 @@ async function showReviewSession(plan) {
     const remember = document.createElement("button");
     remember.className = "btn";
     remember.textContent = "помню";
-    remember.onclick = runAsync(async () => {
-      const updated = await applySessionAnswer(item, true);
+    async function choose(isRight) {
+      if (answeredThisConcept) return;
+      answeredThisConcept = true;
       remember.disabled = true;
       forgot.disabled = true;
-      card.appendChild(sessionFeedbackLine(updated, true));
-      appendSessionNext(card);
-    });
+      try {
+        const updated = await applySessionAnswer(item, isRight);
+        card.appendChild(sessionFeedbackLine(updated, isRight));
+        appendSessionNext(card);
+      } catch (error) {
+        answeredThisConcept = false;
+        remember.disabled = false;
+        forgot.disabled = false;
+        throw error;
+      }
+    }
+
+    remember.onclick = runAsync(() => choose(true));
 
     const forgot = document.createElement("button");
     forgot.className = "btn secondary";
     forgot.textContent = "не помню";
-    forgot.onclick = runAsync(async () => {
-      const updated = await applySessionAnswer(item, false);
-      remember.disabled = true;
-      forgot.disabled = true;
-      card.appendChild(sessionFeedbackLine(updated, false));
-      appendSessionNext(card);
-    });
+    forgot.onclick = runAsync(() => choose(false));
 
     card.append(remember, forgot);
     root.appendChild(card);
@@ -2774,9 +2787,9 @@ async function showReviewSession(plan) {
     wrap.innerHTML =
       sessionHeader(plan, items.length, items.length, results) +
       `<div class="quiz-result">` +
-        `<div class="score-label">сеанс закрыт</div>` +
+        `<div class="score-label">Повторение завершено</div>` +
         `<div class="score">${right} / ${items.length}</div>` +
-        `<p>сеанс закрыт · ${items.length} ${pluralizeSignals(items.length)} · ${tomorrow} ${tomorrow === 1 ? "вернётся" : "вернутся"} завтра</p>` +
+        `<p>Повторили ${items.length} ${pluralizeQuestions(items.length)}. ${tomorrow} ${tomorrow === 1 ? "тема вернётся" : "тем вернутся"} завтра.</p>` +
       `</div>`;
     $screen.appendChild(wrap);
     startSessionOrganism(wrap, "glad");
@@ -2788,14 +2801,14 @@ async function showReviewSession(plan) {
       if (mod) {
         const next = document.createElement("button");
         next.className = "btn btn-with-icon";
-        setButtonContent(next, `открыть ${mod.id}`, "arrow");
+        setButtonContent(next, `Открыть ${mod.id}`, "arrow");
         next.onclick = runAsync(() => showModule(mod));
         result.appendChild(next);
       }
     }
     const home = document.createElement("button");
     home.className = "btn secondary";
-    home.textContent = "на главную";
+    home.textContent = "На главную";
     home.onclick = runAsync(showHome);
     result.appendChild(home);
   }
@@ -2830,10 +2843,10 @@ function showQuizIntro(mod) {
     metricHtml("info", "target", "5-8 мин", "обычно на модуль") +
     metricHtml("success", "check", "70%+", "ориентир прохождения") +
     `</div>` +
+    safetyNoteHtml() +
     `<details class="quiz-rules"><summary>Как считается результат</summary>` +
     `<p>${gradedTotal} ${pluralizeQuestions(gradedTotal)} идут в автоматический балл. ${applicationTotal} ${pluralizeQuestions(applicationTotal)} используются для самопроверки и не снижают результат.</p>` +
     `<p>Ошибки сохраняются как темы для закрепления после завершения теста.</p>` +
-    `<p><strong>Важно:</strong> это образовательная проверка, а не медицинская рекомендация.</p>` +
     `</details>`;
 
   const start = document.createElement("button");
@@ -2894,15 +2907,16 @@ async function showQuiz(mod) {
       `</div>` +
       `<div class="quiz-progress-track" aria-label="Прогресс проверки"><span style="width: ${percent}%"></span></div>` +
       `<div class="quiz-progress-stats">` +
-        `<span>${answered}/${questions.length} отвечено</span>` +
-        `<span>${correct}/${gradedTotal} правильно</span>` +
-        `<span>${mistakes} ошибок</span>` +
+      (answered
+        ? `<span>верных ${correct} из ${gradedTotal}</span><span>${mistakes ? `ошибок ${mistakes}` : "без ошибок"}</span>`
+        : `<span>на балл: ${gradedTotal}</span><span>самопроверка: ${applicationTotal}</span>`) +
       `</div>`;
     return progress;
   }
 
   function renderAutoQuestion(q) {
     const card = document.createElement("div");
+    let answeredThisQuestion = false;
     card.className = "quiz-q";
     card.innerHTML = `<div class="q-text">${renderMarkdownInline(q.text)}</div>`;
 
@@ -2923,39 +2937,51 @@ async function showQuiz(mod) {
     $screen.appendChild(card);
 
     async function answer(chosen) {
+      if (answeredThisQuestion) return;
+      answeredThisQuestion = true;
+      for (const [b] of optButtons) b.disabled = true;
       const isRight = chosen === q.answer;
-      if (isRight) correct++;
-      else mistakes++;
-      answered++;
-      await updateWeakSpot(mod.id, q, isRight, chosen);
-      await setModProgress(mod.id, {
-        quizAttemptStatus: "in-progress",
-        quizAnswered: answered,
-        quizCorrect: correct,
-        quizMistakes: mistakes,
-      });
-      for (const [b, key, state] of optButtons) {
-        b.disabled = true;
-        if (key === q.answer) {
-          b.classList.add("correct");
-          if (state) state.textContent = key === chosen ? "✓ Ваш ответ, правильный" : "✓ Правильный ответ";
-        } else if (key === chosen) {
-          b.classList.add("wrong");
-          if (state) state.textContent = "× Ваш ответ";
-        } else if (state) {
-          state.textContent = "Не выбран";
+      const nextCorrect = correct + (isRight ? 1 : 0);
+      const nextMistakes = mistakes + (isRight ? 0 : 1);
+      const nextAnswered = answered + 1;
+      try {
+        await updateWeakSpot(mod.id, q, isRight, chosen);
+        await setModProgress(mod.id, {
+          quizAttemptStatus: "in-progress",
+          quizAnswered: nextAnswered,
+          quizCorrect: nextCorrect,
+          quizMistakes: nextMistakes,
+        });
+        correct = nextCorrect;
+        mistakes = nextMistakes;
+        answered = nextAnswered;
+        for (const [b, key, state] of optButtons) {
+          if (key === q.answer) {
+            b.classList.add("correct");
+            if (state) state.textContent = key === chosen ? "✓ Ваш ответ, правильный" : "✓ Правильный ответ";
+          } else if (key === chosen) {
+            b.classList.add("wrong");
+            if (state) state.textContent = "× Ваш ответ";
+          } else if (state) {
+            state.textContent = "Не выбран";
+          }
         }
+        if (q.explain.trim()) {
+          card.appendChild(QuizDiagnosis({ question: q, chosenKey: chosen, isRight }));
+        }
+        if (!isRight) card.appendChild(ReviewAddedLine());
+        appendNextButton(card);
+      } catch (error) {
+        answeredThisQuestion = false;
+        for (const [b] of optButtons) b.disabled = false;
+        throw error;
       }
-      if (q.explain.trim()) {
-        card.appendChild(QuizDiagnosis({ question: q, chosenKey: chosen, isRight }));
-      }
-      if (!isRight) card.appendChild(ReviewAddedLine());
-      appendNextButton(card);
     }
   }
 
   function renderApplicationQuestion(q) {
     const card = document.createElement("div");
+    let revealed = false;
     card.className = "quiz-q";
     card.innerHTML =
       `<div class="q-text app-text">${renderMarkdown(q.text)}</div>` +
@@ -2965,20 +2991,29 @@ async function showQuiz(mod) {
     reveal.className = "btn";
     reveal.textContent = "Показать разбор";
     reveal.onclick = runAsync(async () => {
+      if (revealed) return;
+      revealed = true;
       reveal.disabled = true;
-      answered++;
-      await setModProgress(mod.id, {
-        quizAttemptStatus: "in-progress",
-        quizAnswered: answered,
-        quizCorrect: correct,
-        quizMistakes: mistakes,
-      });
-      if (q.explain.trim()) {
-        const exp = QuizDiagnosis({ question: q, chosenKey: null, isRight: true });
-        exp.classList.add("answer-block");
-        card.appendChild(exp);
+      const nextAnswered = answered + 1;
+      try {
+        await setModProgress(mod.id, {
+          quizAttemptStatus: "in-progress",
+          quizAnswered: nextAnswered,
+          quizCorrect: correct,
+          quizMistakes: mistakes,
+        });
+        answered = nextAnswered;
+        if (q.explain.trim()) {
+          const exp = QuizDiagnosis({ question: q, chosenKey: null, isRight: true });
+          exp.classList.add("answer-block");
+          card.appendChild(exp);
+        }
+        appendNextButton(card);
+      } catch (error) {
+        revealed = false;
+        reveal.disabled = false;
+        throw error;
       }
-      appendNextButton(card);
     });
 
     card.appendChild(reveal);
@@ -2987,9 +3022,13 @@ async function showQuiz(mod) {
 
   function appendNextButton(container) {
     const next = document.createElement("button");
+    let moving = false;
     next.className = "btn quiz-next";
     setButtonContent(next, idx + 1 < questions.length ? "Ответить на следующий вопрос" : "Завершить тест", "arrow");
     next.onclick = runAsync(async () => {
+      if (moving) return;
+      moving = true;
+      next.disabled = true;
       idx++;
       if (idx < questions.length) renderQuestion();
       else await renderResult();
@@ -3035,34 +3074,38 @@ async function showQuiz(mod) {
 
     const weakCount = getWeakSpotCount(mod.id);
     const ratio = gradedTotal ? correct / gradedTotal : 1;
-    const message = gradedTotal === 0
-      ? "Открытые вопросы завершены."
-    : correct === gradedTotal
-        ? "сигнал чистый."
-        : ratio >= 0.7
-          ? "контур держится."
-          : "вернёмся к теории.";
+    const passed = gradedTotal === 0 || ratio >= 0.7;
+    const verdict = gradedTotal === 0
+      ? "Самопроверка завершена"
+      : passed
+        ? "Проверка пройдена"
+        : "Нужно повторить материал";
+    const resultHint = weakCount
+      ? `Закрепите ${weakCount} ${pluralizeQuestions(weakCount)}, затем можно пройти проверку снова.`
+      : "Можно перейти к итогу модуля или пройти проверку снова.";
 
     $screen.innerHTML = "";
     const div = document.createElement("div");
     div.className = "quiz-result";
     div.innerHTML =
-      `<div class="score-label">Автоматический результат</div>` +
+      `<div class="score-label">Результат проверки</div>` +
       `<div class="score">${correct} / ${gradedTotal}</div>` +
-      `<p>${message}</p>` +
+      `<p>${verdict}</p>` +
+      `<p class="muted">${escapeHtml(resultHint)}</p>` +
+      safetyNoteHtml() +
       (applicationTotal ? `<p class="muted">Открытые вопросы: ${applicationTotal}. Они использованы для самопроверки и не входят в балл.</p>` : "") +
       (weakCount ? `<p class="muted">Для закрепления сохранено: ${weakCount} ${pluralizeQuestions(weakCount)}.</p>` : "");
 
     if (weakCount) {
       const review = document.createElement("button");
-      review.className = "btn secondary";
+      review.className = "btn";
       review.textContent = "Открыть закрепление";
       review.onclick = runAsync(() => openModuleReview(mod));
       div.appendChild(review);
     }
 
     const retry = document.createElement("button");
-    retry.className = "btn";
+    retry.className = weakCount ? "btn secondary" : "btn";
     retry.textContent = "Пройти проверку ещё раз";
     retry.onclick = runAsync(() => showQuiz(mod));
     div.appendChild(retry);
@@ -3083,20 +3126,21 @@ function showWeakSpots(mod) {
   card.className = "review-card";
 
   if (!moduleItems.length) {
-    card.innerHTML = `<h2>Слабые сигналы</h2><p>слабых сигналов нет. прибор спокоен.</p>`;
+    card.innerHTML = `<h2>Темы для закрепления</h2>${safetyNoteHtml()}<p>Сейчас нет тем для повторения.</p>`;
     $screen.appendChild(card);
     return;
   }
 
   card.innerHTML =
-    `<h2>Слабые сигналы</h2>` +
-    `<p class="muted">память видна: сегодня повторяем due-сигналы, остальные спокойно ждут своей даты.</p>`;
+    `<h2>Темы для закрепления</h2>` +
+    safetyNoteHtml() +
+    `<p class="muted">Сегодня повторяем темы, которые пора освежить. Остальные вернутся позже.</p>`;
 
   const due = grouped.today.slice(0, reviewApi().DAILY_REVIEW_LIMIT);
   if (due.length) {
     const start = document.createElement("button");
     start.className = "btn btn-with-icon";
-    setButtonContent(start, "закрепить сейчас ▸", "arrow");
+    setButtonContent(start, "Закрепить сейчас", "arrow");
     start.onclick = runAsync(() => startLearningSession({ reviewOnly: true, items: due }));
     card.appendChild(start);
   }
@@ -3137,16 +3181,16 @@ function showWeakSpots(mod) {
 
   renderGroup("сегодня", grouped.today, "сегодня очередь пуста.");
   renderGroup("скоро", grouped.soon.slice(0, 12), "скоро ничего не ждёт.");
-  renderGroup("усвоено", grouped.retired.slice(0, 12), "усвоенных сигналов пока нет.");
+  renderGroup("усвоено", grouped.retired.slice(0, 12), "Усвоенных тем пока нет.");
 
   const retry = document.createElement("button");
   retry.className = "btn secondary";
-  retry.textContent = "пройти тест снова";
+  retry.textContent = "Пройти тест снова";
   retry.onclick = () => showQuiz(mod);
 
   const clear = document.createElement("button");
   clear.className = "btn secondary danger";
-  clear.textContent = "очистить список";
+  clear.textContent = "Очистить список";
   clear.onclick = runAsync(async () => {
     if (!confirm("Очистить слабые места этого модуля?")) return;
     const mp = Object.assign({}, modProgress(mod.id), { weakSpots: {} });
@@ -3188,6 +3232,53 @@ function runAsync(fn) {
     .catch((error) => console.error("Nutrio action failed", error));
 }
 
+function showServiceWorkerUpdatePrompt(registration) {
+  if (!registration?.waiting || document.querySelector(".app-update-banner")) return;
+
+  const banner = document.createElement("div");
+  banner.className = "app-update-banner";
+  setElementAttr(banner, "role", "status");
+  setElementAttr(banner, "aria-live", "polite");
+
+  const text = document.createElement("span");
+  text.textContent = "Доступна новая версия курса.";
+
+  const reload = document.createElement("button");
+  reload.type = "button";
+  reload.textContent = "Обновить";
+  reload.onclick = () => {
+    reload.disabled = true;
+    if (registration.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" });
+  };
+
+  banner.append(text, reload);
+  document.body.appendChild(banner);
+}
+
+async function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloading) return;
+    reloading = true;
+    window.location.reload();
+  });
+
+  const registration = await navigator.serviceWorker.register("sw.js");
+  if (registration.waiting && navigator.serviceWorker.controller) showServiceWorkerUpdatePrompt(registration);
+
+  registration.addEventListener("updatefound", () => {
+    const installing = registration.installing;
+    if (!installing) return;
+    installing.addEventListener("statechange", () => {
+      if (installing.state === "installed" && navigator.serviceWorker.controller) {
+        showServiceWorkerUpdatePrompt(registration);
+      }
+    });
+  });
+}
+
 $back.onclick = runAsync(showHome);
 $profile.onclick = runAsync(showProfile);
 if (window.addEventListener) window.addEventListener("resize", updateTabsOverflowHint);
@@ -3211,8 +3302,6 @@ configureMarkedSecurity();
   }
 })();
 
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch((error) => console.warn("SW register failed", error));
-  });
-}
+window.addEventListener("load", () => {
+  registerServiceWorker().catch((error) => console.warn("SW register failed", error));
+});

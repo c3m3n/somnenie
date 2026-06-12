@@ -14,6 +14,9 @@ $questionCount = 0
 $autoCount = 0
 $applicationCount = 0
 $theoryTitles = @{}
+$claimCoverageByModule = @{}
+$claimFreshnessDays = 366
+$requiredClaimModules = @("M08", "M09", "M10", "M11", "M17", "M19", "M20", "M21", "M22")
 
 function Add-ContentError([string]$Message) {
   $script:errors.Add($Message) | Out-Null
@@ -21,6 +24,23 @@ function Add-ContentError([string]$Message) {
 
 function Test-IsoDate([string]$Value) {
   return $Value -match '^\d{4}-\d{2}-\d{2}$'
+}
+
+function Test-ReviewedAtFresh([string]$Value, [string]$Label) {
+  try {
+    $date = [datetime]::ParseExact($Value, "yyyy-MM-dd", [Globalization.CultureInfo]::InvariantCulture)
+  } catch {
+    Add-ContentError "$Label reviewedAt must be a valid YYYY-MM-DD date"
+    return
+  }
+
+  $today = (Get-Date).Date
+  if ($date.Date -gt $today) {
+    Add-ContentError "$Label reviewedAt is in the future: $Value"
+  }
+  if ($date.Date -lt $today.AddDays(-$script:claimFreshnessDays)) {
+    Add-ContentError "$Label reviewedAt is stale: $Value"
+  }
 }
 
 if (-not (Test-Path -LiteralPath $contentRoot)) {
@@ -62,6 +82,9 @@ if (-not (Test-Path -LiteralPath $contentRoot)) {
       $quiz = Get-Content -Raw -LiteralPath $quizPath -Encoding UTF8
       $blocks = [regex]::Split($quiz, "\r?\n---+\r?\n")
       $moduleQuestions = 0
+      $moduleAutoCount = 0
+      $moduleApplicationCount = 0
+      $seenQuestionNumbers = @{}
 
       foreach ($block in $blocks) {
         $head = [regex]::Match($block, "(?m)^##\s*Q(\d+)\s*\(([^)]+)\)\s*$")
@@ -74,6 +97,14 @@ if (-not (Test-Path -LiteralPath $contentRoot)) {
         $body = $block.Substring($head.Index + $head.Length).Trim()
         $label = "$($module.Name)/quiz.md Q$qNumber"
 
+        if ($seenQuestionNumbers.ContainsKey($qNumber)) {
+          Add-ContentError "$label duplicates question number Q$qNumber"
+        }
+        $seenQuestionNumbers[$qNumber] = $true
+        if ($qNumber -lt 1 -or $qNumber -gt 10) {
+          Add-ContentError "$label question number must be in Q1..Q10"
+        }
+
         if ($allowedTypes -notcontains $type) {
           Add-ContentError "$label uses unsupported type: $type"
           continue
@@ -81,9 +112,28 @@ if (-not (Test-Path -LiteralPath $contentRoot)) {
 
         if ($type -eq "MCQ") {
           $autoCount++
+          $moduleAutoCount++
           $options = [regex]::Matches($body, "(?m)^([A-D])\.\s+(.+)$")
           if ($options.Count -lt 2) {
             Add-ContentError "$label has fewer than 2 MCQ options"
+          }
+          if ($options.Count -ne 4) {
+            Add-ContentError "$label must have exactly 4 MCQ options"
+          }
+
+          $seenOptionLetters = @{}
+          $seenOptionTexts = @{}
+          foreach ($option in $options) {
+            $letter = $option.Groups[1].Value
+            $text = $option.Groups[2].Value.Trim().ToLowerInvariant()
+            if ($seenOptionLetters.ContainsKey($letter)) {
+              Add-ContentError "$label has duplicate MCQ option letter: $letter"
+            }
+            $seenOptionLetters[$letter] = $true
+            if ($seenOptionTexts.ContainsKey($text)) {
+              Add-ContentError "$label has duplicate MCQ option text: $($option.Groups[2].Value.Trim())"
+            }
+            $seenOptionTexts[$text] = $true
           }
 
           $answer = [regex]::Match($body, "\*\*Правильный ответ:\s*([A-D])\b[^*]*\*\*")
@@ -105,6 +155,7 @@ if (-not (Test-Path -LiteralPath $contentRoot)) {
           }
         } elseif ($type -eq "True/False") {
           $autoCount++
+          $moduleAutoCount++
           if ($body -notmatch "\*\*Правильный ответ:\s*(ВЕРНО|НЕВЕРНО|True|False)") {
             Add-ContentError "$label is missing True/False answer"
           }
@@ -113,14 +164,26 @@ if (-not (Test-Path -LiteralPath $contentRoot)) {
           }
         } elseif ($type -eq "Применение") {
           $applicationCount++
+          $moduleApplicationCount++
           if ($body -notmatch "\*\*Ответ и разбор:\*\*") {
             Add-ContentError "$label is missing answer review block"
           }
         }
       }
 
-      if ($moduleQuestions -eq 0) {
-        Add-ContentError "No quiz questions found: $($module.Name)/quiz.md"
+      if ($moduleQuestions -ne 10) {
+        Add-ContentError "$($module.Name)/quiz.md must have exactly 10 questions; found $moduleQuestions"
+      }
+      if ($moduleAutoCount -ne 7) {
+        Add-ContentError "$($module.Name)/quiz.md must have exactly 7 automatic questions; found $moduleAutoCount"
+      }
+      if ($moduleApplicationCount -ne 3) {
+        Add-ContentError "$($module.Name)/quiz.md must have exactly 3 application questions; found $moduleApplicationCount"
+      }
+      for ($expectedQuestion = 1; $expectedQuestion -le 10; $expectedQuestion++) {
+        if (-not $seenQuestionNumbers.ContainsKey($expectedQuestion)) {
+          Add-ContentError "$($module.Name)/quiz.md is missing Q$expectedQuestion"
+        }
       }
     }
   }
@@ -208,8 +271,11 @@ if (-not (Test-Path -LiteralPath $contentRoot)) {
       if ($claimsDoc.schemaVersion -ne 1) {
         Add-ContentError "content/claims.json schemaVersion must be 1"
       }
-      if (-not (Test-IsoDate ([string]$claimsDoc.reviewedAt))) {
+      $claimsReviewedAt = [string]$claimsDoc.reviewedAt
+      if (-not (Test-IsoDate $claimsReviewedAt)) {
         Add-ContentError "content/claims.json reviewedAt must be YYYY-MM-DD"
+      } else {
+        Test-ReviewedAtFresh $claimsReviewedAt "content/claims.json"
       }
 
       $sources = @($claimsDoc.sources)
@@ -233,8 +299,11 @@ if (-not (Test-Path -LiteralPath $contentRoot)) {
         if ([string]::IsNullOrWhiteSpace([string]$source.jurisdiction)) {
           Add-ContentError "content/claims.json source $label is missing jurisdiction"
         }
-        if (-not (Test-IsoDate ([string]$source.reviewedAt))) {
+        $sourceReviewedAt = [string]$source.reviewedAt
+        if (-not (Test-IsoDate $sourceReviewedAt)) {
           Add-ContentError "content/claims.json source $label reviewedAt must be YYYY-MM-DD"
+        } else {
+          Test-ReviewedAtFresh $sourceReviewedAt "content/claims.json source $label"
         }
         if ([string]$source.url -notmatch '^https?://') {
           Add-ContentError "content/claims.json source $label url must be http(s)"
@@ -256,8 +325,14 @@ if (-not (Test-Path -LiteralPath $contentRoot)) {
           Add-ContentError "content/claims.json has duplicate claimId: $claimId"
         }
         $claimIds[$claimId] = $true
-        if ($moduleNames -notcontains ([string]$claim.moduleId)) {
+        $claimModuleId = [string]$claim.moduleId
+        if ($moduleNames -notcontains $claimModuleId) {
           Add-ContentError "content/claims.json claim $label references unknown moduleId: $($claim.moduleId)"
+        } else {
+          if (-not $script:claimCoverageByModule.ContainsKey($claimModuleId)) {
+            $script:claimCoverageByModule[$claimModuleId] = 0
+          }
+          $script:claimCoverageByModule[$claimModuleId]++
         }
         if ([string]::IsNullOrWhiteSpace([string]$claim.kind)) {
           Add-ContentError "content/claims.json claim $label is missing kind"
@@ -268,8 +343,11 @@ if (-not (Test-Path -LiteralPath $contentRoot)) {
         if ([string]::IsNullOrWhiteSpace([string]$claim.jurisdiction)) {
           Add-ContentError "content/claims.json claim $label is missing jurisdiction"
         }
-        if (-not (Test-IsoDate ([string]$claim.reviewedAt))) {
+        $claimReviewedAt = [string]$claim.reviewedAt
+        if (-not (Test-IsoDate $claimReviewedAt)) {
           Add-ContentError "content/claims.json claim $label reviewedAt must be YYYY-MM-DD"
+        } else {
+          Test-ReviewedAtFresh $claimReviewedAt "content/claims.json claim $label"
         }
 
         $sourceId = if ($null -eq $claim.sourceId) { "" } else { [string]$claim.sourceId }
@@ -298,6 +376,11 @@ if (-not (Test-Path -LiteralPath $contentRoot)) {
           }
         }
       }
+      foreach ($requiredModule in $requiredClaimModules) {
+        if (($moduleNames -contains $requiredModule) -and -not $claimCoverageByModule.ContainsKey($requiredModule)) {
+          Add-ContentError "content/claims.json required sensitive module has no claims: $requiredModule"
+        }
+      }
     } catch {
       Add-ContentError "Invalid content/claims.json: $($_.Exception.Message)"
     }
@@ -313,3 +396,14 @@ if ($errors.Count -gt 0) {
 Write-Host "Content validation passed." -ForegroundColor Green
 Write-Host "Modules: $moduleCount"
 Write-Host "Questions: $questionCount ($autoCount automatic, $applicationCount application)"
+if ($claimCoverageByModule.Count -gt 0) {
+  $claimCoverage = $claimCoverageByModule.GetEnumerator() |
+    Sort-Object Name |
+    ForEach-Object { "$($_.Name)=$($_.Value)" }
+  Write-Host "Claim coverage: $($claimCoverage -join ', ')"
+  $uncoveredModules = @($moduleNames | Where-Object { -not $claimCoverageByModule.ContainsKey($_) })
+  if ($uncoveredModules.Count -gt 0) {
+    Write-Host "Claim coverage gaps: $($uncoveredModules -join ', ')" -ForegroundColor Yellow
+  }
+  Write-Host "Required claim modules: $($requiredClaimModules -join ', ')"
+}

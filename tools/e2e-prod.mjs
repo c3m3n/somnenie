@@ -132,12 +132,21 @@ function connect(wsUrl) {
 
 async function waitFor(runtime, expression, timeout = 10000) {
   const started = Date.now();
+  let lastError = "";
   while (Date.now() - started < timeout) {
-    const result = await runtime(expression);
-    if (result.result?.value) return;
+    try {
+      const result = await runtime(expression);
+      if (result.exceptionDetails) {
+        lastError = result.exceptionDetails.exception?.description || result.exceptionDetails.text || "Runtime exception";
+      } else if (result.result?.value) {
+        return;
+      }
+    } catch (error) {
+      lastError = String(error && (error.stack || error.message || error));
+    }
     await delay(250);
   }
-  throw new Error(`Timed out waiting for ${expression}`);
+  throw new Error(`Timed out waiting for ${expression}${lastError ? `; last error: ${lastError}` : ""}`);
 }
 
 async function run() {
@@ -183,11 +192,16 @@ async function run() {
   const desktopResult = await runtime(`(async () => { try {
     const waitFor = async (predicate, label, timeout = 10000) => {
       const start = Date.now();
+      let lastError = '';
       while (Date.now() - start < timeout) {
-        if (await predicate()) return true;
+        try {
+          if (await predicate()) return true;
+        } catch (error) {
+          lastError = String(error && (error.stack || error.message || error));
+        }
         await new Promise((resolve) => setTimeout(resolve, 100));
       }
-      throw new Error('Timed out: ' + label);
+      throw new Error('Timed out: ' + label + (lastError ? '; last error: ' + lastError : ''));
     };
     const click = async (element, label) => {
       if (!element) throw new Error('Missing element: ' + label);
@@ -313,15 +327,24 @@ async function run() {
     const quizMd = await (await fetch('content/M01/quiz.md')).text();
     const firstQuestion = parseQuiz(quizMd)[0];
     const wrongIndex = firstQuestion.options.findIndex((option) => option.key !== firstQuestion.answer);
-    await click(document.querySelectorAll('.quiz-q .opt')[wrongIndex >= 0 ? wrongIndex : 0], 'wrong quiz option');
-    await waitFor(() => document.querySelector('.quiz-diagnosis'), 'quiz diagnosis rendered');
+    const wrongOption = document.querySelectorAll('.quiz-q .opt')[wrongIndex >= 0 ? wrongIndex : 0];
+    if (!wrongOption) throw new Error('Missing element: wrong quiz option');
+    wrongOption.click();
+    wrongOption.click();
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await waitFor(() => document.querySelectorAll('.quiz-diagnosis').length === 1, 'one quiz diagnosis rendered after double click');
     await waitFor(async () => Object.keys((await window.NutrioStorage.getModuleProgress('M01')).weakSpots || {}).length === 1, 'weak spot saved');
+    await waitFor(async () => (await window.NutrioStorage.getModuleProgress('M01')).quizAnswered === 1, 'double-clicked quiz answer counted once');
+    await waitFor(async () => (await window.NutrioStorage.getAppState()).review.items.filter((item) => item.id === 'M01-q1').length === 1, 'double-clicked quiz answer created one review item');
     const weakSpotsAfterWrong = (await window.NutrioStorage.getModuleProgress('M01')).weakSpots || {};
     const appStateAfterWrong = await window.NutrioStorage.getAppState();
     const firstReviewItem = appStateAfterWrong.review.items.find((item) => item.id === 'M01-q1') || {};
     const firstWeakSpot = Object.values(weakSpotsAfterWrong)[0] || {};
+    const m01AfterWrong = await window.NutrioStorage.getModuleProgress('M01');
     const quizDiagnosis = {
       exists: Boolean(document.querySelector('.quiz-diagnosis')),
+      diagnosisCount: document.querySelectorAll('.quiz-diagnosis').length,
+      nextButtonCount: document.querySelectorAll('.quiz-q .quiz-next').length,
       gridItems: document.querySelectorAll('.quiz-diagnosis-grid > div').length,
       trailNodes: document.querySelectorAll('.quiz-diagnosis .concept-node').length,
       weakSpotMistakeType: firstWeakSpot.mistakeType || '',
@@ -329,6 +352,8 @@ async function run() {
       reviewItemCourseId: firstReviewItem.courseId || '',
       reviewItemInterval: firstReviewItem.interval || 0,
       reviewItemLastResult: firstReviewItem.lastResult || '',
+      quizAnswered: m01AfterWrong.quizAnswered || 0,
+      reviewItemCopies: appStateAfterWrong.review.items.filter((item) => item.id === 'M01-q1').length,
     };
     const progressAfterQuiz = await readProgress();
 
@@ -342,12 +367,18 @@ async function run() {
     await waitFor(() => document.querySelector('.review-session') && document.querySelectorAll('.session-question .opt').length > 0, 'review session question');
     const reviewOptions = Array.from(document.querySelectorAll('.session-question .opt'));
     const correctReviewIndex = firstQuestion.options.findIndex((option) => option.key === firstQuestion.answer);
-    await click(reviewOptions[correctReviewIndex], 'correct review answer');
-    await waitFor(() => document.querySelector('.session-return-line'), 'review return line');
+    const correctReviewOption = reviewOptions[correctReviewIndex];
+    if (!correctReviewOption) throw new Error('Missing element: correct review answer');
+    correctReviewOption.click();
+    correctReviewOption.click();
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    await waitFor(() => document.querySelectorAll('.session-return-line').length === 1, 'one review return line after double click');
     const stateAfterReviewSession = await window.NutrioStorage.getAppState();
     const sessionReviewItem = stateAfterReviewSession.review.items.find((item) => item.id === 'M01-q1') || {};
     const sessionReview = {
       returnText: document.querySelector('.session-return-line')?.textContent || '',
+      returnLineCount: document.querySelectorAll('.session-return-line').length,
+      nextButtonCount: document.querySelectorAll('.session-question .quiz-next').length,
       interval: sessionReviewItem.interval || 0,
       lastResult: sessionReviewItem.lastResult || '',
       streakDays: stateAfterReviewSession.sessions.streakDays || 0,
@@ -557,6 +588,8 @@ async function run() {
   assert(desktopSummary.nextModuleRoute.title.startsWith("M02"), "Summary next action should open the next module");
   assert(desktopSummary.nextModuleRoute.activeTab === "theory.md", "Next module should open on theory");
   assert(desktopSummary.quizDiagnosis.exists === true, "Quiz feedback should render a diagnostic block");
+  assert(desktopSummary.quizDiagnosis.diagnosisCount === 1, "Double-clicked quiz answer should render one diagnostic block");
+  assert(desktopSummary.quizDiagnosis.nextButtonCount === 1, "Double-clicked quiz answer should render one next button");
   assert(desktopSummary.quizDiagnosis.gridItems >= 2, "Quiz diagnosis should explain weak spot and error type");
   assert(desktopSummary.quizDiagnosis.trailNodes === 0, "Quiz diagnosis should avoid repeating the concept trail");
   assert(desktopSummary.quizDiagnosis.weakSpotMistakeType, "Weak spot should store the error type");
@@ -564,7 +597,11 @@ async function run() {
   assert(desktopSummary.quizDiagnosis.reviewItemCourseId === "nutrition", "SRS item should carry the nutrition course id");
   assert(desktopSummary.quizDiagnosis.reviewItemInterval === 1, "Wrong quiz answer should schedule a 1-day interval");
   assert(desktopSummary.quizDiagnosis.reviewItemLastResult === "wrong", "Wrong quiz answer should mark the SRS item as wrong");
+  assert(desktopSummary.quizDiagnosis.quizAnswered === 1, "Double-clicked quiz answer should count once");
+  assert(desktopSummary.quizDiagnosis.reviewItemCopies === 1, "Double-clicked quiz answer should create one SRS item");
   assert(desktopSummary.sessionReview.returnText.includes("3"), "Correct review answer should show the next 3-day return");
+  assert(desktopSummary.sessionReview.returnLineCount === 1, "Double-clicked review answer should render one return line");
+  assert(desktopSummary.sessionReview.nextButtonCount === 1, "Double-clicked review answer should render one next button");
   assert(desktopSummary.sessionReview.interval === 3, "Correct review answer should advance the item to a 3-day interval");
   assert(desktopSummary.sessionReview.lastResult === "right", "Correct review answer should mark the SRS item as right");
   assert(desktopSummary.sessionReview.streakDays >= 1, "Review session should update the quiet streak");

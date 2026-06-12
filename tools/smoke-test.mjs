@@ -373,6 +373,7 @@ await waitUntil(
 assert(title.textContent === "Нутрициология", "Home title did not render");
 assert(screen.children[0].className === "intro-card", "Intro card is missing");
 assert(screen.children[0].innerHTML.includes("next-step-card"), "Home should lead with the next learning step");
+assert(screen.children[0].innerHTML.includes("safety-note"), "Home should expose the medical safety boundary");
 assert(!screen.children[0].innerHTML.includes("hero-visual"), "Home should not lead with a decorative hero visual");
 assert(screen.children[0].innerHTML.includes("course-map-segment"), "Home should expose a segmented course map");
 const initialHomeActions = screen.children[0].children.find((child) => child.className === "home-actions");
@@ -512,6 +513,7 @@ quizTab.onclick();
 
 const quizIntro = screen.children.filter((child) => child.className === "quiz-intro").at(-1);
 assert(quizIntro, "Quiz intro did not render");
+assert(quizIntro.innerHTML.includes("safety-note"), "Quiz intro should expose the medical safety boundary");
 assert(quizIntro.innerHTML.includes("7") && quizIntro.innerHTML.includes("автоматический балл"), "Quiz intro should explain scored questions");
 assert(quizIntro.innerHTML.includes("3") && quizIntro.innerHTML.includes("самопроверки"), "Quiz intro should explain self-check questions");
 assert(quizIntro.innerHTML.includes("закрепления"), "Quiz intro should explain reinforcement routing");
@@ -530,13 +532,15 @@ assert(quizCard, "Quiz card did not render");
 
 const firstOption = quizCard.children.find((child) => child.className === "opt");
 assert(firstOption, "First quiz option did not render");
-await firstOption.onclick();
+await Promise.all([firstOption.onclick(), firstOption.onclick()]);
 
 progress = await storage.getAllProgress();
 assert(Object.keys(progress.M01.weakSpots || {}).length === 1, "Wrong answer did not create a weak spot");
+assert(progress.M01.quizAnswered === 1, "Double-clicked answer should count as one answered quiz question");
 assert(progress.M01.quizAttemptStatus === "in-progress", "First answer should mark the quiz attempt as in progress");
 appState = await storage.getAppState();
 const reviewItem = appState.review.items.find((item) => item.id === "M01-q1");
+assert(appState.review.items.filter((item) => item.id === "M01-q1").length === 1, "Double-clicked answer should create one SRS review item");
 assert(reviewItem, "Wrong answer should create an SRS review item");
 assert(reviewItem.courseId === "nutrition", "Review item should carry courseId");
 assert(reviewItem.interval === 1 && reviewItem.lastResult === "wrong", "Wrong answer should schedule the signal for tomorrow");
@@ -561,7 +565,7 @@ assert(reviewButton.innerHTML.includes("M01"), "Home review block should identif
 await reviewButton.onclick();
 assert(title.textContent === "M01", "Review shortcut should open the module");
 assert(tabs.children.some((child) => child.dataset.file === "__review__" && child.classList.contains("active")), "Review shortcut should open the review tab");
-assert(screen.children.some((child) => child.className === "review-card" && child.innerHTML.includes("Слабые сигналы")), "Review screen should use weak-signal terminology");
+assert(screen.children.some((child) => child.className === "review-card" && child.innerHTML.includes("Темы для закрепления")), "Review screen should use reinforcement terminology");
 
 await context.exportProgress();
 assert(lastAppendedElement?.download?.startsWith("nutrio-data-"), "Export filename should start with nutrio-data-");
@@ -628,6 +632,14 @@ assert(sw.includes("precacheContent().catch"), "Service worker should warm conte
 assert(sw.includes('fetch(req, { cache: "no-cache" })'), "Service worker should use network-first for mutable resources");
 assert(sw.includes('url.pathname.includes("/content/")'), "Service worker should explicitly classify content resources");
 assert(sw.includes('k.startsWith("nutrio-") && !k.startsWith(VERSION)'), "Service worker should only delete Nutrio caches");
+assert(sw.includes('event.data?.type === "SKIP_WAITING"'), "Service worker should only skip waiting after an explicit app message");
+const installHandler = sw.match(/self\.addEventListener\("install",[\s\S]*?\n\}\);/);
+assert(installHandler && !installHandler[0].includes("skipWaiting"), "Service worker install should not force skipWaiting");
+
+const appJsSource = await fs.readFile(path.join(projectRoot, "app.js"), "utf8");
+assert(appJsSource.includes("navigator.serviceWorker.addEventListener(\"controllerchange\""), "App should reload after an accepted service worker update");
+assert(appJsSource.includes("registration.addEventListener(\"updatefound\""), "App should detect waiting service worker updates");
+assert(appJsSource.includes("registration.waiting.postMessage"), "App should activate a waiting service worker only after user confirmation");
 
 const vercelIgnore = await fs.readFile(path.join(projectRoot, ".vercelignore"), "utf8");
 assert(vercelIgnore.split(/\r?\n/).includes(".vercel"), ".vercelignore should exclude .vercel");
@@ -653,10 +665,16 @@ assert(!/<script>\s*if \("serviceWorker" in navigator\)/.test(indexHtml), "index
 const vercelConfig = JSON.parse(await fs.readFile(path.join(projectRoot, "vercel.json"), "utf8"));
 const allHeaders = vercelConfig.headers.flatMap((entry) => entry.headers || []);
 const headerValue = (key) => allHeaders.find((header) => header.key.toLowerCase() === key.toLowerCase())?.value || "";
+const headersFor = (source) => vercelConfig.headers.find((entry) => entry.source === source)?.headers || [];
+const headerForSource = (source, key) => headersFor(source).find((header) => header.key.toLowerCase() === key.toLowerCase())?.value || "";
 assert(headerValue("Content-Security-Policy").includes("script-src 'self'"), "CSP should restrict scripts to self");
 assert(headerValue("Content-Security-Policy").includes("object-src 'none'"), "CSP should block plugin/object content");
 assert(headerValue("X-Content-Type-Options") === "nosniff", "Security headers should include X-Content-Type-Options nosniff");
 assert(Boolean(headerValue("Referrer-Policy")), "Security headers should include Referrer-Policy");
 assert(Boolean(headerValue("Permissions-Policy")), "Security headers should include Permissions-Policy");
+assert(headerForSource("/sw.js", "Cache-Control").includes("no-store"), "sw.js should be served without browser caching");
+assert(headerForSource("/app.js", "Cache-Control").includes("must-revalidate"), "app.js should be served with revalidation");
+assert(headerForSource("/content/(.*)", "Cache-Control").includes("must-revalidate"), "content files should be served with revalidation");
+assert(headerForSource("/fonts/(.*)", "Cache-Control").includes("stale-while-revalidate"), "font assets should keep a bounded static cache");
 
 console.log("Smoke test passed.");

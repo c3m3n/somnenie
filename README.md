@@ -4,6 +4,16 @@
 
 Курс нужен для обучения и самопроверки. Он не заменяет врача, диагностику, лечение или индивидуальные рекомендации по питанию.
 
+## Назначение и аудитория
+
+Somnenie — личное статическое PWA для курса «Нутрициология без мифов». Внутренний codename в документации и задачах: Nutrio.
+
+Базовая аудитория: здоровый взрослый новичок, который хочет учиться, проходить самопроверку, сохранять выводы и возвращаться к слабым местам.
+
+Курс не заменяет врача, диагностику, лечение или индивидуальные рекомендации. Он не предназначен для самостоятельного ведения беременности/лактации, диабета, хронической болезни почек, пищевой аллергии, РПП, детского/подросткового питания или необъяснимой потери веса.
+
+Учебная петля: прочитать материал -> пройти проверку -> сохранить главный вывод -> повторить слабые места.
+
 ## Запуск
 
 ```powershell
@@ -23,17 +33,13 @@ http://127.0.0.1:8766/
 ## Проверки
 
 ```powershell
-node --check app.js
-node .\tools\test-review.mjs
-node .\tools\smoke-test.mjs
-powershell -ExecutionPolicy Bypass -File .\tools\validate-content.ps1
+powershell -ExecutionPolicy Bypass -File .\tools\check-all.ps1
 ```
 
 Browser E2E:
 
 ```powershell
-$env:NUTRIO_E2E_URL="http://127.0.0.1:8766/"
-node .\tools\e2e-prod.mjs
+powershell -ExecutionPolicy Bypass -File .\tools\check-all.ps1 -E2E
 ```
 
 ## Структура
@@ -47,8 +53,8 @@ manifest.webmanifest        PWA manifest
 core/storage.js             IndexedDB и миграция старого localStorage
 core/review.js              очередь повторения слабых мест
 lib/marked.min.js           локальный Markdown-рендерер
-content/manifest.json       индекс учебных модулей
-content/course.json         фазы курса
+content/manifest.json       источник истины для списка модулей и обязательных файлов
+content/course.json         источник истины для фаз курса
 content/claims.json         контракт источников для чувствительных утверждений
 content/MXX/                теория, термины, тест, практика, схемы, итог
 tools/                      валидатор, smoke, review test, browser E2E
