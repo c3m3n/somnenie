@@ -435,26 +435,15 @@ body::after {
   gap: 7px;
 }
 
-#tabs button.active {
-  background: rgba(12, 12, 10, 0.72);
-  border-color: var(--tab-active);
-  color: var(--ink);
-  box-shadow: inset 0 -2px 0 var(--tab-active);
-}
-
-#tabs button.tab-info.active {
-  border-color: var(--info);
-  box-shadow: inset 0 -2px 0 var(--info);
-}
-
-#tabs button.tab-success.active {
-  border-color: var(--success);
-  box-shadow: inset 0 -2px 0 var(--success);
-}
-
+/* Активная вкладка — нейтральное состояние навигации (не конкурирует с primary-CTA). */
+#tabs button.active,
+#tabs button.tab-info.active,
+#tabs button.tab-success.active,
 #tabs button.tab-review.active {
-  border-color: var(--review);
-  box-shadow: inset 0 -2px 0 var(--review);
+  background: rgba(207, 201, 184, 0.08);
+  border-color: rgba(207, 201, 184, 0.42);
+  color: var(--bone);
+  box-shadow: inset 0 -2px 0 var(--bone);
 }
 
 .tab-icon {
@@ -2236,6 +2225,14 @@ body::after {
 .opt:active:not(:disabled) { transform: translateY(0); }
 .opt:disabled { cursor: default; }
 .opt.dimmed { opacity: 0.45; }
+
+.matrix-explain {
+  margin: 10px 0 14px;
+  font-family: var(--sans);
+  font-size: 0.82em;
+  line-height: 1.4;
+  color: var(--dim);
+}
 .opt.correct {
   background: var(--success-soft);
   border-color: rgba(47, 122, 82, 0.62);

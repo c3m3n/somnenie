@@ -1257,8 +1257,6 @@ async function showHome() {
     (summary.weakSpotTotal
       ? `<div class="home-review-strip">${iconSvg("review", "home-strip-icon")}<span>Повторение: ${summary.dueReviewTotal} сегодня · ${summary.weakSpotTotal} ${pluralizeQuestions(summary.weakSpotTotal)} в очереди</span></div>`
       : `<div class="home-review-strip is-empty">${iconSvg("check", "home-strip-icon")}<span>Очередь повторения наполнится после первого теста</span></div>`) +
-    `<div class="organism-wrap rise" aria-hidden="true"><pre id="organism"></pre></div>` +
-    `<section class="console rise" aria-live="polite" aria-label="Состояние прибора"><div data-console-lines></div></section>` +
     `<section class="matrix-block home-progress-compact rise" aria-label="Карта курса">` +
       `<div class="course-map instrument-matrix" aria-label="Карта прогресса по модулям: клик открывает модуль">${courseMapSegments(nextModule)}</div>` +
       `<div class="matrix-foot">` +
@@ -1268,6 +1266,8 @@ async function showHome() {
       `<div class="course-progress" aria-label="Общий прогресс курса по шагам"><span style="width: ${totalPercent}%"></span></div>` +
     `</section>` +
     `<section class="ledger rise" aria-label="Фазы курса">${phaseLedgerRows(nextModule)}</section>` +
+    `<div class="organism-wrap rise" aria-hidden="true"><pre id="organism"></pre></div>` +
+    `<section class="console rise" aria-live="polite" aria-label="Состояние прибора"><div data-console-lines></div></section>` +
     safetyNoteHtml();
 
   const actions = document.createElement("div");
@@ -1529,6 +1529,7 @@ async function showProfile() {
     `<div class="section-kicker">Где я</div>` +
     `<h2>Прогресс обучения</h2>` +
     `<div class="course-map instrument-matrix profile-matrix" aria-label="Матрица прогресса по модулям: клик открывает модуль">${courseMapSegments(nextModule)}</div>` +
+    `<p class="matrix-explain">Каждая клетка — один из ${summary.totalModules} модулей. В каждом 3 шага: материал, проверка, итог — всего ${summary.totalSteps}.</p>` +
     `<div class="metric-grid">` +
     dashboardMetrics.join("") +
     `</div>`;
