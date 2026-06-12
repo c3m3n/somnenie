@@ -86,8 +86,8 @@
   --void: #070707;
   --field: #0c0c0a;
   --bone: #cfc9b8;
-  --dim: #999180;
-  --dimmer: #7d7666;
+  --dim: #b3ab98;
+  --dimmer: #968d79;
   --line: #1d1d22;
   --signal: #46e896;
   --signal-glow: rgba(70, 232, 150, 0.5);
@@ -2180,6 +2180,21 @@ body::after {
   color: var(--dimmer);
   margin-bottom: 8px;
 }
+
+/* Учебный текст — читаемый гротеск без разрядки; моно остаётся только для меток/чисел/статусов. */
+.quiz-q .q-text,
+.quiz-q .app-text,
+.opt-body,
+.quiz-intro p,
+.application-prompt,
+.quiz-rules,
+.quiz-diagnosis-grid p,
+.quiz-diagnosis-head strong,
+.safety-note {
+  font-family: var(--sans);
+  letter-spacing: normal;
+}
+
 .quiz-q .q-text { font-weight: 600; margin-bottom: 14px; }
 .quiz-q .q-text p:first-child { margin-top: 0; }
 .quiz-q .q-text p:last-child { margin-bottom: 0; }
@@ -2220,6 +2235,7 @@ body::after {
 }
 .opt:active:not(:disabled) { transform: translateY(0); }
 .opt:disabled { cursor: default; }
+.opt.dimmed { opacity: 0.45; }
 .opt.correct {
   background: var(--success-soft);
   border-color: rgba(47, 122, 82, 0.62);
@@ -2362,6 +2378,22 @@ body::after {
 
 .quiz-diagnosis-explain p:first-child { margin-top: 0; }
 .quiz-diagnosis-explain p:last-child { margin-bottom: 0; }
+
+.quiz-diagnosis-more {
+  margin-top: 10px;
+}
+
+.quiz-diagnosis-more > summary {
+  cursor: pointer;
+  color: var(--tab-active);
+  font-weight: 700;
+  font-size: 0.88em;
+}
+
+.quiz-diagnosis-more > summary::-webkit-details-marker { color: var(--tab-active); }
+
+.quiz-diagnosis-explain-body p:first-child { margin-top: 0; }
+.quiz-diagnosis-explain-body p:last-child { margin-bottom: 0; }
 
 .review-added-line {
   display: inline-flex;
@@ -2690,6 +2722,12 @@ body::after {
   }
   .quiz-intro-start {
     display: none;
+  }
+  .quiz-q .quiz-next {
+    position: sticky;
+    bottom: 8px;
+    z-index: 5;
+    box-shadow: var(--shadow-soft);
   }
   .btn { width: 100%; margin-right: 0; }
   .home-actions .btn { width: 100%; }
@@ -4106,8 +4144,14 @@ summary:focus-visible {
   .module-main .md,
   .md,
   .md.md-sectioned {
-    padding: 18px 16px 24px;
-    font-size: 16px;
+    padding: 20px 18px 24px;
+    font-size: 15px;
+  }
+  .md table { font-size: 0.86em; }
+  .md th,
+  .md td {
+    white-space: nowrap;
+    padding: 6px 10px;
   }
 
   .module-main .md.md-sectioned {

@@ -923,21 +923,30 @@ function QuizDiagnosis({ question, chosenKey, isRight }) {
   setElementAttr(block, "aria-live", "polite");
   const icon = isRight ? "✓" : "×";
   const verdict = isRight ? "Верно" : "Нужно уточнить";
-  block.innerHTML =
+  const head =
     `<div class="quiz-diagnosis-head">` +
       `<span class="feedback-mark" aria-hidden="true">${icon}</span>` +
       `<div>` +
         `<span>${verdict}</span>` +
         `<strong>${escapeHtml(diagnosis.summary)}</strong>` +
       `</div>` +
-    `</div>` +
+    `</div>`;
+  const grid =
     `<div class="quiz-diagnosis-grid">` +
       `<div><span>Уровень вопроса</span><strong>${escapeHtml(diagnosis.level.label)}</strong><p>${escapeHtml(diagnosis.level.description)}</p></div>` +
       `<div><span>${isRight ? "Что закрепить" : "Что спуталось"}</span><strong>${escapeHtml(diagnosis.mistakeType)}</strong><p>${escapeHtml(diagnosis.repair)}</p></div>` +
-    `</div>` +
-    (question.explain.trim()
-      ? `<details class="quiz-diagnosis-explain"><summary>Подробнее</summary>${renderMarkdown(question.explain.trim())}</details>`
-      : "");
+    `</div>`;
+  const explain = question.explain.trim()
+    ? `<div class="quiz-diagnosis-explain-body">${renderMarkdown(question.explain.trim())}</div>`
+    : "";
+  if (isRight) {
+    // Верный ответ — короткая фиксация, подробный разбор спрятан под раскрытие.
+    block.innerHTML = head +
+      `<details class="quiz-diagnosis-more"><summary>Разбор и что закрепить</summary>${grid}${explain}</details>`;
+  } else {
+    block.innerHTML = head + grid +
+      (explain ? `<details class="quiz-diagnosis-explain"><summary>Подробнее</summary>${explain}</details>` : "");
+  }
   return block;
 }
 
@@ -2706,8 +2715,9 @@ async function showReviewSession(plan) {
             } else if (key === opt.key) {
               button.classList.add("wrong");
               if (mark) mark.textContent = "× Ваш ответ";
-            } else if (mark) {
-              mark.textContent = "Не выбран";
+            } else {
+              button.classList.add("dimmed");
+              if (mark) mark.textContent = "";
             }
           }
           card.appendChild(sessionFeedbackLine(updated, isRight));
@@ -2903,13 +2913,12 @@ async function showQuiz(mod) {
     progress.innerHTML =
       `<div class="quiz-progress-head">` +
         `<strong>Вопрос ${idx + 1} из ${questions.length}</strong>` +
-        `<span>${q.kind === "application" ? "Самопроверка" : "На балл"}</span>` +
       `</div>` +
       `<div class="quiz-progress-track" aria-label="Прогресс проверки"><span style="width: ${percent}%"></span></div>` +
       `<div class="quiz-progress-stats">` +
       (answered
         ? `<span>верных ${correct} из ${gradedTotal}</span><span>${mistakes ? `ошибок ${mistakes}` : "без ошибок"}</span>`
-        : `<span>на балл: ${gradedTotal}</span><span>самопроверка: ${applicationTotal}</span>`) +
+        : `<span>${gradedTotal} оцениваемых</span><span>${applicationTotal} для самопроверки</span>`) +
       `</div>`;
     return progress;
   }
@@ -2919,7 +2928,7 @@ async function showQuiz(mod) {
     let answeredThisQuestion = false;
     card.className = "quiz-q";
     card.innerHTML =
-      `<div class="q-kicker">проверка понимания · идёт в балл</div>` +
+      `<div class="q-kicker">Оцениваемый вопрос</div>` +
       `<div class="q-text">${renderMarkdownInline(q.text)}</div>`;
 
     const optButtons = [];
@@ -2964,8 +2973,9 @@ async function showQuiz(mod) {
           } else if (key === chosen) {
             b.classList.add("wrong");
             if (state) state.textContent = "× Ваш ответ";
-          } else if (state) {
-            state.textContent = "Не выбран";
+          } else {
+            b.classList.add("dimmed");
+            if (state) state.textContent = "";
           }
         }
         if (q.explain.trim()) {
@@ -2986,7 +2996,7 @@ async function showQuiz(mod) {
     let revealed = false;
     card.className = "quiz-q";
     card.innerHTML =
-      `<div class="q-kicker">применение · самопроверка</div>` +
+      `<div class="q-kicker">Для самопроверки</div>` +
       `<div class="q-text app-text">${renderMarkdown(q.text)}</div>` +
       `<div class="application-prompt">Сформулируйте ответ самостоятельно, затем откройте разбор. Этот вопрос не входит в автоматический балл.</div>`;
 
@@ -3027,7 +3037,7 @@ async function showQuiz(mod) {
     const next = document.createElement("button");
     let moving = false;
     next.className = "btn quiz-next";
-    setButtonContent(next, idx + 1 < questions.length ? "Ответить на следующий вопрос" : "Завершить тест", "arrow");
+    setButtonContent(next, idx + 1 < questions.length ? "Следующий вопрос" : "Завершить тест", "arrow");
     next.onclick = runAsync(async () => {
       if (moving) return;
       moving = true;
