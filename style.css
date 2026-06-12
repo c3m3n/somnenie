@@ -436,25 +436,25 @@ body::after {
 }
 
 #tabs button.active {
-  background: var(--tab-active);
+  background: rgba(12, 12, 10, 0.72);
   border-color: var(--tab-active);
-  color: var(--void);
-  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.36);
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--tab-active);
 }
 
 #tabs button.tab-info.active {
-  background: var(--tab-active);
-  border-color: var(--tab-active);
+  border-color: var(--info);
+  box-shadow: inset 0 -2px 0 var(--info);
 }
 
 #tabs button.tab-success.active {
-  background: var(--tab-active);
-  border-color: var(--tab-active);
+  border-color: var(--success);
+  box-shadow: inset 0 -2px 0 var(--success);
 }
 
 #tabs button.tab-review.active {
-  background: var(--review);
   border-color: var(--review);
+  box-shadow: inset 0 -2px 0 var(--review);
 }
 
 .tab-icon {
@@ -2172,6 +2172,14 @@ body::after {
   box-shadow: var(--shadow-soft);
 }
 
+.q-kicker {
+  font-family: var(--mono);
+  font-size: 0.7em;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--dimmer);
+  margin-bottom: 8px;
+}
 .quiz-q .q-text { font-weight: 600; margin-bottom: 14px; }
 .quiz-q .q-text p:first-child { margin-top: 0; }
 .quiz-q .q-text p:last-child { margin-bottom: 0; }
@@ -2439,8 +2447,8 @@ body::after {
 .loading { color: var(--muted); text-align: center; padding: 40px 0; }
 
 @media (max-width: 520px) {
-  body { font-size: 16px; }
-  #screen { padding: 14px 12px 76px; }
+  body { font-size: 15px; }
+  #screen { padding: 12px 12px 72px; }
   #topbar { padding-left: 12px; padding-right: 12px; align-items: center; }
   #topbar h1 {
     white-space: nowrap;
@@ -2620,11 +2628,12 @@ body::after {
   }
   .material-subnav {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2px;
     overflow: visible;
     align-items: stretch;
-    margin-bottom: 10px;
-    padding: 6px;
+    margin-bottom: 8px;
+    padding: 4px 0;
   }
   .material-subnav-label {
     display: none;
@@ -2632,9 +2641,10 @@ body::after {
   .material-subtab {
     min-width: 0;
     justify-content: center;
-    padding-left: 9px;
-    padding-right: 9px;
+    padding: 7px 4px;
+    font-size: 0.72em;
   }
+  .material-subtab svg { display: none; }
   .metric-grid { grid-template-columns: repeat(2, 1fr); }
   .metric {
     min-height: 74px;
@@ -2676,6 +2686,9 @@ body::after {
     grid-template-columns: 1fr;
   }
   .quiz-intro-mark {
+    display: none;
+  }
+  .quiz-intro-start {
     display: none;
   }
   .btn { width: 100%; margin-right: 0; }
@@ -3555,9 +3568,9 @@ summary:focus-visible {
 }
 
 .material-subtab.active {
-  border-color: var(--ember);
-  background: var(--ember-dim);
-  color: var(--ember);
+  border-color: transparent;
+  background: transparent;
+  color: var(--bone);
   box-shadow: inset 0 -2px 0 var(--ember);
 }
 
@@ -3579,7 +3592,7 @@ summary:focus-visible {
   padding: 24px 28px 30px;
   font-family: var(--serif);
   font-size: 17px;
-  line-height: 1.68;
+  line-height: 1.55;
   box-shadow: 0 0 0 1px rgba(255, 122, 77, 0.12), 0 22px 70px rgba(0, 0, 0, 0.48), 0 0 34px rgba(255, 122, 77, 0.08);
 }
 

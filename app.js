@@ -2850,7 +2850,7 @@ function showQuizIntro(mod) {
     `</details>`;
 
   const start = document.createElement("button");
-  start.className = "btn btn-with-icon";
+  start.className = "btn btn-with-icon quiz-intro-start";
   setButtonContent(start, "Начать проверку", "arrow");
   start.onclick = runAsync(() => showQuiz(mod));
   card.appendChild(start);
@@ -2918,7 +2918,9 @@ async function showQuiz(mod) {
     const card = document.createElement("div");
     let answeredThisQuestion = false;
     card.className = "quiz-q";
-    card.innerHTML = `<div class="q-text">${renderMarkdownInline(q.text)}</div>`;
+    card.innerHTML =
+      `<div class="q-kicker">проверка понимания · идёт в балл</div>` +
+      `<div class="q-text">${renderMarkdownInline(q.text)}</div>`;
 
     const optButtons = [];
     for (const opt of q.options) {
@@ -2984,6 +2986,7 @@ async function showQuiz(mod) {
     let revealed = false;
     card.className = "quiz-q";
     card.innerHTML =
+      `<div class="q-kicker">применение · самопроверка</div>` +
       `<div class="q-text app-text">${renderMarkdown(q.text)}</div>` +
       `<div class="application-prompt">Сформулируйте ответ самостоятельно, затем откройте разбор. Этот вопрос не входит в автоматический балл.</div>`;
 
