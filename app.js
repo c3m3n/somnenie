@@ -9,11 +9,13 @@ const TABS = [
   { file: "summary.md",  label: "Закрепить" },
 ];
 const MATERIAL_FILES = ["theory.md", "terms.md", "practice.md", "diagrams.md"];
+// Линейный маршрут станции. step связывает вкладку с моделью прогресса
+// (stationProgressForModule), чтобы показывать её как stepper, а не равные вкладки.
 const MODULE_ROUTE_TABS = [
-  { file: "theory.md", label: "Понять", files: ["theory.md", "terms.md"], icon: "book", tone: "info" },
-  { file: "practice.md", label: "Применить", files: ["practice.md", "diagrams.md"], icon: "practice", tone: "next" },
-  { file: "quiz.md", label: "Проверить", files: ["quiz.md"], icon: "quiz", tone: "next" },
-  { file: "summary.md", label: "Закрепить", files: ["summary.md"], icon: "summary", tone: "success" },
+  { file: "theory.md", label: "Понять", files: ["theory.md", "terms.md"], icon: "book", tone: "info", step: "understand" },
+  { file: "practice.md", label: "Применить", files: ["practice.md", "diagrams.md"], icon: "practice", tone: "next", step: "apply" },
+  { file: "quiz.md", label: "Проверить", files: ["quiz.md"], icon: "quiz", tone: "next", step: "check" },
+  { file: "summary.md", label: "Закрепить", files: ["summary.md"], icon: "summary", tone: "success", step: "anchor" },
 ];
 const CONTENT_MANIFEST_PATH = "content/manifest.json";
 // Источник истины общих констант — core/constants.js (загружается раньше app.js).
@@ -1539,6 +1541,13 @@ function signalReturnText(item) {
   return `→ вернётся через ${item.interval} ${pluralizeDays(item.interval)}.`;
 }
 
+// Дата возврата + текущий интервал — карточка слабого места как объект с ритмом.
+function memoryReturnLabel(item) {
+  if (!item || item.retired) return "усвоено · ушло из очереди";
+  const interval = item.interval || 1;
+  return `вернётся ${formatShortDate(item.due)} · интервал ${interval} ${pluralizeDays(interval)}`;
+}
+
 function pluralizeDays(count) {
   const mod10 = count % 10;
   const mod100 = count % 100;
@@ -2270,10 +2279,12 @@ function appendTabButton(tab) {
   const button = document.createElement("button");
   button.textContent = tab.label;
   button.className = `tab-button tab-${visual.tone}`;
-  button.innerHTML = `${tabIconHtml(visual)}<span>${escapeHtml(tab.label)}</span>`;
+  const dot = tab.step ? `<i class="tab-step-dot" aria-hidden="true"></i>` : "";
+  button.innerHTML = `${dot}${tabIconHtml(visual)}<span>${escapeHtml(tab.label)}</span>`;
   button.onclick = () => openTab(tab.file);
   button.dataset.file = tab.file;
   button.dataset.files = (tab.files || [tab.file]).join("|");
+  if (tab.step) button.dataset.step = tab.step;
   $tabs.appendChild(button);
 }
 
@@ -2289,6 +2300,22 @@ function syncActiveTab(file) {
       if (isActive) setElementAttr(item, "aria-current", "page");
       else removeElementAttr(item, "aria-current");
     }
+  }
+  refreshStepperStatus();
+}
+
+// Станция — линейный маршрут: пройденные шаги отмечены, текущий активен,
+// будущие приглушены (но кликабельны). Статусы берём из модели прогресса.
+function refreshStepperStatus() {
+  if (!current || !$tabs.children) return;
+  const completed = stationProgressForModule(current).completedSteps;
+  for (const item of $tabs.children) {
+    const step = item.dataset?.step;
+    if (!step) continue;
+    const isActive = item.classList.contains("active");
+    const isDone = completed.includes(step) && !isActive;
+    item.classList.toggle("is-done", isDone);
+    item.classList.toggle("is-future", !isDone && !isActive);
   }
 }
 
@@ -2526,7 +2553,18 @@ function enhanceResponsiveTables(container) {
     for (const cells of rows) {
       const card = document.createElement("article");
       card.className = "responsive-table-card";
-      for (let i = 0; i < cells.length; i++) {
+      // Первый столбец — ключ строки. Делаем его заголовком карточки, остальные
+      // столбцы — парами «подпись: значение». Так карточка читается как объект,
+      // а не как повторяющееся «Витамин: A».
+      let startIndex = 0;
+      if (headers.length >= 2 && cells.length >= 2) {
+        const titleEl = document.createElement("h4");
+        titleEl.className = "responsive-table-card-title";
+        titleEl.innerHTML = cells[0].innerHTML;
+        card.appendChild(titleEl);
+        startIndex = 1;
+      }
+      for (let i = startIndex; i < cells.length; i++) {
         const row = document.createElement("div");
         row.className = "responsive-table-row";
         const label = document.createElement("span");
@@ -3355,6 +3393,7 @@ async function showReviewSession(plan) {
         for (const [button] of optButtons) button.disabled = true;
         const isRight = opt.key === question.answer;
         try {
+          const prevInterval = item.interval;
           const updated = await applySessionAnswer(item, isRight);
           for (const [button, key, mark] of optButtons) {
             if (key === question.answer) {
@@ -3368,7 +3407,7 @@ async function showReviewSession(plan) {
               if (mark) mark.textContent = "";
             }
           }
-          card.appendChild(sessionFeedbackLine(updated, isRight));
+          card.appendChild(sessionFeedbackLine(updated, isRight, prevInterval));
           if (question.explain.trim()) card.appendChild(QuizDiagnosis({ question, chosenKey: opt.key, isRight }));
           appendSessionNext(card);
         } catch (error) {
@@ -3407,8 +3446,9 @@ async function showReviewSession(plan) {
       remember.disabled = true;
       forgot.disabled = true;
       try {
+        const prevInterval = item.interval;
         const updated = await applySessionAnswer(item, isRight);
-        card.appendChild(sessionFeedbackLine(updated, isRight));
+        card.appendChild(sessionFeedbackLine(updated, isRight, prevInterval));
         appendSessionNext(card);
       } catch (error) {
         answeredThisConcept = false;
@@ -3429,12 +3469,20 @@ async function showReviewSession(plan) {
     root.appendChild(card);
   }
 
-  function sessionFeedbackLine(item, isRight) {
+  function sessionFeedbackLine(item, isRight, prevInterval = null) {
     const line = document.createElement("div");
     line.className = `session-return-line ${isRight ? "is-right" : "is-wrong"}`;
     setElementAttr(line, "role", "status");
     setElementAttr(line, "aria-live", "polite");
-    line.textContent = signalReturnText(item);
+    // После верного ответа показываем рост интервала: повторение видно как прогресс,
+    // а не бесконечная очередь.
+    if (item && !item.retired && item.lastResult === "right" && prevInterval && item.interval > prevInterval) {
+      const prevLabel = prevInterval === 1 ? "завтра" : `через ${prevInterval} ${pluralizeDays(prevInterval)}`;
+      const nextLabel = item.interval === 1 ? "завтра" : `через ${item.interval} ${pluralizeDays(item.interval)}`;
+      line.textContent = `↑ интервал вырос: ${prevLabel} → ${nextLabel}.`;
+    } else {
+      line.textContent = signalReturnText(item);
+    }
     return line;
   }
 
@@ -3886,16 +3934,16 @@ function showWeakSpots(mod) {
           `<span>Как тренируем</span>` +
           `<strong>${escapeHtml(memory.reviewStrategy)}</strong>` +
         `</div>` +
+        (memory.sourceText
+          ? `<div class="weak-example"><span>Исходный пример</span><p>${escapeHtml(trimLearningText(memory.sourceText, 180))}</p></div>`
+          : "") +
         ConceptTrail(levelKey, { compact: true, className: "weak-concept-trail" }) +
+        `<div class="weak-return">${escapeHtml(memoryReturnLabel(item))}</div>` +
         `<div class="weak-meta">` +
           `<span>диагноз: ${escapeHtml(memory.diagnosticType)}</span>` +
           `<span>уровень: ${escapeHtml(memory.level)}</span>` +
           `<span>ошибок: ${escapeHtml(item.errors || 0)}</span>` +
-          `<span>${item.retired ? "усвоено" : `вернётся ${formatShortDate(item.due)}`}</span>` +
-        `</div>` +
-        (memory.sourceText
-          ? `<details class="weak-source-question"><summary>Исходный вопрос</summary><p>${escapeHtml(memory.sourceText)}</p></details>`
-          : "");
+        `</div>`;
       list.appendChild(li);
     }
     section.appendChild(list);

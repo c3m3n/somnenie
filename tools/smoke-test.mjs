@@ -498,6 +498,10 @@ assert(tabButtons.length === 4, `Expected 4 station route buttons before weak-sp
 assert(tabButtons.some((child) => child.innerHTML.includes("tab-icon")), "Study tabs should expose activity icons");
 assert(!mobileTabSelect, "Mobile module navigation should not use a hidden route select");
 assert(tabButtons.map((child) => child.textContent).join("|") === "Понять|Применить|Проверить|Закрепить", "Station route should use Understand, Apply, Check, Anchor");
+assert(tabButtons.every((child) => child.dataset.step), "Each station route step should carry a step key for the stepper");
+assert(tabButtons.filter((child) => child.classList.contains("active")).length === 1, "Stepper should mark exactly one current step");
+assert(tabButtons.filter((child) => child.classList.contains("is-future")).length === 3, "Unstarted station should show the three later steps as quiet/future");
+assert(!tabButtons.some((child) => child.classList.contains("is-done")), "A fresh station should have no completed steps yet");
 assert(!screen.children.some((child) => child.className === "study-card"), "Theory should not close station progress on the first block");
 assert(screen.children.some((child) => child.className === "material-subnav"), "Material blocks should render local navigation");
 assert(screen.children.some((child) => child.className === "material-subnav" && child.children.filter((tab) => tab.dataset.file).map((tab) => tab.dataset.file).join("|") === "theory.md|terms.md"), "Understand step should only expose theory and terms blocks");
@@ -682,7 +686,8 @@ const memoryScreen = screen.children.find((child) => child.className === "review
 const memoryScreenText = elementTreeText(memoryScreen);
 assert(memoryScreenText.includes("Память слабых мест"), "Review screen should use weak-spot memory terminology");
 assert(memoryScreenText.includes("Как тренируем"), "Memory screen should explain the review strategy");
-assert(memoryScreenText.includes("Исходный вопрос"), "Memory screen should keep the original question as source context");
+assert(memoryScreenText.includes("Исходный пример"), "Memory card should surface the original example as visible source context");
+assert(memoryScreenText.includes("интервал"), "Memory card should materialize the spaced-repetition interval");
 
 await context.exportProgress();
 assert(lastAppendedElement?.download?.startsWith("nutrio-data-"), "Export filename should start with nutrio-data-");
