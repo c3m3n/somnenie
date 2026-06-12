@@ -2,16 +2,69 @@
   "name": "Somnenie — нутрициология без мифов",
   "short_name": "Somnenie",
   "description": "Доказательный курс по нутрициологии: теория, тесты, повторение. Работает офлайн.",
+  "id": "./",
   "lang": "ru",
-  "start_url": "./index.html",
+  "dir": "ltr",
+  "start_url": "./index.html#today",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#070707",
   "theme_color": "#070707",
+  "categories": ["education", "health", "books"],
+  "prefer_related_applications": false,
   "icons": [
+    { "src": "icons/favicon-32.png", "sizes": "32x32", "type": "image/png", "purpose": "any" },
+    { "src": "icons/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Сегодня",
+      "short_name": "Сегодня",
+      "description": "Открыть следующий учебный шаг.",
+      "url": "./index.html#today",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Карта курса",
+      "short_name": "Карта",
+      "description": "Открыть карту учебных станций.",
+      "url": "./index.html#atlas",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Память",
+      "short_name": "Память",
+      "description": "Открыть слабые места и повторения.",
+      "url": "./index.html#memory",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Журнал",
+      "short_name": "Журнал",
+      "description": "Открыть историю выводов.",
+      "url": "./index.html#journal",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/home-narrow.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Следующий короткий учебный шаг"
+    },
+    {
+      "src": "screenshots/progress-wide.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Прогресс, память и журнал"
+    }
   ]
 }

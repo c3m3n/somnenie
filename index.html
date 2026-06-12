@@ -35,7 +35,8 @@
       </span>
       <h1 id="title">Нутрициология</h1>
     </div>
-    <button id="profile-btn" title="Локальный прогресс обучения">
+    <button id="profile-btn" title="Прогресс, память и журнал" aria-label="Открыть прогресс, память и журнал">
+      <span class="profile-meter" aria-hidden="true"></span>
       <svg class="btn-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="12" cy="8" r="3"></circle>
         <path d="M5 21a7 7 0 0 1 14 0"></path>
@@ -46,6 +47,7 @@
   <nav id="tabs" class="hidden"></nav>
   <main id="screen"></main>
   <script src="lib/marked.min.js"></script>
+  <script src="core/constants.js"></script>
   <script src="core/storage.js"></script>
   <script src="core/review.js"></script>
   <script src="core/quiz.js"></script>

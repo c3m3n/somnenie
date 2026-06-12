@@ -16,9 +16,11 @@ const MODULE_ROUTE_TABS = [
   { file: "summary.md", label: "Закрепить", files: ["summary.md"], icon: "summary", tone: "success" },
 ];
 const CONTENT_MANIFEST_PATH = "content/manifest.json";
-const QUIZ_PROGRESS_VERSION = 2;
-const REVIEW_SCHEMA_VERSION = 2;
-const COURSE_ID = "nutrition";
+// Источник истины общих констант — core/constants.js (загружается раньше app.js).
+const NUTRIO_CONST = (window.NutrioConst || globalThis.NutrioConst) || {};
+const QUIZ_PROGRESS_VERSION = NUTRIO_CONST.QUIZ_PROGRESS_VERSION ?? 2;
+const REVIEW_SCHEMA_VERSION = NUTRIO_CONST.REVIEW_SCHEMA_VERSION ?? 2;
+const COURSE_ID = NUTRIO_CONST.COURSE_ID ?? "nutrition";
 const MIGRATION_TIMEOUT_MS = 4000;
 const CONTENT_FETCH_TIMEOUT_MS = 4000;
 // Источник истины — core/review.js (review.js загружается раньше app.js).
@@ -43,6 +45,8 @@ let course = null;         // карта фаз из content/course.json (опц
 let contentManifest = null; // индекс модулей и файлов из content/manifest.json (опционально)
 let readingProgressCleanup = null;
 let appStateCache = defaultAppState();
+let deferredInstallPrompt = null;
+let pwaStatusTimer = null;
 
 function setScreenMode(mode) {
   if (!document.body?.classList) return;
@@ -50,6 +54,19 @@ function setScreenMode(mode) {
     document.body.classList.remove(className);
   }
   if (mode) document.body.classList.add(`mode-${mode}`);
+}
+
+// A11y: при смене экрана переводим фокус на его заголовок, иначе фокус остаётся
+// в body и навигация с клавиатуры/скринридера теряет контекст.
+function focusScreenStart() {
+  if (!$screen || typeof $screen.querySelector !== "function") return;
+  const target = $screen.querySelector("h1, h2") || $screen;
+  if (!target || typeof target.focus !== "function") return;
+  if (typeof target.setAttribute === "function" &&
+      (typeof target.getAttribute !== "function" || !target.getAttribute("tabindex"))) {
+    target.setAttribute("tabindex", "-1");
+  }
+  target.focus({ preventScroll: true });
 }
 
 function cleanupHomeEffects() {
@@ -198,23 +215,6 @@ function typeConsoleLines(host, lines, reduced) {
   addLine(0);
 }
 
-function configureMarkedSecurity() {
-  const api = markdownApi();
-  if (!api?.Renderer || typeof api.use !== "function") return;
-
-  const renderer = new api.Renderer();
-  renderer.html = (html) => escapeHtml(html);
-  renderer.link = (href, title, text) => {
-    const safeHref = safeMarkdownHref(href);
-    if (!safeHref) return text;
-    const titleAttr = title ? ` title="${escapeHtmlAttribute(title)}"` : "";
-    return `<a href="${escapeHtmlAttribute(safeHref)}"${titleAttr} rel="noopener noreferrer">${text}</a>`;
-  };
-  renderer.image = (_href, _title, text) => escapeHtml(text || "");
-
-  api.use({ renderer });
-}
-
 function markdownApi() {
   return window.marked || globalThis.marked;
 }
@@ -223,44 +223,34 @@ function quizApi() {
   return window.NutrioQuiz || globalThis.NutrioQuiz;
 }
 
-function safeMarkdownHref(href) {
-  const raw = String(href || "").trim();
-  if (!raw || /[\u0000-\u001F\u007F]/.test(raw)) return "";
+// Единственный слой защиты HTML. marked не санитизирует сам — весь его вывод
+// проходит здесь. Правило простое: allowlist безопасных тегов, всё остальное
+// вырезается. Каждый шаг отвечает за один класс угроз, поэтому слой легко аудировать.
+const SANITIZE_ALLOWED_TAGS = "p|br|strong|em|code|pre|ul|ol|li|blockquote|h[1-6]|hr|table|thead|tbody|tr|th|td|a|del";
+const SANITIZE_DISALLOWED_TAG = new RegExp(`<\\/?(?!\\/?(${SANITIZE_ALLOWED_TAGS})\\b)[a-z][^>]*>`, "gi");
 
-  const compact = raw.replace(/\s+/g, "");
-  if (compact.startsWith("#") || compact.startsWith("/") || compact.startsWith("./") || compact.startsWith("../")) {
-    return raw;
-  }
-
-  try {
-    const base = window.location?.href || "https://example.local/";
-    const url = new URL(raw, base);
-    if (["http:", "https:", "mailto:"].includes(url.protocol)) return raw;
-  } catch {
-    return "";
-  }
-
-  return "";
-}
-
-function sanitizeRenderedMarkdown(html) {
+function sanitizeHtml(html) {
   let safe = String(html || "");
+  // 1. Активные/встраиваемые элементы целиком (парные и одиночные теги).
   safe = safe.replace(/<\s*(script|iframe|object|embed|form|input|button|textarea|select|style|meta|link|base|svg|math)\b[\s\S]*?<\s*\/\s*\1\s*>/gi, "");
   safe = safe.replace(/<\s*(script|iframe|object|embed|form|input|button|textarea|select|style|meta|link|base|svg|math)\b[^>]*\/?\s*>/gi, "");
-  safe = safe.replace(/<\/?(?!\/?(p|br|strong|em|code|pre|ul|ol|li|blockquote|h[1-6]|hr|table|thead|tbody|tr|th|td|a|del)\b)[a-z][^>]*>/gi, "");
+  // 2. Любой тег вне allowlist (например <img>, <div onclick>).
+  safe = safe.replace(SANITIZE_DISALLOWED_TAG, "");
+  // 3. Обработчики событий и инлайновые стили.
   safe = safe.replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
   safe = safe.replace(/\s+style\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+  // 4. Опасные протоколы в ссылках/источниках и в сыром markdown.
   safe = safe.replace(/\s+(href|src|xlink:href)\s*=\s*(['"]?)\s*(javascript|data|vbscript|file):[^'"\s>]*/gi, "");
   safe = safe.replace(/\]\(\s*(javascript|data|vbscript|file):[^)]*\)/gi, "]()");
   return safe;
 }
 
 function renderMarkdown(text) {
-  return sanitizeRenderedMarkdown(markdownApi().parse(String(text || "")));
+  return sanitizeHtml(markdownApi().parse(String(text || "")));
 }
 
 function renderMarkdownInline(text) {
-  return sanitizeRenderedMarkdown(markdownApi().parseInline(String(text || "")));
+  return sanitizeHtml(markdownApi().parseInline(String(text || "")));
 }
 
 function startAsciiOrganism(pre, reduced) {
@@ -861,6 +851,11 @@ function tabVisual(file) {
   }[file] || { icon: "book", tone: "next" };
 }
 
+function tabIconHtml(visual) {
+  const tone = escapeHtmlAttribute(visual?.tone || "next");
+  return `<span class="tab-glyph tab-glyph-${tone}" aria-hidden="true">${iconSvg(visual?.icon || "book", "tab-icon")}</span>`;
+}
+
 function isMaterialFile(file) {
   return MATERIAL_FILES.includes(file);
 }
@@ -1269,27 +1264,45 @@ function timeSpeechPool() {
 
 function machineSpeechLines(summary, nextModule, sessionPlan) {
   const sessions = loadSessionState();
-  const lines = [`> ${speechPick(timeSpeechPool(), sessions.lastDate || "new")}`];
   const daysSinceLast = sessions.lastDate ? reviewApi().daysBetweenISO(sessions.lastDate, todayISO()) : 0;
+  const stationCount = `${summary.completedStations}/${summary.totalStations}`;
+  const lines = [`> маршрут: ${stationCount} станций закрыто${nextModule ? `, следующий ${nextModule.id}` : ""}.`];
 
   if (!nextModule && !summary.weakSpotTotal) {
-    lines.push(`> ${speechPick("complete", summary.completedSteps)}`);
+    lines.push("> память: слабых мест нет, курс можно поддерживать короткими повторами.");
   } else if (daysSinceLast > 7) {
-    lines.push(`> ${speechPick("break", daysSinceLast)}`);
+    lines.push(`> пауза: ${daysSinceLast} дней. начнём с короткого шага без долга.`);
   } else if (sessionPlan?.reviews?.length) {
-    lines.push(`> ${sessionPlan.reviews.length} ${pluralizeSignals(sessionPlan.reviews.length)} ${sessionPlan.reviews.length === 1 ? "хочет" : "хотят"} вернуться.`);
+    lines.push(`> память: ${sessionPlan.reviews.length} ${pluralizeSignals(sessionPlan.reviews.length)} на сегодня, не больше короткой сессии.`);
   } else {
-    lines.push(`> ${speechPick("queue", summary.completedSteps)}`);
+    lines.push("> память: на сегодня чисто.");
   }
 
   if (sessions.streakDays > 1) {
-    lines.push(`> ${sessions.streakDays}-й день подряд.`);
+    lines.push(`> ритм: ${sessions.streakDays}-й день подряд. следующий шаг уже выбран.`);
   } else if (nextModule) {
-    lines.push(`> ${speechPick("progress", nextModule.id)} ${ordinalSignal(moduleSignalNumber(nextModule))} ждёт.`);
+    lines.push(`> фокус: ${stationIdForModule(nextModule)} — понять, проверить, сохранить вывод.`);
   } else {
-    lines.push("> прибор спокоен.");
+    lines.push("> фокус: вернуться к журналу или поддерживающему повторению.");
   }
   return lines.slice(0, 3);
+}
+
+function homeRouteStatusHtml(summary, nextModule, sessionPlan) {
+  const completed = signalCounterText(summary.completedStations || 0);
+  const memory = summary.dueReviewTotal
+    ? `${summary.dueReviewTotal} ${pluralizeWeakSpots(summary.dueReviewTotal)} сегодня`
+    : "память чиста";
+  const next = sessionPlan?.reviews?.length
+    ? `короткая сессия памяти · до ${TODAY_REVIEW_LIMIT} сигналов`
+    : nextModule
+      ? `${stationIdForModule(nextModule)} · ${nextModule.title}`
+      : "курс закрыт · поддерживать ритм";
+  return `<div class="organism-caption">` +
+    `<span>контур маршрута</span>` +
+    `<strong>${escapeHtml(completed)} · ${escapeHtml(memory)}</strong>` +
+    `<small>${escapeHtml(next)}</small>` +
+  `</div>`;
 }
 
 function buildCurrentSessionPlan(nextModule = findNextModule(), reviewOnly = false) {
@@ -1568,15 +1581,15 @@ async function showHome() {
   const todayAction = buildTodayAction(summary, nextModule);
   const stationTotal = modules.length;
   const stationCompleted = completedStationCount();
-  const stationPercent = stationTotal ? Math.round((stationCompleted / stationTotal) * 100) : 0;
+  updateProfileButton(summary);
 
   const intro = document.createElement("section");
   intro.className = "intro-card today-screen";
   intro.innerHTML =
     `<section class="home-learning-lead rise">` +
-      `<p class="home-product-label">SOMNENIE</p>` +
+      `<p class="home-product-label">SOMNENIE · маршрут</p>` +
       `<h2>Сегодня</h2>` +
-      `<p>Один полезный учебный акт: прочитать, проверить, понять ошибку или повторить вовремя.</p>` +
+      `<p>Следующий короткий шаг уже выбран: понять тему, проверить себя или вернуться к слабому месту.</p>` +
     `</section>` +
     `<section class="next next-step-card today-card rise">` +
       `<p class="ask">${escapeHtml(todayAction.reason)}</p>` +
@@ -1586,23 +1599,17 @@ async function showHome() {
       `<p class="today-estimate">${escapeHtml(todayAction.estimatedTime)}</p>` +
       (todayAction.afterAction ? `<p class="next-step-why">${escapeHtml(todayAction.afterAction)}</p>` : "") +
     `</section>` +
-    `<section class="matrix-block today-atlas-preview home-progress-compact rise" aria-label="Краткая карта курса">` +
-      `<div class="course-map instrument-matrix" aria-label="Краткая карта прогресса по станциям">${courseMapSegments(nextModule, false)}</div>` +
-      `<div class="matrix-foot">` +
-        `<span class="map-legend"><i class="legend-complete"></i>завершён <i class="legend-active"></i>в работе <i class="legend-review"></i>повторить <i class="legend-idle"></i>не начат</span>` +
-      `</div>` +
-      `<div class="home-progress-text${stationPercent ? "" : " is-empty"}"><strong>${stationPercent}%</strong><span>${stationCompleted}/${stationTotal} учебных станций завершено</span></div>` +
-      `<div class="course-progress" aria-label="Прогресс курса по завершённым станциям"><span style="width: ${stationPercent}%"></span></div>` +
-      `<button type="button" class="atlas-link">Открыть карту курса</button>` +
-    `</section>` +
     `<header class="instrument-statusbar rise">` +
       `<span class="led" aria-hidden="true"></span>` +
       `<span class="instrument-brand">SOMNENIE</span>` +
-      `<span class="instrument-path">~/сегодня/следующий-акт</span>` +
+      `<span class="instrument-path">маршрут/сегодня/следующий-шаг</span>` +
       `<span class="instrument-clock" data-instrument-clock>--:--:--</span>` +
     `</header>` +
-    `<div class="organism-wrap rise" aria-hidden="true"><pre id="organism"></pre></div>` +
+    `<div class="organism-wrap rise" aria-label="Контур учебного маршрута"><pre id="organism" aria-hidden="true"></pre>${homeRouteStatusHtml(summary, nextModule, sessionPlan)}</div>` +
     `<section class="console rise" aria-live="polite" aria-label="Состояние прибора"><div data-console-lines></div></section>` +
+    `<nav class="home-atlas-foot rise" aria-label="Карта курса">` +
+      `<button type="button" class="atlas-link home-atlas-link">Карта курса · ${stationCompleted}/${stationTotal} учебных станций</button>` +
+    `</nav>` +
     safetyNoteHtml();
 
   const actions = document.createElement("div");
@@ -1628,6 +1635,7 @@ async function showHome() {
 
   $screen.appendChild(intro);
   startHomeEffects(intro, summary, nextModule, sessionPlan);
+  focusScreenStart();
 }
 
 async function showAtlas() {
@@ -1648,6 +1656,7 @@ async function showAtlas() {
   const stationTotal = modules.length;
   const stationCompleted = completedStationCount();
   const stationPercent = stationTotal ? Math.round((stationCompleted / stationTotal) * 100) : 0;
+  updateProfileButton(summary);
   const atlasNodes = buildAtlasNodes(nextModule);
 
   const head = document.createElement("section");
@@ -1686,6 +1695,7 @@ async function showAtlas() {
 
     for (const mod of group.modules) $screen.appendChild(moduleCard(mod, nextModule));
   }
+  focusScreenStart();
 }
 
 function moduleCard(mod, nextModule = null) {
@@ -2008,17 +2018,77 @@ async function showProfile(options = {}) {
   resetBtn.onclick = runAsync(resetProgress);
 
   actions.append(exportBtn, resetBtn);
+  const pwaCard = buildPwaCard();
   $screen.appendChild(dashboard);
   bindCourseMap(dashboard);
   $screen.appendChild(weak);
   $screen.appendChild(takeaways);
   if (phases) $screen.appendChild(phases);
+  $screen.appendChild(pwaCard);
   $screen.appendChild(form);
   $screen.appendChild(actions);
 
   if (options.focus === "journal") {
     takeaways.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  } else if (options.focus === "memory") {
+    weak.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  } else {
+    focusScreenStart();
   }
+}
+
+function isStandalonePwa() {
+  return Boolean(
+    window.matchMedia?.("(display-mode: standalone)")?.matches ||
+    window.navigator?.standalone === true
+  );
+}
+
+function pwaConnectionText() {
+  return navigator.onLine === false
+    ? "Офлайн: сохранённые станции, прогресс и память доступны на этом устройстве."
+    : "Онлайн: приложение проверяет обновления курса и держит офлайн-кэш готовым.";
+}
+
+function buildPwaCard() {
+  const card = document.createElement("section");
+  card.className = "dashboard-card pwa-card";
+  const installed = isStandalonePwa();
+  const canInstall = Boolean(deferredInstallPrompt) && !installed;
+  card.innerHTML =
+    `<div class="section-kicker">PWA</div>` +
+    `<h2>Приложение и офлайн</h2>` +
+    `<p class="muted">${escapeHtml(pwaConnectionText())}</p>` +
+    `<ul class="pwa-capability-list">` +
+      `<li>Открывается как отдельное приложение после установки.</li>` +
+      `<li>Кэширует оболочку, шрифты, иконки и учебные материалы.</li>` +
+      `<li>Локальный прогресс хранится на устройстве и экспортируется вручную.</li>` +
+    `</ul>`;
+
+  const actions = document.createElement("div");
+  actions.className = "pwa-actions";
+
+  const install = document.createElement("button");
+  install.className = "btn compact btn-with-icon";
+  if (installed) {
+    setButtonContent(install, "Приложение установлено", "check");
+    install.disabled = true;
+  } else if (canInstall) {
+    setButtonContent(install, "Установить приложение", "arrow");
+    install.onclick = runAsync(triggerPwaInstall);
+  } else {
+    setButtonContent(install, "Установка через меню браузера", "profile");
+    install.disabled = true;
+  }
+
+  const update = document.createElement("button");
+  update.className = "btn secondary compact";
+  update.textContent = "Проверить обновления";
+  update.onclick = runAsync(checkForPwaUpdate);
+
+  actions.append(install, update);
+  card.appendChild(actions);
+  return card;
 }
 
 function createFieldLabel(text) {
@@ -2101,6 +2171,24 @@ function getProgressSummary() {
   return summary;
 }
 
+function updateProfileButton(summary = null) {
+  if (!$profile || !modules.length) return;
+  const data = summary || getProgressSummary();
+  const percent = data.coursePercent || 0;
+  const due = data.dueReviewTotal || 0;
+  if ($profile.style && typeof $profile.style.setProperty === "function") {
+    $profile.style.setProperty("--profile-progress", `${percent}%`);
+  }
+  $profile.dataset.reviewDue = due ? "true" : "false";
+  setElementAttr(
+    $profile,
+    "title",
+    due
+      ? `Прогресс ${percent}%. На сегодня ${due} ${pluralizeWeakSpots(due)} в памяти.`
+      : `Прогресс ${percent}%. Открыть путь, память и журнал.`,
+  );
+}
+
 async function exportProgress() {
   const data = await storageApi().exportData();
   const payload = {
@@ -2147,6 +2235,7 @@ async function showModule(mod) {
   $profile.classList.remove("active");
   $tabs.classList.remove("hidden");
   await refreshStorageCache();
+  updateProfileButton();
   $tabs.innerHTML = "";
   $screen.innerHTML = `<div class="loading">Загрузка…</div>`;
 
@@ -2181,7 +2270,7 @@ function appendTabButton(tab) {
   const button = document.createElement("button");
   button.textContent = tab.label;
   button.className = `tab-button tab-${visual.tone}`;
-  button.innerHTML = `${iconSvg(visual.icon, "tab-icon")}<span>${escapeHtml(tab.label)}</span>`;
+  button.innerHTML = `${tabIconHtml(visual)}<span>${escapeHtml(tab.label)}</span>`;
   button.onclick = () => openTab(tab.file);
   button.dataset.file = tab.file;
   button.dataset.files = (tab.files || [tab.file]).join("|");
@@ -2290,6 +2379,35 @@ function stepButtonText(prefix, step) {
   return step.label || prefix;
 }
 
+function learningStepShortLabel(step) {
+  if (!step) return "";
+  if (step.kind === "tab") return contentTabByFile(step.file).label;
+  if (step.kind === "module") return `Станция ${step.mod?.id || step.label}`;
+  if (step.kind === "home") return "Сегодня";
+  if (step.kind === "review") return "Закрепление";
+  return step.label || "";
+}
+
+function lessonRouteContextHtml(mod, file, nextStep) {
+  const route = moduleRouteTabForFile(file);
+  const block = contentTabByFile(file);
+  const tabs = availableTabs(mod);
+  const total = Math.max(1, tabs.length + (file === "__review__" ? 1 : 0));
+  const index = file === "__review__" ? total - 1 : Math.max(0, tabs.findIndex((tab) => tab.file === file));
+  const current = file === "__review__"
+    ? "Память слабых мест"
+    : isMaterialFile(file)
+      ? `${route.label} · ${block.label}`
+      : route.label || block.label;
+  const next = learningStepShortLabel(nextStep) || "Завершение";
+  return `<div class="lesson-route">` +
+    `<span class="lesson-route-kicker">Маршрут станции</span>` +
+    `<strong>${escapeHtml(current)}</strong>` +
+    `<span>${escapeHtml(mod.id)} · шаг ${index + 1} из ${total}</span>` +
+    `<em>Дальше: ${escapeHtml(next)}</em>` +
+  `</div>`;
+}
+
 function tabTargetLabel(file) {
   return {
     "theory.md": "главной мысли",
@@ -2319,6 +2437,7 @@ function appendModuleNavigation(mod, file, options = {}) {
 
   const nav = document.createElement("section");
   nav.className = "lesson-nav";
+  nav.innerHTML = lessonRouteContextHtml(mod, file, next || review || mobilePrimary);
 
   const actions = document.createElement("div");
   actions.className = "lesson-nav-actions";
@@ -2643,6 +2762,9 @@ function appendReadingProgress(container, cards) {
 
   const progress = document.createElement("div");
   progress.className = "reading-progress";
+  setElementAttr(progress, "role", "progressbar");
+  setElementAttr(progress, "aria-valuemin", "0");
+  setElementAttr(progress, "aria-valuemax", "100");
 
   const label = document.createElement("span");
   label.className = "reading-progress-label";
@@ -2669,6 +2791,9 @@ function appendReadingProgress(container, cards) {
     const percent = Math.round(((active + 1) / cards.length) * 100);
     label.textContent = `Раздел ${active + 1} из ${cards.length}`;
     fill.style.width = `${percent}%`;
+    progress.classList.toggle("is-scrolled", active > 0 || (window.scrollY || 0) > 80);
+    setElementAttr(progress, "aria-valuenow", String(percent));
+    setElementAttr(progress, "aria-valuetext", `Раздел ${active + 1} из ${cards.length}`);
     for (let i = 0; i < cards.length; i++) cards[i].classList.toggle("active", i === active);
   };
 
@@ -2680,7 +2805,10 @@ function appendReadingProgress(container, cards) {
   };
 
   label.textContent = `Раздел 1 из ${cards.length}`;
-  fill.style.width = `${Math.round((1 / cards.length) * 100)}%`;
+  const initialPercent = Math.round((1 / cards.length) * 100);
+  fill.style.width = `${initialPercent}%`;
+  setElementAttr(progress, "aria-valuenow", String(initialPercent));
+  setElementAttr(progress, "aria-valuetext", `Раздел 1 из ${cards.length}`);
   cards[0]?.classList.add("active");
   if (typeof requestAnimationFrame === "function") requestAnimationFrame(update);
   else setTimeout(update, 0);
@@ -2713,6 +2841,7 @@ function showMarkdown(mod, file) {
   if (shouldShowStationCompletionControls(mod, file)) appendTheoryControls(mod, file);
   if (file === "summary.md") appendSummaryControls(mod);
   appendModuleNavigation(mod, file);
+  focusScreenStart();
 }
 
 function MaterialSubnav(mod, activeFile) {
@@ -2734,7 +2863,7 @@ function MaterialSubnav(mod, activeFile) {
     const button = document.createElement("button");
     button.className = `material-subtab tab-${visual.tone}`;
     button.dataset.file = tab.file;
-    button.innerHTML = `${iconSvg(visual.icon, "tab-icon")}<span>${escapeHtml(tab.label)}</span>`;
+    button.innerHTML = `${tabIconHtml(visual)}<span>${escapeHtml(tab.label)}</span>`;
     if (tab.file === activeFile) {
       button.classList.add("active");
       setElementAttr(button, "aria-current", "page");
@@ -3147,6 +3276,7 @@ async function showReviewSession(plan) {
   $profile.classList.remove("hidden");
   $profile.classList.remove("active");
   $tabs.classList.add("hidden");
+  updateProfileButton();
 
   const items = plan.reviews.slice(0, TODAY_REVIEW_LIMIT);
   const results = [];
@@ -3344,6 +3474,7 @@ async function showReviewSession(plan) {
   }
 
   await renderCurrent();
+  focusScreenStart();
 }
 
 /* ---------- квиз: прохождение ---------- */
@@ -3391,6 +3522,7 @@ function showQuizIntro(mod) {
     includeNext: false,
     mobilePrimary: { kind: "action", label: "Начать проверку", run: () => showQuiz(mod) },
   });
+  focusScreenStart();
 }
 
 async function showQuiz(mod) {
@@ -3694,6 +3826,7 @@ async function showQuiz(mod) {
   }
 
   renderQuestion();
+  focusScreenStart();
 }
 
 function showWeakSpots(mod) {
@@ -3795,6 +3928,7 @@ function showWeakSpots(mod) {
   card.append(retry, clear);
   $screen.appendChild(card);
   appendModuleNavigation(mod, "__review__", { includeNext: false });
+  focusScreenStart();
 }
 
 /* ---------- утилиты и запуск ---------- */
@@ -3822,8 +3956,106 @@ function runAsync(fn) {
     .catch((error) => console.error("Nutrio action failed", error));
 }
 
+function pwaBannerExists(className) {
+  return typeof document.querySelector === "function" && document.querySelector(`.${className}`);
+}
+
+function removePwaBanner(className) {
+  if (typeof document.querySelector !== "function") return;
+  document.querySelector(`.${className}`)?.remove?.();
+}
+
+async function triggerPwaInstall() {
+  if (!deferredInstallPrompt) return;
+  const prompt = deferredInstallPrompt;
+  deferredInstallPrompt = null;
+  removePwaBanner("pwa-install-banner");
+  await prompt.prompt?.();
+  await prompt.userChoice?.catch?.(() => null);
+}
+
+function showPwaInstallPrompt() {
+  if (!deferredInstallPrompt || isStandalonePwa() || pwaBannerExists("pwa-install-banner")) return;
+
+  const banner = document.createElement("div");
+  banner.className = "app-update-banner pwa-install-banner";
+  setElementAttr(banner, "role", "status");
+  setElementAttr(banner, "aria-live", "polite");
+
+  const text = document.createElement("span");
+  text.textContent = "Можно установить Somnenie: курс и повторения будут открываться как приложение.";
+
+  const install = document.createElement("button");
+  install.type = "button";
+  install.textContent = "Установить";
+  install.onclick = runAsync(triggerPwaInstall);
+
+  const later = document.createElement("button");
+  later.type = "button";
+  later.className = "ghost";
+  later.textContent = "Позже";
+  later.onclick = () => banner.remove();
+
+  banner.append(text, install, later);
+  document.body.appendChild(banner);
+}
+
+function showPwaStatus(message, tone = "info", timeout = 3600) {
+  removePwaBanner("pwa-status-banner");
+  const banner = document.createElement("div");
+  banner.className = `pwa-status-banner pwa-status-${tone}`;
+  setElementAttr(banner, "role", "status");
+  setElementAttr(banner, "aria-live", "polite");
+  banner.textContent = message;
+  document.body.appendChild(banner);
+
+  if (pwaStatusTimer) clearTimeout(pwaStatusTimer);
+  if (timeout) {
+    pwaStatusTimer = setTimeout(() => banner.remove?.(), timeout);
+  }
+}
+
+function syncOnlineStatus() {
+  if (navigator.onLine === false) {
+    showPwaStatus("Офлайн-режим: сохранённые станции и прогресс доступны на этом устройстве.", "offline", 0);
+  } else {
+    showPwaStatus("Снова онлайн. Обновления курса будут проверены автоматически.", "online");
+    checkForPwaUpdate().catch((error) => console.warn("PWA update check failed", error));
+  }
+}
+
+async function checkForPwaUpdate() {
+  if (!("serviceWorker" in navigator)) {
+    showPwaStatus("Service worker недоступен в этом браузере.", "offline");
+    return null;
+  }
+  const registration = await navigator.serviceWorker.getRegistration?.();
+  if (!registration) {
+    showPwaStatus("Офлайн-слой будет готов после первой загрузки приложения.", "info");
+    return null;
+  }
+  await registration.update?.();
+  if (registration.waiting) showServiceWorkerUpdatePrompt(registration);
+  else showPwaStatus("Обновлений сейчас нет. Офлайн-кэш активен.", "online");
+  return registration;
+}
+
+async function applyLaunchRoute() {
+  const hash = String(window.location?.hash || "").replace(/^#/, "").toLowerCase();
+  const params = new URLSearchParams(String(window.location?.search || ""));
+  const route = hash || params.get("screen") || "";
+  if (!route || route === "today" || route === "home") {
+    if (route) await showHome();
+    return;
+  }
+  if (route === "atlas" || route === "map") return showAtlas();
+  if (route === "progress" || route === "profile") return showProfile();
+  if (route === "journal") return showProfile({ focus: "journal" });
+  if (route === "memory") return showProfile({ focus: "memory" });
+}
+
 function showServiceWorkerUpdatePrompt(registration) {
-  if (!registration?.waiting || document.querySelector(".app-update-banner")) return;
+  if (!registration?.waiting || pwaBannerExists("app-update-banner")) return;
 
   const banner = document.createElement("div");
   banner.className = "app-update-banner";
@@ -3856,6 +4088,9 @@ async function registerServiceWorker() {
   });
 
   const registration = await navigator.serviceWorker.register("sw.js");
+  navigator.serviceWorker.ready
+    ?.then((readyRegistration) => readyRegistration.active?.postMessage?.({ type: "CACHE_CONTENT" }))
+    .catch((error) => console.warn("PWA content warmup failed", error));
   if (registration.waiting && navigator.serviceWorker.controller) showServiceWorkerUpdatePrompt(registration);
 
   registration.addEventListener("updatefound", () => {
@@ -3871,8 +4106,22 @@ async function registerServiceWorker() {
 
 $back.onclick = runAsync(showHome);
 $profile.onclick = runAsync(showProfile);
-if (window.addEventListener) window.addEventListener("resize", updateTabsOverflowHint);
-configureMarkedSecurity();
+if (window.addEventListener) {
+  window.addEventListener("resize", updateTabsOverflowHint);
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    showPwaInstallPrompt();
+  });
+  window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    removePwaBanner("pwa-install-banner");
+    showPwaStatus("Somnenie установлено. Теперь его можно открывать как приложение.", "online");
+  });
+  window.addEventListener("online", syncOnlineStatus);
+  window.addEventListener("offline", syncOnlineStatus);
+  window.addEventListener("hashchange", runAsync(applyLaunchRoute));
+}
 
 (async function init() {
   $screen.innerHTML = `<div class="loading">Загрузка станций…</div>`;
@@ -3886,6 +4135,7 @@ configureMarkedSecurity();
     modules = await discoverModules(contentManifest, course);
     await migrateReviewStateFromProgress();
     await showHome();
+    await applyLaunchRoute();
   } catch (error) {
     console.error("Nutrio init failed", error);
     $screen.innerHTML = `<div class="loading">Storage initialization failed. Check console.</div>`;

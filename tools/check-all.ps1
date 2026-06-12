@@ -23,6 +23,7 @@ function Invoke-CheckedCommand {
 }
 
 Invoke-CheckedCommand node --check app.js
+Invoke-CheckedCommand node --check core\constants.js
 Invoke-CheckedCommand node --check core\storage.js
 Invoke-CheckedCommand node --check core\review.js
 Invoke-CheckedCommand node --check core\quiz.js

@@ -298,6 +298,7 @@ const context = {
   setTimeout,
   clearTimeout,
   Blob,
+  URLSearchParams,
   URL: {
     createObjectURL: (blob) => {
       objectUrls.push(blob);
@@ -360,6 +361,9 @@ const context = {
 
 vm.createContext(context);
 
+const constantsJs = await fs.readFile(path.join(projectRoot, "core", "constants.js"), "utf8");
+vm.runInContext(constantsJs, context, { filename: "core/constants.js" });
+
 const storageJs = await fs.readFile(path.join(projectRoot, "core", "storage.js"), "utf8");
 vm.runInContext(storageJs, context, { filename: "core/storage.js" });
 
@@ -389,7 +393,8 @@ assert(screen.children[0].innerHTML.includes("next-step-card"), "Home should lea
 assert(screen.children[0].innerHTML.includes("today-card"), "Today should render the next act as the primary card");
 assert(screen.children[0].innerHTML.includes("safety-note"), "Home should expose the medical safety boundary");
 assert(!screen.children[0].innerHTML.includes("hero-visual"), "Home should not lead with a decorative hero visual");
-assert(screen.children[0].innerHTML.includes("course-map-segment"), "Home should expose a segmented course map");
+assert(screen.children[0].innerHTML.includes("home-atlas-link"), "Home should offer a quiet link to the course map");
+assert(!screen.children[0].innerHTML.includes("course-map-segment"), "Home should not embed the full segmented map (Atlas owns it)");
 const initialHomeActions = screen.children[0].children.find((child) => child.className === "home-actions");
 assert(initialHomeActions, "Home actions are missing");
 assert(initialHomeActions.children.length === 1, "Home should expose exactly one primary learning action");
@@ -400,7 +405,7 @@ assert(appState.schemaVersion === 2, "Storage appState should use schema v2");
 assert(appState.review.courseId === "nutrition", "Review state should carry the nutrition course id");
 assert(appState.sessions.courseId === "nutrition", "Session state should carry the nutrition course id");
 assert(screen.children[0].innerHTML.includes("учебных станций"), "Home should explain progress as completed stations");
-assert(screen.children[0].innerHTML.includes("map-legend"), "Home course map should explain its states with a legend");
+assert(!screen.children[0].innerHTML.includes("map-legend"), "Home should not carry the course-map legend (Atlas owns the map)");
 assert(screen.children[0].innerHTML.includes("SOMNENIE"), "Home statusbar should carry the platform brand, not the course");
 assert(!screen.children[0].innerHTML.includes("NUTRIO"), "Old NUTRIO brand should not remain on home");
 assert(!screen.children[0].innerHTML.includes("home-metrics"), "Home should not lead with dashboard-style KPI cards");
@@ -414,6 +419,8 @@ assert(homePhaseHeaders.length === 0, "Today should not expose phase headers as 
 assert(typeof context.showAtlas === "function", "Atlas screen function should be available");
 await context.showAtlas();
 assert(title.textContent === "Карта курса", "Atlas screen did not open");
+assert(screen.children.some((child) => (child.innerHTML || "").includes("course-map-segment")), "Atlas should expose the segmented course map");
+assert(screen.children.some((child) => (child.innerHTML || "").includes("map-legend")), "Atlas should explain map states with a legend");
 const atlasModuleCards = screen.children.filter((child) => child.className === "module-card");
 assert(atlasModuleCards.length === 24, `Expected 24 module cards in Atlas, got ${atlasModuleCards.length}`);
 const atlasPhaseHeaders = screen.children.filter((child) => child.className === "phase-header");

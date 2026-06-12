@@ -1,12 +1,16 @@
 (function () {
   "use strict";
 
+  // Источник истины — core/constants.js: глобаль в браузере/vm, require в node.
+  const SHARED = (typeof globalThis !== "undefined" && globalThis.NutrioConst)
+    || (typeof require === "function" ? require("./constants.js") : null)
+    || {};
   const DB_NAME = "nutrio-db";
   const DB_VERSION = 1;
   const PROFILE_ID = "default";
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = SHARED.SCHEMA_VERSION || 2;
   const APP_STATE_KEY = "appState";
-  const COURSE_ID = "nutrition";
+  const COURSE_ID = SHARED.COURSE_ID || "nutrition";
   const PROFILE_KEY = "nutrio-profile";
   const PROGRESS_KEY = "nutrio-progress";
 

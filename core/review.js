@@ -8,8 +8,12 @@
 })(typeof globalThis !== "undefined" ? globalThis : this, function () {
   "use strict";
 
-  const COURSE_ID = "nutrition";
-  const REVIEW_SCHEMA_VERSION = 2;
+  // Источник истины — core/constants.js: глобаль в браузере/vm, require в node.
+  const SHARED = (typeof globalThis !== "undefined" && globalThis.NutrioConst)
+    || (typeof require === "function" ? require("./constants.js") : null)
+    || {};
+  const COURSE_ID = SHARED.COURSE_ID || "nutrition";
+  const REVIEW_SCHEMA_VERSION = SHARED.REVIEW_SCHEMA_VERSION || 2;
   const REVIEW_INTERVALS = [1, 3, 7, 14, 30, 60];
   // DAILY_REVIEW_LIMIT — максимум, который очередь готова выдать за день.
   // TODAY_REVIEW_LIMIT — сколько показываем в дневной карточке/сеансе (короткая сессия).

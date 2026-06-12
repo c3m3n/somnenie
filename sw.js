@@ -1,13 +1,17 @@
 ﻿/* Service worker для офлайн-доступа. Кэширует оболочку приложения и учебный контент. */
 
-const VERSION = "nutrio-v14";
+importScripts("./core/constants.js");
+
+const VERSION = "nutrio-v16";
 const SHELL_CACHE = `${VERSION}-shell`;
 const CONTENT_CACHE = `${VERSION}-content`;
+const MODULE_FILES = self.NutrioConst?.MODULE_FILES || ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"];
 
 const APP_SHELL = [
   "./",
   "./index.html",
   "./style.css",
+  "./core/constants.js",
   "./core/storage.js",
   "./core/review.js",
   "./core/quiz.js",
@@ -24,9 +28,10 @@ const APP_SHELL = [
   "./icons/icon-512.png",
   "./icons/icon-maskable-512.png",
   "./icons/apple-touch-icon.png",
+  "./icons/favicon-32.png",
+  "./screenshots/home-narrow.png",
+  "./screenshots/progress-wide.png",
 ];
-
-const MODULE_FILES = ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"];
 
 async function fetchJson(path) {
   const res = await fetch(path, { cache: "no-cache" });
@@ -85,10 +90,17 @@ self.addEventListener("install", (event) => {
 
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
+  if (event.data?.type === "CACHE_CONTENT") {
+    event.waitUntil(precacheContent().catch((error) => console.warn("Content warmup failed", error)));
+  }
+  if (event.data?.type === "GET_VERSION") {
+    event.source?.postMessage?.({ type: "SW_VERSION", version: VERSION });
+  }
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {
+    if (self.registration.navigationPreload) await self.registration.navigationPreload.enable();
     const keys = await caches.keys();
     await Promise.all(keys.filter((k) => k.startsWith("nutrio-") && !k.startsWith(VERSION)).map((k) => caches.delete(k)));
     await self.clients.claim();
@@ -105,6 +117,8 @@ self.addEventListener("fetch", (event) => {
 
   if (req.mode === "navigate") {
     event.respondWith((async () => {
+      const preload = await event.preloadResponse;
+      if (preload) return preload;
       try {
         return await fetch(req);
       } catch {
@@ -118,6 +132,7 @@ self.addEventListener("fetch", (event) => {
   const isContent = url.pathname.includes("/content/");
   const isMutableShell =
     url.pathname.endsWith("/app.js") ||
+    url.pathname.endsWith("/core/constants.js") ||
     url.pathname.endsWith("/core/storage.js") ||
     url.pathname.endsWith("/core/review.js") ||
     url.pathname.endsWith("/core/quiz.js") ||
