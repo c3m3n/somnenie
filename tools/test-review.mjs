@@ -24,6 +24,9 @@ assert(item.id === "M09-q3", "Question review id should be module-question based
 assert(item.interval === 1, "Wrong quiz answer should reset interval to 1 day");
 assert(item.due === "2026-06-12", "Wrong quiz answer should return tomorrow");
 assert(item.errors === 1 && item.streak === 0, "Wrong answer should increment errors and reset streak");
+assert(item.diagnosticType === "нутриент_принят_за_продукт", "Review item should store an internal diagnostic type");
+assert(item.userLabel === "Нутриент принят за продукт", "Review item should store a human-readable weak spot label");
+assert(item.reviewStrategy.includes("новый вопрос"), "Review item should store a weak-spot review strategy");
 
 item = review.applyReviewAnswer(item, true, "2026-06-12");
 assert(item.interval === 3, "First correct review should move to 3 days");
@@ -95,6 +98,7 @@ assert(migrated.id === "M02-q4", "Weak spot migration should preserve question i
 assert(migrated.due === start, "Weak spot migration should make the item due today");
 assert(migrated.errors === 3, "Weak spot migration should preserve miss count as errors");
 assert(migrated.courseId === "nutrition", "Migrated weak spot should carry courseId");
+assert(migrated.userLabel, "Migrated weak spot should expose a learning-card label");
 
 let sessions = review.recordSessionActivity(null, { reviews: 2 }, "2026-06-11");
 assert(sessions.streakDays === 1, "First activity day should start streak");

@@ -1,18 +1,19 @@
 ﻿/* Нутрициология — тренажёр. Движок читает папки content/MXX с md-файлами. */
 
 const TABS = [
-  { file: "theory.md",   label: "Теория" },
+  { file: "theory.md",   label: "Главная мысль" },
   { file: "terms.md",    label: "Термины" },
-  { file: "practice.md", label: "Практика" },
+  { file: "practice.md", label: "Пример" },
   { file: "diagrams.md", label: "Схемы" },
-  { file: "quiz.md",     label: "Проверка" },
-  { file: "summary.md",  label: "Итог" },
+  { file: "quiz.md",     label: "Проверить" },
+  { file: "summary.md",  label: "Закрепить" },
 ];
 const MATERIAL_FILES = ["theory.md", "terms.md", "practice.md", "diagrams.md"];
 const MODULE_ROUTE_TABS = [
-  { file: "theory.md", label: "Материал", files: MATERIAL_FILES, icon: "book", tone: "info" },
-  { file: "quiz.md", label: "Проверка", files: ["quiz.md"], icon: "quiz", tone: "next" },
-  { file: "summary.md", label: "Итог", files: ["summary.md"], icon: "summary", tone: "success" },
+  { file: "theory.md", label: "Понять", files: ["theory.md", "terms.md"], icon: "book", tone: "info" },
+  { file: "practice.md", label: "Применить", files: ["practice.md", "diagrams.md"], icon: "practice", tone: "next" },
+  { file: "quiz.md", label: "Проверить", files: ["quiz.md"], icon: "quiz", tone: "next" },
+  { file: "summary.md", label: "Закрепить", files: ["summary.md"], icon: "summary", tone: "success" },
 ];
 const CONTENT_MANIFEST_PATH = "content/manifest.json";
 const QUIZ_PROGRESS_VERSION = 2;
@@ -20,6 +21,7 @@ const REVIEW_SCHEMA_VERSION = 2;
 const COURSE_ID = "nutrition";
 const MIGRATION_TIMEOUT_MS = 4000;
 const CONTENT_FETCH_TIMEOUT_MS = 4000;
+const TODAY_REVIEW_LIMIT = 5;
 const SAFETY_NOTE = "Учебный материал. Не заменяет врача, диагностику, лечение или индивидуальные рекомендации по питанию.";
 const PROFILE_LEVELS = {
   beginner: "Новичок",
@@ -43,7 +45,7 @@ let appStateCache = defaultAppState();
 
 function setScreenMode(mode) {
   if (!document.body?.classList) return;
-  for (const className of ["mode-home", "mode-module", "mode-profile", "mode-session"]) {
+  for (const className of ["mode-home", "mode-module", "mode-profile", "mode-session", "mode-atlas"]) {
     document.body.classList.remove(className);
   }
   if (mode) document.body.classList.add(`mode-${mode}`);
@@ -585,12 +587,20 @@ async function updateWeakSpot(id, q, isRight, chosenKey = null) {
     delete spots[key];
   } else {
     const prev = spots[key] || {};
+    const mistakeType = diagnosis.mistakeType;
+    const diagnosticType = diagnosticTypeFromText(mistakeType);
+    const reviewStrategy = "Ответить на новый вопрос с тем же типом рассуждения.";
     spots[key] = {
       number: q.number,
       text: plainText(q.text).slice(0, 220),
       level: diagnosis.level.label,
       levelKey: diagnosis.level.key,
-      mistakeType: diagnosis.mistakeType,
+      mistakeType,
+      diagnosticType,
+      userLabel: mistakeType,
+      shortExplanation: diagnosis.repair,
+      reviewStrategy,
+      repair: diagnosis.repair,
       misses: (prev.misses || 0) + 1,
       updatedAt: new Date().toISOString(),
     };
@@ -605,6 +615,11 @@ async function updateWeakSpot(id, q, isRight, chosenKey = null) {
       question: q,
       diagnosis,
       text: plainText(q.text).slice(0, 260),
+      diagnosticType: diagnosticTypeFromText(diagnosis.mistakeType),
+      userLabel: diagnosis.mistakeType,
+      shortExplanation: diagnosis.repair,
+      reviewStrategy: "Ответить на новый вопрос с тем же типом рассуждения.",
+      repair: diagnosis.repair,
     }, new Date());
     await saveReviewState(nextReview);
   }
@@ -703,20 +718,22 @@ function getModuleGroups() {
 }
 
 function phaseProgressLabel(mods) {
-  let material = 0;
+  let startedStations = 0;
+  let completedStations = 0;
   let quizzes = 0;
   let ratioSum = 0;
-  let completedSteps = 0;
   for (const m of mods) {
+    const score = moduleCompletionScore(m);
     const pr = modProgress(m.id);
-    completedSteps += moduleCompletionScore(m);
-    if (pr.theoryRead) material++;
+    if (score > 0 || isQuizInProgress(pr)) startedStations++;
+    if (score === 3) completedStations++;
     if (isQuizCompletedProgress(pr) && pr.quizTotal) {
       quizzes++;
       ratioSum += pr.quizBest / pr.quizTotal;
     }
   }
-  const parts = [`шаги ${completedSteps}/${mods.length * 3}`, `материал ${material}/${mods.length}`];
+  const parts = [`станции ${completedStations}/${mods.length}`];
+  if (startedStations > completedStations) parts.push(`в работе ${startedStations - completedStations}`);
   if (quizzes) parts.push(`проверка ${quizzes}/${mods.length} · ${Math.round((ratioSum / quizzes) * 100)}%`);
   return parts.join(" · ");
 }
@@ -757,8 +774,8 @@ function primaryActionLabel(mod) {
   const pr = modProgress(mod.id);
   if (getDueReviewCount(mod.id)) return `Закрепить ${mod.id}`;
   if (isQuizInProgress(pr)) return `Продолжить проверку ${mod.id}`;
-  if (pr.theoryRead || pr.takeaway || isQuizCompletedProgress(pr)) return `Продолжить модуль ${mod.id}`;
-  return `Начать модуль ${mod.id}`;
+  if (pr.theoryRead || pr.takeaway || isQuizCompletedProgress(pr)) return `Продолжить станцию ${mod.id}`;
+  return `Начать станцию ${mod.id}`;
 }
 
 function moduleStateLabel(mod) {
@@ -847,13 +864,58 @@ function contentTabByFile(file) {
   return TABS.find((tab) => tab.file === file) || { file, label: file };
 }
 
+function firstAvailableRouteFile(mod, routeTab) {
+  return routeTab.files.find((file) => mod?.files?.[file] !== null) || routeTab.file;
+}
+
 function moduleRouteTabForFile(file) {
-  if (file === "__review__") return { file: "__review__", label: "Закрепление", files: ["__review__"], icon: "review", tone: "review" };
+  if (file === "__review__") return { file: "__review__", label: "Память", files: ["__review__"], icon: "review", tone: "review" };
   return MODULE_ROUTE_TABS.find((tab) => tab.files.includes(file)) || contentTabByFile(file);
 }
 
 function availableMaterialTabs(mod) {
   return TABS.filter((tab) => isMaterialFile(tab.file) && mod?.files?.[tab.file] !== null);
+}
+
+function availableStationBlockTabs(mod, file) {
+  const routeTab = moduleRouteTabForFile(file);
+  const files = routeTab.files || [file];
+  return TABS.filter((tab) => files.includes(tab.file) && mod?.files?.[tab.file] !== null);
+}
+
+function stationCompletionFile(mod) {
+  const materialTabs = availableMaterialTabs(mod);
+  return materialTabs.at(-1)?.file || "theory.md";
+}
+
+function shouldShowStationCompletionControls(mod, file) {
+  return isMaterialFile(file) && file === stationCompletionFile(mod);
+}
+
+function stripMarkdownSyntax(text) {
+  return plainText(String(text || "")
+    .replace(/\|/g, " ")
+    .replace(/\[[^\]]+\]\([^)]+\)/g, "")
+    .replace(/#+\s*/g, "")
+  );
+}
+
+function suggestedTakeawayFromSummary(mod) {
+  const source = mod?.files?.["summary.md"] || "";
+  const lines = String(source).split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const blockquote = lines
+    .filter((line) => line.startsWith(">"))
+    .map((line) => stripMarkdownSyntax(line))
+    .find((line) => line.length >= 48);
+  if (blockquote) return compactLearningNoteText(blockquote, 220);
+
+  const bodyLine = lines
+    .filter((line) => !line.startsWith("#") && !/^\|?\s*-{3,}/.test(line))
+    .map((line) => stripMarkdownSyntax(line))
+    .find((line) => line.length >= 48);
+  if (bodyLine) return compactLearningNoteText(bodyLine, 220);
+
+  return `${mod?.title || mod?.id || "Станция"}: главный вывод сохранён для повторного просмотра.`;
 }
 
 function metricHtml(tone, iconName, value, label) {
@@ -863,16 +925,17 @@ function metricHtml(tone, iconName, value, label) {
 function progressActiveModuleHtml(mod, sessionPlan = null) {
   if (!mod) {
     return `<section class="progress-active-module is-complete">` +
-      `<div><span>Курс</span><strong>Все модули закрыты</strong></div>` +
+      `<div><span>Курс</span><strong>Все станции закрыты</strong></div>` +
       `<p>Новые темы для закрепления появятся здесь, если после повторения останутся ошибки.</p>` +
     `</section>`;
   }
 
   const pr = modProgress(mod.id);
   const steps = [
-    { label: "Материал", done: Boolean(pr.theoryRead), active: !pr.theoryRead },
-    { label: "Проверка", done: isQuizCompletedProgress(pr), active: pr.theoryRead && !isQuizCompletedProgress(pr) },
-    { label: "Итог", done: Boolean(pr.takeaway), active: isQuizCompletedProgress(pr) && !pr.takeaway },
+    { label: "Понять", done: Boolean(pr.theoryRead), active: !pr.theoryRead },
+    { label: "Применить", done: Boolean(pr.theoryRead), active: pr.theoryRead && !isQuizCompletedProgress(pr) },
+    { label: "Проверить", done: isQuizCompletedProgress(pr), active: pr.theoryRead && !isQuizCompletedProgress(pr) },
+    { label: "Закрепить", done: Boolean(pr.takeaway), active: isQuizCompletedProgress(pr) && !pr.takeaway },
   ];
   const state = moduleCompletionScore(mod) > 0 || isQuizInProgress(pr) ? "в работе" : "следующий";
   const planText = sessionPlan ? sessionMetaText(sessionPlan, mod) : continueLabel(mod);
@@ -1032,14 +1095,17 @@ function ReviewAddedLine() {
   return line;
 }
 
-function courseMapSegments(nextModule = null) {
+function courseMapSegments(nextModule = null, interactive = true) {
   return modules.map((mod, index) => {
     const score = moduleCompletionScore(mod);
     const weakCount = getDueReviewCount(mod.id);
     const state = weakCount ? "review" : score === 3 ? "complete" : score > 0 ? "active" : "idle";
     const isNext = nextModule?.id === mod.id && state === "idle";
     const hint = `${mod.id} · ${mod.title} · ${isNext ? "Следующий" : moduleStateLabel(mod)}`;
-    return `<button type="button" class="course-map-segment ${state}${isNext ? " next" : ""}" data-module-id="${escapeHtml(mod.id)}" style="--segment-delay: ${index * 10}ms" title="${escapeHtml(hint)}" aria-label="${escapeHtml(hint)}"></button>`;
+    const attrs = `class="course-map-segment ${state}${isNext ? " next" : ""}" data-module-id="${escapeHtml(mod.id)}" style="--segment-delay: ${index * 10}ms" title="${escapeHtml(hint)}" aria-label="${escapeHtml(hint)}"`;
+    return interactive
+      ? `<button type="button" ${attrs}></button>`
+      : `<span ${attrs} role="img"></span>`;
   }).join("");
 }
 
@@ -1234,17 +1300,209 @@ function buildCurrentSessionPlan(nextModule = findNextModule(), reviewOnly = fal
 function sessionButtonLabel(plan, nextModule) {
   const count = plan?.reviews?.length || 0;
   if (count && plan.moduleStep) return `сеанс: ${count} ${pluralizeRepeats(count)} + ${plan.moduleStep.moduleId} ▸`;
-  if (count) return `повторить ${count} ${pluralizeQuestions(count)} ▸`;
+  if (count) return `повторить ${count} ${pluralizeWeakSpots(count)} ▸`;
   if (nextModule) return `${moduleCompletionScore(nextModule) > 0 || isQuizInProgress(modProgress(nextModule.id)) ? "продолжить" : "начать"} ${nextModule.id} ▸`;
   return "курс завершён";
 }
 
 function sessionMetaText(plan, nextModule) {
   const count = plan?.reviews?.length || 0;
-  if (count && plan.moduleStep) return `${count} ${pluralizeQuestions(count)} на повторение, затем ${plan.moduleStep.moduleId} · ~${plan.estimatedMinutes} мин`;
-  if (count) return `${count} ${pluralizeQuestions(count)} на повторение · новый модуль не нужен`;
+  if (count && plan.moduleStep) return `${count} ${pluralizeWeakSpots(count)} на повторение, затем ${plan.moduleStep.moduleId} · ~${plan.estimatedMinutes} мин`;
+  if (count) return `${count} ${pluralizeWeakSpots(count)} на повторение · новая станция не нужна`;
   if (nextModule) return `Повторов пока нет. Следующий шаг — ${nextModule.id}.`;
   return "курс пройден · слабые места можно повторять в любой момент";
+}
+
+function stationIdForModule(mod) {
+  return `${mod?.id || "M00"}.1`;
+}
+
+function stationForModule(mod) {
+  if (!mod) return null;
+  return {
+    id: stationIdForModule(mod),
+    moduleId: mod.id,
+    title: mod.title || mod.id,
+    estimatedMinutes: 6,
+    sourceContent: mod.files || {},
+  };
+}
+
+function stationStepForModule(mod) {
+  const pr = modProgress(mod.id);
+  if (!pr.theoryRead) return { key: "understand", label: "Понять", detail: "прочитать короткий учебный блок" };
+  if (!isQuizCompletedProgress(pr)) return { key: "check", label: "Проверить", detail: "ответить на вопросы проверки" };
+  if (!pr.takeaway) return { key: "anchor", label: "Закрепить", detail: "сформулировать итог станции" };
+  return { key: "completed", label: "Завершено", detail: "станция закрыта" };
+}
+
+function stationProgressForModule(mod) {
+  const pr = modProgress(mod.id);
+  const completedSteps = [];
+  if (pr.theoryRead) completedSteps.push("understand", "apply");
+  if (isQuizCompletedProgress(pr)) completedSteps.push("check");
+  if (pr.takeaway) completedSteps.push("anchor");
+  return {
+    stationId: stationIdForModule(mod),
+    currentStep: stationStepForModule(mod).key,
+    completedSteps,
+    checkCompleted: isQuizCompletedProgress(pr),
+    takeawaySaved: Boolean(pr.takeaway),
+    weakSpotIds: Object.keys(pr.weakSpots || {}),
+    completedAt: pr.takeawayUpdatedAt || null,
+  };
+}
+
+function stationIsStarted(mod) {
+  const pr = modProgress(mod.id);
+  return Boolean(pr.theoryRead || pr.takeaway || isQuizInProgress(pr) || isQuizCompletedProgress(pr));
+}
+
+function stationIsCompleted(mod) {
+  return moduleCompletionScore(mod) === 3;
+}
+
+function completedStationCount() {
+  return modules.filter(stationIsCompleted).length;
+}
+
+function diagnosticTypeFromText(value) {
+  if (typeof reviewApi().diagnosticTypeFrom === "function") return reviewApi().diagnosticTypeFrom(value);
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9а-яё]+/gi, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 80) || "mixed_reasoning";
+}
+
+function weakSpotLearningCard(item) {
+  const text = plainText(item?.text || "");
+  const level = item?.level || conceptLevelFromText(text).label;
+  const mistakeType = item?.mistakeType || item?.userLabel || "Смешение уровней анализа";
+  const userLabel = item?.userLabel || mistakeType;
+  const shortExplanation = item?.shortExplanation || item?.repair ||
+    (level
+      ? `Проверьте, на каком уровне сделан вывод: ${level.toLowerCase()}.`
+      : "Сначала определите уровень вопроса, затем делайте вывод.");
+  const reviewStrategy = item?.reviewStrategy ||
+    (item?.kind === "concept"
+      ? "Сформулировать правило своими словами и проверить, где оно применяется."
+      : "Ответить на новый вопрос с тем же типом рассуждения.");
+
+  return {
+    diagnosticType: item?.diagnosticType || diagnosticTypeFromText(mistakeType),
+    userLabel,
+    shortExplanation,
+    reviewStrategy,
+    sourceText: text,
+    level,
+  };
+}
+
+function weakSpotLabel(item) {
+  return weakSpotLearningCard(item).userLabel || "слабое место";
+}
+
+function buildAtlasNodes(nextModule = findNextModule()) {
+  const nodes = [];
+  for (const group of getModuleGroups()) {
+    nodes.push({
+      id: group.title,
+      type: "phase",
+      title: group.title,
+      subtitle: group.subtitle || "",
+      progress: phaseCompletionPercent(group.modules),
+    });
+    for (const mod of group.modules) {
+      const station = stationForModule(mod);
+      const due = getDueReviewCount(mod.id);
+      const weak = getVisibleWeakSpotCount(mod.id);
+      const completed = stationIsCompleted(mod);
+      const inProgress = stationIsStarted(mod);
+      nodes.push({
+        id: station.id,
+        type: "station",
+        moduleId: mod.id,
+        title: station.title,
+        status: due ? "repeat_today" : weak ? "has_weak_spots" : completed ? "completed" : inProgress ? "in_progress" : nextModule?.id === mod.id ? "next" : "not_started",
+        progress: moduleCompletionPercent(mod),
+      });
+    }
+  }
+  return nodes;
+}
+
+function buildTodayAction(summary = getProgressSummary(), nextModule = findNextModule()) {
+  const dueReviews = reviewApi().dueReviewItems(loadReviewState(), new Date(), TODAY_REVIEW_LIMIT);
+  const nextStation = stationForModule(nextModule);
+
+  if (dueReviews.length) {
+    const labels = dueReviews.slice(0, 3).map(weakSpotLabel);
+    return {
+      type: "repeat",
+      title: `Повторить ${dueReviews.length} ${pluralizeWeakSpots(dueReviews.length)}`,
+      description: "Срок повторения наступил. Сначала закрепляем то, что уже возвращалось с ошибкой.",
+      estimatedTime: approxMinutes(Math.max(4, Math.min(6, dueReviews.length * 2))),
+      primaryCta: "Начать повторение",
+      reason: "Повторение важнее нового материала, когда срок уже наступил.",
+      reviews: dueReviews,
+      targetRoute: "memory",
+      weakLabels: labels,
+      afterAction: nextStation ? `После этого: ${nextStation.id} · ${nextStation.title}` : "После этого: курс можно поддерживать через память и журнал",
+    };
+  }
+
+  if (nextModule && nextStation) {
+    const started = stationIsStarted(nextModule);
+    const step = stationStepForModule(nextModule);
+    return {
+      type: started ? "continue_station" : "start_station",
+      title: `${started ? "Продолжить" : "Начать"} ${nextStation.id} · ${nextStation.title}`,
+      description: `${step.label}: ${step.detail}.`,
+      estimatedTime: approxMinutes(nextStation.estimatedMinutes),
+      primaryCta: started ? "Продолжить" : "Начать",
+      reason: started ? "Есть незавершённая учебная станция." : "Повторов на сегодня нет, можно открыть следующий учебный шаг.",
+      module: nextModule,
+      station: nextStation,
+      stationProgress: stationProgressForModule(nextModule),
+      targetRoute: "station",
+    };
+  }
+
+  return {
+    type: "course_complete",
+    title: "Курс завершён",
+    description: summary.weakSpotTotal
+      ? "Основной маршрут закрыт. Сейчас полезнее поддерживать слабые места."
+      : "Основной маршрут закрыт. Можно пересмотреть журнал выводов или вернуться к карте курса.",
+    estimatedTime: "свободный режим",
+    primaryCta: summary.weakSpotTotal ? "Открыть память" : "Открыть журнал",
+    reason: "Новых обязательных станций нет.",
+    targetRoute: summary.weakSpotTotal ? "memory" : "journal",
+  };
+}
+
+async function runTodayAction(action) {
+  if (action?.type === "repeat") {
+    return startLearningSession({ reviewOnly: true, items: action.reviews || [] });
+  }
+  if ((action?.type === "continue_station" || action?.type === "start_station") && action.module) {
+    return showModule(action.module);
+  }
+  if (action?.targetRoute === "memory") {
+    const firstWeak = getProgressSummary().weakModules[0];
+    const mod = firstWeak ? modules.find((item) => item.id === firstWeak.id) : null;
+    if (mod) return openModuleReview(mod);
+  }
+  return showProfile();
+}
+
+function todayWeakListHtml(action) {
+  if (!action?.weakLabels?.length) return "";
+  const rows = action.weakLabels.map((label, index) =>
+    `<li><span>${index + 1}</span>${escapeHtml(label)}</li>`
+  ).join("");
+  return `<ol class="today-weak-list">${rows}</ol>`;
 }
 
 function formatShortDate(iso) {
@@ -1276,14 +1534,14 @@ function pluralizeRepeats(count) {
   return "повторений";
 }
 
-/* ---------- экран: список модулей ---------- */
+/* ---------- экран: Today ---------- */
 
 async function showHome() {
   resetReadingProgress();
   cleanupHomeEffects();
   setScreenMode("home");
   current = null;
-  $title.textContent = "Нутрициология";
+  $title.textContent = "Сегодня";
   $back.classList.add("hidden");
   $profile.classList.remove("hidden");
   $profile.classList.remove("active");
@@ -1299,51 +1557,42 @@ async function showHome() {
   const summary = getProgressSummary();
   const nextModule = findNextModule();
   const sessionPlan = buildCurrentSessionPlan(nextModule);
-  const totalPercent = summary.coursePercent;
-  const nextLabel = sessionButtonLabel(sessionPlan, nextModule);
-  const nextPhaseGroup = nextModule
-    ? getModuleGroups().find((g) => g.modules.some((m) => m.id === nextModule.id))
-    : null;
-  const nextMeta = nextPhaseGroup
-    ? nextPhaseGroup.title.toLowerCase()
-    : "все модули закрыты";
-  const nextAsk = nextModule
-    ? (sessionPlan.reviews.length ? "сеанс на сегодня" : "следующий шаг")
-    : "курс пройден";
+  const todayAction = buildTodayAction(summary, nextModule);
+  const stationTotal = modules.length;
+  const stationCompleted = completedStationCount();
+  const stationPercent = stationTotal ? Math.round((stationCompleted / stationTotal) * 100) : 0;
 
   const intro = document.createElement("section");
-  intro.className = "intro-card";
+  intro.className = "intro-card today-screen";
   intro.innerHTML =
     `<section class="home-learning-lead rise">` +
       `<p class="home-product-label">SOMNENIE</p>` +
-      `<h2>Нутрициология без мифов</h2>` +
-      `<p>Учебный тренажёр по нутрициологии: читать, проверять, закреплять.</p>` +
+      `<h2>Сегодня</h2>` +
+      `<p>Один полезный учебный акт: прочитать, проверить, понять ошибку или повторить вовремя.</p>` +
     `</section>` +
-    `<section class="next next-step-card rise">` +
-      `<p class="ask">${escapeHtml(nextAsk)}</p>` +
-      `<h3><b>${nextModule ? escapeHtml(nextModule.id) : "24/24"}</b> · ${escapeHtml(nextModule ? nextModule.title : nextLabel)}</h3>` +
-      `<p class="meta">${escapeHtml(sessionMetaText(sessionPlan, nextModule))}</p>` +
-      `<p class="next-step-why">${escapeHtml(nextMeta)}</p>` +
+    `<section class="next next-step-card today-card rise">` +
+      `<p class="ask">${escapeHtml(todayAction.reason)}</p>` +
+      `<h3>${escapeHtml(todayAction.title)}</h3>` +
+      `<p class="meta">${escapeHtml(todayAction.description)}</p>` +
+      todayWeakListHtml(todayAction) +
+      `<p class="today-estimate">${escapeHtml(todayAction.estimatedTime)}</p>` +
+      (todayAction.afterAction ? `<p class="next-step-why">${escapeHtml(todayAction.afterAction)}</p>` : "") +
     `</section>` +
-    (summary.weakSpotTotal
-      ? `<div class="home-review-strip">${iconSvg("review", "home-strip-icon")}<span>Повторение: ${summary.dueReviewTotal} сегодня · ${summary.weakSpotTotal} ${pluralizeQuestions(summary.weakSpotTotal)} в очереди</span></div>`
-      : `<div class="home-review-strip is-empty">${iconSvg("check", "home-strip-icon")}<span>${nextModule ? `Повторов пока нет. Начните ${escapeHtml(nextModule.id)}.` : "Повторов пока нет."}</span></div>`) +
-    `<section class="matrix-block home-progress-compact rise" aria-label="Карта курса">` +
-      `<div class="course-map instrument-matrix" aria-label="Карта прогресса по модулям: клик открывает модуль">${courseMapSegments(nextModule)}</div>` +
+    `<section class="matrix-block today-atlas-preview home-progress-compact rise" aria-label="Краткая карта курса">` +
+      `<div class="course-map instrument-matrix" aria-label="Краткая карта прогресса по станциям">${courseMapSegments(nextModule, false)}</div>` +
       `<div class="matrix-foot">` +
         `<span class="map-legend"><i class="legend-complete"></i>завершён <i class="legend-active"></i>в работе <i class="legend-review"></i>повторить <i class="legend-idle"></i>не начат</span>` +
       `</div>` +
-      `<div class="home-progress-text${totalPercent ? "" : " is-empty"}"><strong>${totalPercent}%</strong><span>${summary.completedSteps}/${summary.totalSteps} шагов курса завершено</span></div>` +
-      `<div class="course-progress" aria-label="Общий прогресс курса по шагам"><span style="width: ${totalPercent}%"></span></div>` +
+      `<div class="home-progress-text${stationPercent ? "" : " is-empty"}"><strong>${stationPercent}%</strong><span>${stationCompleted}/${stationTotal} учебных станций завершено</span></div>` +
+      `<div class="course-progress" aria-label="Прогресс курса по завершённым станциям"><span style="width: ${stationPercent}%"></span></div>` +
+      `<button type="button" class="atlas-link">Открыть карту курса</button>` +
     `</section>` +
-    `<section class="ledger rise" aria-label="Фазы курса">${phaseLedgerRows(nextModule)}</section>` +
     `<header class="instrument-statusbar rise">` +
       `<span class="led" aria-hidden="true"></span>` +
       `<span class="instrument-brand">SOMNENIE</span>` +
-      `<span class="instrument-path">~/курс/нутрициология</span>` +
+      `<span class="instrument-path">~/сегодня/следующий-акт</span>` +
       `<span class="instrument-clock" data-instrument-clock>--:--:--</span>` +
     `</header>` +
-    `<p class="etch rise">нутрициология без <em>мифов</em></p>` +
     `<div class="organism-wrap rise" aria-hidden="true"><pre id="organism"></pre></div>` +
     `<section class="console rise" aria-live="polite" aria-label="Состояние прибора"><div data-console-lines></div></section>` +
     safetyNoteHtml();
@@ -1351,18 +1600,11 @@ async function showHome() {
   const actions = document.createElement("div");
   actions.className = "home-actions";
 
-  if (nextModule || sessionPlan.reviews.length) {
-    const continueBtn = document.createElement("button");
-    continueBtn.className = "btn compact btn-with-icon";
-    setButtonContent(continueBtn, nextLabel, "arrow");
-    continueBtn.onclick = runAsync(() => startLearningSession());
-    actions.appendChild(continueBtn);
-  } else {
-    const complete = document.createElement("div");
-    complete.className = "course-complete";
-    complete.textContent = "Курс пройден. Закрепление появится здесь, если в тестах останутся ошибки.";
-    actions.appendChild(complete);
-  }
+  const actionBtn = document.createElement("button");
+  actionBtn.className = "btn compact btn-with-icon today-primary-action";
+  setButtonContent(actionBtn, todayAction.primaryCta, "arrow");
+  actionBtn.onclick = runAsync(() => runTodayAction(todayAction));
+  actions.appendChild(actionBtn);
 
   const nextStepCard = typeof intro.querySelector === "function"
     ? intro.querySelector(".next-step-card")
@@ -1372,11 +1614,53 @@ async function showHome() {
     nextStepCard.insertBefore(actions, secondary || null);
   }
   else intro.appendChild(actions);
-  $screen.appendChild(intro);
-  bindCourseMap(intro);
-  startHomeEffects(intro, summary, nextModule, sessionPlan);
 
-  appendHomeReview(summary);
+  const atlasLink = intro.querySelector?.(".atlas-link");
+  if (atlasLink) atlasLink.onclick = runAsync(showAtlas);
+
+  $screen.appendChild(intro);
+  startHomeEffects(intro, summary, nextModule, sessionPlan);
+}
+
+async function showAtlas() {
+  resetReadingProgress();
+  cleanupHomeEffects();
+  setScreenMode("atlas");
+  current = null;
+  $title.textContent = "Карта курса";
+  $back.classList.remove("hidden");
+  $profile.classList.remove("hidden");
+  $profile.classList.remove("active");
+  $tabs.classList.add("hidden");
+  await refreshStorageCache();
+  $screen.innerHTML = "";
+
+  const summary = getProgressSummary();
+  const nextModule = findNextModule();
+  const stationTotal = modules.length;
+  const stationCompleted = completedStationCount();
+  const stationPercent = stationTotal ? Math.round((stationCompleted / stationTotal) * 100) : 0;
+  const atlasNodes = buildAtlasNodes(nextModule);
+
+  const head = document.createElement("section");
+  head.className = "intro-card atlas-screen";
+  head.innerHTML =
+    `<section class="home-learning-lead rise">` +
+      `<p class="home-product-label">ATLAS</p>` +
+      `<h2>Карта курса</h2>` +
+      `<p>Ориентация по маршруту. Следующее действие всё равно выбирает экран «Сегодня».</p>` +
+    `</section>` +
+    `<section class="matrix-block home-progress-compact rise" aria-label="Карта курса">` +
+      `<div class="course-map instrument-matrix" aria-label="Карта прогресса по станциям: клик открывает станцию">${courseMapSegments(nextModule, true)}</div>` +
+      `<div class="matrix-foot">` +
+        `<span class="map-legend"><i class="legend-complete"></i>завершён <i class="legend-active"></i>в работе <i class="legend-review"></i>повторить <i class="legend-idle"></i>не начат</span>` +
+      `</div>` +
+      `<div class="home-progress-text${stationPercent ? "" : " is-empty"}"><strong>${stationPercent}%</strong><span>${stationCompleted}/${stationTotal} учебных станций завершено</span></div>` +
+      `<div class="course-progress" aria-label="Прогресс курса по завершённым станциям"><span style="width: ${stationPercent}%"></span></div>` +
+    `</section>` +
+    `<p class="atlas-meta">${atlasNodes.filter((node) => node.type === "station" && node.status === "repeat_today").length} станций требуют повторения сегодня · ${summary.weakSpotTotal} слабых мест в памяти</p>`;
+  $screen.appendChild(head);
+  bindCourseMap(head);
 
   let phaseNumber = 0;
   for (const group of getModuleGroups()) {
@@ -1386,7 +1670,7 @@ async function showHome() {
     const header = document.createElement("section");
     header.className = "phase-header";
     header.innerHTML =
-      `<div class="phase-kicker">Фаза ${phaseNumber} · ${doneModules}/${group.modules.length} модулей</div>` +
+      `<div class="phase-kicker">Фаза ${phaseNumber} · ${doneModules}/${group.modules.length} станций</div>` +
       `<h2>${escapeHtml(group.title)}</h2>` +
       (group.subtitle ? `<p class="phase-subtitle">${escapeHtml(group.subtitle)}</p>` : "") +
       `<div class="phase-progressbar" aria-hidden="true"><span style="width: ${phasePercent}%"></span></div>`;
@@ -1404,10 +1688,10 @@ function moduleCard(mod, nextModule = null) {
   const completion = moduleCompletionPercent(mod);
   const theme = moduleTheme(mod);
   const isNext = nextModule?.id === mod.id;
-  if (pr.theoryRead) parts.push("материал ✓");
+  if (pr.theoryRead) parts.push("понять/применить ✓");
   if (isQuizCompletedProgress(pr)) parts.push(`проверка ${pr.quizBest}/${pr.quizTotal}`);
   else if (isQuizInProgress(pr)) parts.push(`проверка ${pr.quizAnswered || 0}/${pr.quizTotalQuestions || "?"}`);
-  if (pr.takeaway) parts.push("итог ✓");
+  if (pr.takeaway) parts.push("закрепить ✓");
   if (weakCount) parts.push(`закрепить ${weakCount}`);
   else if (rawWeakCount && isQuizInProgress(pr)) parts.push(`${rawWeakCount} ошибка сохранена`);
 
@@ -1436,9 +1720,10 @@ function moduleCard(mod, nextModule = null) {
     `</div>` +
     `</div>` +
     `<div class="module-steps" aria-hidden="true">` +
-    `<span class="${pr.theoryRead ? "done" : ""}">${iconSvg("book", "step-icon")}Материал</span>` +
-    `<span class="${isQuizCompletedProgress(pr) ? "done" : isQuizInProgress(pr) ? "active" : ""}">${iconSvg("quiz", "step-icon")}Проверка</span>` +
-    `<span class="${pr.takeaway ? "done" : ""}">${iconSvg("summary", "step-icon")}Итог</span>` +
+    `<span class="${pr.theoryRead ? "done" : ""}">${iconSvg("book", "step-icon")}Понять</span>` +
+    `<span class="${pr.theoryRead ? "done" : ""}">${iconSvg("practice", "step-icon")}Применить</span>` +
+    `<span class="${isQuizCompletedProgress(pr) ? "done" : isQuizInProgress(pr) ? "active" : ""}">${iconSvg("quiz", "step-icon")}Проверить</span>` +
+    `<span class="${pr.takeaway ? "done" : ""}">${iconSvg("summary", "step-icon")}Закрепить</span>` +
     `</div>` +
     (parts.length ? `<div class="mod-progress">${parts.join(" · ")}</div>` : "") +
     `<div class="module-progressbar" aria-hidden="true"><span style="width: ${completion}%"></span></div>`;
@@ -1452,9 +1737,9 @@ function appendHomeReview(summary) {
   const section = document.createElement("section");
   section.className = "home-review";
   section.innerHTML =
-    `<div class="section-kicker">Повторение</div>` +
-    `<h2>Очередь повторения</h2>` +
-    `<p class="muted">Вопросы с ошибками возвращаются по расписанию. Сегодняшние попадают в сеанс, остальные ждут своей даты.</p>`;
+    `<div class="section-kicker">Memory</div>` +
+    `<h2>Память слабых мест</h2>` +
+    `<p class="muted">Слабые места возвращаются по расписанию. Сегодняшние попадают в короткую сессию, остальные ждут своей даты.</p>`;
 
   const list = document.createElement("div");
   list.className = "review-module-list";
@@ -1468,7 +1753,7 @@ function appendHomeReview(summary) {
     button.innerHTML =
       `<span>${escapeHtml(item.id)}</span>` +
       `<strong>${escapeHtml(item.title)}</strong>` +
-      `<em>${item.dueCount ? `${item.dueCount} сегодня · ` : ""}${item.count} ${pluralizeQuestions(item.count)} на повторении</em>` +
+      `<em>${item.dueCount ? `${item.dueCount} сегодня · ` : ""}${item.count} ${pluralizeWeakSpots(item.count)} в памяти</em>` +
       (item.topMistake ? `<span class="review-mistake">слабое место: ${escapeHtml(item.topMistake.toLowerCase())}</span>` : "");
     button.onclick = runAsync(() => openModuleReview(mod));
     list.appendChild(button);
@@ -1484,6 +1769,26 @@ function pluralizeQuestions(count) {
   if (mod10 === 1 && mod100 !== 11) return "вопрос";
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "вопроса";
   return "вопросов";
+}
+
+function pluralizeWeakSpots(count) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return "слабое место";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "слабых места";
+  return "слабых мест";
+}
+
+function pluralizeMinutes(count) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod10 === 1 && mod100 !== 11) return "минута";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return "минуты";
+  return "минут";
+}
+
+function approxMinutes(count) {
+  return `≈ ${count} ${pluralizeMinutes(count)}`;
 }
 
 function streakLine(sessions) {
@@ -1598,16 +1903,16 @@ async function showProfile() {
   const dashboard = document.createElement("section");
   dashboard.className = "dashboard-card dashboard-primary";
   const dashboardMetrics = [
-    metricHtml(summary.completedSteps ? "success" : "empty", "check", `${summary.completedSteps}/${summary.totalSteps}`, "шагов завершено"),
-    metricHtml(summary.theoryRead ? "info" : "empty", "book", `${summary.theoryRead}/${summary.totalModules}`, "материалов"),
-    metricHtml(summary.quizCompleted ? "next" : "empty", "quiz", `${summary.quizCompleted}/${summary.totalModules}`, "проверок"),
+    metricHtml(summary.completedStations ? "success" : "empty", "check", `${summary.completedStations}/${summary.totalStations}`, "станций завершено"),
+    metricHtml(summary.theoryRead ? "info" : "empty", "book", `${summary.theoryRead}/${summary.totalStations}`, "понять/применить"),
+    metricHtml(summary.quizCompleted ? "next" : "empty", "quiz", `${summary.quizCompleted}/${summary.totalStations}`, "проверок"),
   ];
   if (summary.quizCompleted) dashboardMetrics.push(metricHtml("success", "target", summary.averageScore, "средний лучший балл"));
   dashboard.innerHTML =
     `<div class="section-kicker">Где я</div>` +
     `<h2>Прогресс обучения</h2>` +
-    `<div class="course-map instrument-matrix profile-matrix" aria-label="Матрица прогресса по модулям: клик открывает модуль">${courseMapSegments(nextModule)}</div>` +
-    `<p class="matrix-explain">Каждая клетка — один из ${summary.totalModules} модулей. В каждом 3 шага: материал, проверка, итог — всего ${summary.totalSteps}.</p>` +
+    `<div class="course-map instrument-matrix profile-matrix" aria-label="Матрица прогресса по станциям: клик открывает станцию">${courseMapSegments(nextModule)}</div>` +
+    `<p class="matrix-explain">Каждая клетка — учебная станция. Станция закрыта после маршрута: понять, применить, проверить, закрепить.</p>` +
     progressActiveModuleHtml(nextModule, sessionPlan) +
     `<div class="metric-grid">` +
     dashboardMetrics.join("") +
@@ -1649,18 +1954,18 @@ async function showProfile() {
 
   const weak = document.createElement("section");
   weak.className = "dashboard-card";
-  weak.innerHTML = `<div class="section-kicker">Что улучшить</div><h2>Темы для закрепления</h2>`;
+    weak.innerHTML = `<div class="section-kicker">Memory</div><h2>Память слабых мест</h2>`;
   if (summary.weakModules.length) {
     const list = document.createElement("ol");
     list.className = "cabinet-list";
     for (const item of summary.weakModules) {
       const li = document.createElement("li");
-      li.innerHTML = `<strong>${item.id}</strong> ${escapeHtml(item.title)} <span class="muted">· ${item.count} ${pluralizeQuestions(item.count)}${item.topMistake ? ` · ${escapeHtml(item.topMistake.toLowerCase())}` : ""}</span>`;
+      li.innerHTML = `<strong>${item.id}</strong> ${escapeHtml(item.title)} <span class="muted">· ${item.count} ${pluralizeWeakSpots(item.count)}${item.topMistake ? ` · ${escapeHtml(item.topMistake.toLowerCase())}` : ""}</span>`;
       list.appendChild(li);
     }
     weak.appendChild(list);
   } else {
-    weak.innerHTML += `<p class="muted">Здесь появятся темы после завершённого теста, если в ответах были ошибки.</p>`;
+    weak.innerHTML += `<p class="muted">Здесь появятся слабые места после проверки: тип ошибки, объяснение и стратегия повторения.</p>`;
   }
 
   const takeaways = document.createElement("section");
@@ -1676,7 +1981,7 @@ async function showProfile() {
     }
     takeaways.appendChild(list);
   } else {
-    takeaways.innerHTML += `<p class="muted">Сохраните первый итог модуля, чтобы собрать здесь свои выводы.</p>`;
+    takeaways.innerHTML += `<p class="muted">Сохраните первый вывод станции, чтобы собрать здесь свою историю понимания.</p>`;
   }
 
   const actions = document.createElement("section");
@@ -1714,8 +2019,10 @@ function getProgressSummary() {
   const progress = loadProgress();
   const summary = {
     totalModules: modules.length,
+    totalStations: modules.length,
     totalSteps: modules.length * 3,
     completedSteps: 0,
+    completedStations: 0,
     coursePercent: 0,
     theoryRead: 0,
     quizCompleted: 0,
@@ -1733,21 +2040,29 @@ function getProgressSummary() {
   summary.retiredReviewTotal = reviewStats.retired;
   for (const mod of modules) {
     const pr = progress[mod.id] || {};
-    summary.completedSteps += moduleCompletionScore(mod);
+    const completionScore = moduleCompletionScore(mod);
+    summary.completedSteps += completionScore;
+    if (completionScore === 3) summary.completedStations++;
     if (pr.theoryRead) summary.theoryRead++;
     if (isQuizCompletedProgress(pr) && pr.quizTotal) {
       summary.quizCompleted++;
       ratioSum += pr.quizBest / pr.quizTotal;
     }
 
-    const reviewCount = isQuizCompletedProgress(pr) ? getModuleReviewItems(mod.id).length : 0;
+    const moduleReviewItems = isQuizCompletedProgress(pr) ? getModuleReviewItems(mod.id) : [];
+    const reviewCount = moduleReviewItems.length;
     const fallbackSpotCount = isQuizCompletedProgress(pr) ? Object.keys(pr.weakSpots || {}).length : 0;
     const count = reviewCount || fallbackSpotCount;
     const dueCount = getDueReviewCount(mod.id);
     if (count) {
       const mistakeFreq = {};
+      for (const item of moduleReviewItems) {
+        const label = weakSpotLearningCard(item).userLabel;
+        if (label) mistakeFreq[label] = (mistakeFreq[label] || 0) + 1;
+      }
       for (const spot of Object.values(pr.weakSpots || {})) {
-        if (spot?.mistakeType) mistakeFreq[spot.mistakeType] = (mistakeFreq[spot.mistakeType] || 0) + 1;
+        const label = spot?.userLabel || spot?.mistakeType;
+        if (label) mistakeFreq[label] = (mistakeFreq[label] || 0) + 1;
       }
       const topMistake = Object.entries(mistakeFreq).sort((a, b) => b[1] - a[1])[0]?.[0] || "";
       summary.weakSpotTotal += count;
@@ -1766,7 +2081,7 @@ function getProgressSummary() {
   if (summary.quizCompleted) {
     summary.averageScore = `${Math.round((ratioSum / summary.quizCompleted) * 100)}%`;
   }
-  summary.coursePercent = summary.totalSteps ? Math.round((summary.completedSteps / summary.totalSteps) * 100) : 0;
+  summary.coursePercent = summary.totalStations ? Math.round((summary.completedStations / summary.totalStations) * 100) : 0;
 
   summary.takeaways.sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
   summary.takeaways = summary.takeaways.slice(0, 5);
@@ -1805,7 +2120,7 @@ async function resetProgress() {
   else await showHome();
 }
 
-/* ---------- экран: модуль с вкладками ---------- */
+/* ---------- экран: учебная станция ---------- */
 
 async function showModule(mod) {
   resetReadingProgress();
@@ -1890,8 +2205,10 @@ function availableTabs(mod) {
 }
 
 function availableModuleTabItems(mod) {
-  const tabs = MODULE_ROUTE_TABS.filter((tab) => tab.files.some((file) => mod?.files?.[file] !== null));
-  if (mod && getVisibleWeakSpotCount(mod.id)) return [...tabs, { file: "__review__", label: "Закрепление", files: ["__review__"], icon: "review", tone: "review" }];
+  const tabs = MODULE_ROUTE_TABS
+    .filter((tab) => tab.files.some((file) => mod?.files?.[file] !== null))
+    .map((tab) => Object.assign({}, tab, { file: firstAvailableRouteFile(mod, tab) }));
+  if (mod && getVisibleWeakSpotCount(mod.id)) return [...tabs, { file: "__review__", label: "Память", files: ["__review__"], icon: "review", tone: "review" }];
   return tabs;
 }
 
@@ -1946,7 +2263,7 @@ async function goToLearningStep(step) {
 }
 
 function stepButtonText(prefix, step) {
-  if (step.kind === "module") return prefix === "Следующий модуль" ? `Открыть ${step.label}` : `Продолжить ${step.label}`;
+  if (step.kind === "module") return prefix === "Следующая станция" || prefix === "Следующий модуль" ? `Открыть ${step.label}` : `Продолжить ${step.label}`;
   if (step.kind === "home") return "Завершить курс";
   if (step.kind === "review") return "Открыть закрепление";
   if (step.kind === "action") return step.label;
@@ -1954,7 +2271,7 @@ function stepButtonText(prefix, step) {
     const tab = contentTabByFile(step.file);
     if (prefix === "Назад") return `Назад: ${tab.label}`;
     if (step.file === "quiz.md") return "Перейти к проверке";
-    if (step.file === "summary.md") return "Открыть итог";
+    if (step.file === "summary.md") return "Закрепить вывод";
     return `Перейти к ${tabTargetLabel(step.file)}`;
   }
   return step.label || prefix;
@@ -1962,9 +2279,9 @@ function stepButtonText(prefix, step) {
 
 function tabTargetLabel(file) {
   return {
-    "theory.md": "теории",
+    "theory.md": "главной мысли",
     "terms.md": "терминам",
-    "practice.md": "практике",
+    "practice.md": "примеру",
     "diagrams.md": "схемам",
   }[file] || contentTabByFile(file).label.toLowerCase();
 }
@@ -1995,7 +2312,7 @@ function appendModuleNavigation(mod, file, options = {}) {
 
   if (prev) actions.appendChild(createLearningStepButton(prev, "btn secondary compact lesson-nav-prev", "Назад"));
   if (review) actions.appendChild(createLearningStepButton(review, "btn secondary compact", "Открыть"));
-  if (next) actions.appendChild(createLearningStepButton(next, "btn compact lesson-nav-next", next.kind === "module" ? "Следующий модуль" : "Дальше"));
+  if (next) actions.appendChild(createLearningStepButton(next, "btn compact lesson-nav-next", next.kind === "module" ? "Следующая станция" : "Дальше"));
 
   nav.append(actions);
 
@@ -2003,7 +2320,7 @@ function appendModuleNavigation(mod, file, options = {}) {
     const sticky = createLearningStepButton(
       mobilePrimary,
       "module-next-sticky",
-      mobilePrimary.kind === "module" ? "Следующий модуль" : "Дальше",
+      mobilePrimary.kind === "module" ? "Следующая станция" : "Дальше",
     );
     nav.appendChild(sticky);
   }
@@ -2380,7 +2697,7 @@ function showMarkdown(mod, file) {
   if (isMaterialFile(file)) $screen.appendChild(MaterialSubnav(mod, file));
   $screen.appendChild(buildModuleReadingLayout(mod, file, div));
 
-  if (file === "theory.md") appendTheoryControls(mod, file);
+  if (shouldShowStationCompletionControls(mod, file)) appendTheoryControls(mod, file);
   if (file === "summary.md") appendSummaryControls(mod);
   appendModuleNavigation(mod, file);
 }
@@ -2388,14 +2705,15 @@ function showMarkdown(mod, file) {
 function MaterialSubnav(mod, activeFile) {
   const nav = document.createElement("nav");
   nav.className = "material-subnav";
-  setElementAttr(nav, "aria-label", "Блоки материала");
+  setElementAttr(nav, "aria-label", "Блоки учебной станции");
 
-  const materialTabs = availableMaterialTabs(mod);
+  const routeTab = moduleRouteTabForFile(activeFile);
+  const materialTabs = availableStationBlockTabs(mod, activeFile);
   const activeIndex = Math.max(0, materialTabs.findIndex((tab) => tab.file === activeFile));
 
   const label = document.createElement("div");
   label.className = "material-subnav-label";
-  label.textContent = `Материал · блок ${activeIndex + 1} из ${materialTabs.length}`;
+  label.textContent = `${routeTab.label} · блок ${activeIndex + 1} из ${materialTabs.length}`;
   nav.appendChild(label);
 
   for (const tab of materialTabs) {
@@ -2436,14 +2754,14 @@ function buildModuleSidePanel(mod, file, content) {
 
   const routeTab = moduleRouteTabForFile(file);
   const blockTab = contentTabByFile(file);
-  const materialTabs = availableMaterialTabs(mod);
+  const stationBlockTabs = availableStationBlockTabs(mod, file);
   const routeTabs = MODULE_ROUTE_TABS.filter((tab) => tab.files.some((routeFile) => mod?.files?.[routeFile] !== null));
   const currentRouteIndex = Math.max(0, routeTabs.findIndex((tab) => tab.files.includes(file)));
-  const currentBlockIndex = Math.max(0, materialTabs.findIndex((tab) => tab.file === file));
+  const currentBlockIndex = Math.max(0, stationBlockTabs.findIndex((tab) => tab.file === file));
   const visual = routeTab.icon ? routeTab : tabVisual(file);
   const stepText = isMaterialFile(file)
-    ? `Материал · блок ${currentBlockIndex + 1} из ${materialTabs.length}: ${blockTab.label}`
-    : `Шаг модуля ${currentRouteIndex + 1} из ${routeTabs.length}`;
+    ? `${routeTab.label} · блок ${currentBlockIndex + 1} из ${stationBlockTabs.length}: ${blockTab.label}`
+    : `Станция · шаг ${currentRouteIndex + 1} из ${routeTabs.length}`;
   aside.innerHTML =
     `<div class="side-head">` +
     `<span class="side-icon side-icon-${visual.tone}">${iconSvg(visual.icon, "side-icon-svg")}</span>` +
@@ -2480,7 +2798,7 @@ function buildModuleSidePanel(mod, file, content) {
 
   const next = adjacentLearningStep(mod, file, 1);
   if (next) {
-    const nextButton = createLearningStepButton(next, "side-next", next.kind === "module" ? "Следующий модуль" : "Дальше");
+    const nextButton = createLearningStepButton(next, "side-next", next.kind === "module" ? "Следующая станция" : "Дальше");
     aside.appendChild(nextButton);
   }
 
@@ -2539,12 +2857,12 @@ function appendTheoryControls(mod, file) {
   if (modProgress(mod.id).theoryRead) {
     const note = document.createElement("div");
     note.className = "done-note";
-    note.textContent = "✓ Прочитано";
+    note.textContent = "✓ Шаги «Понять» и «Применить» закрыты";
     controls.appendChild(note);
   } else {
     const btn = document.createElement("button");
     btn.className = "btn btn-with-icon";
-    setButtonContent(btn, "Отметить как прочитанное", "check");
+    setButtonContent(btn, "Завершить чтение и пример", "check");
     btn.onclick = runAsync(async () => {
       await setModProgress(mod.id, { theoryRead: true });
       await recordLearningActivity({ moduleStep: true });
@@ -2559,40 +2877,138 @@ function appendTheoryControls(mod, file) {
 function appendSummaryControls(mod) {
   const controls = document.createElement("section");
   controls.className = "study-card";
+  const progress = modProgress(mod.id);
+  const suggestedTakeaway = suggestedTakeawayFromSummary(mod);
+  let committedTakeaway = progress.takeaway || "";
+  let draftTakeaway = progress.takeawayDraft || "";
 
   const label = document.createElement("label");
   label.className = "takeaway-label";
-  label.textContent = "Главный вывод модуля";
+  label.textContent = "Вывод станции";
 
   const hint = document.createElement("p");
   hint.className = "takeaway-hint";
-  hint.textContent = "Сохранённый вывод закрывает шаг «Итог» и попадает в историю выводов.";
+  hint.textContent = "Вывод сохраняется в журнал автоматически. Можно отредактировать его своими словами.";
 
   const textarea = document.createElement("textarea");
   textarea.className = "takeaway-input";
   textarea.placeholder = "Запишите 1-3 фразы: что теперь понятно, что применить, что повторить.";
-  textarea.value = modProgress(mod.id).takeaway || "";
+  textarea.value = draftTakeaway || committedTakeaway || suggestedTakeaway;
 
-  const save = document.createElement("button");
-  save.className = "btn secondary btn-with-icon";
-  setButtonContent(save, "Сохранить вывод", "summary");
+  const continueBtn = document.createElement("button");
+  continueBtn.className = "btn btn-with-icon";
+  setButtonContent(continueBtn, "Продолжить", "arrow");
 
   const status = document.createElement("div");
   status.className = "save-status";
 
-  save.onclick = runAsync(async () => {
-    await setModProgress(mod.id, {
-      takeaway: textarea.value.trim(),
-      takeawayUpdatedAt: new Date().toISOString(),
-    });
-    await recordLearningActivity({ moduleStep: true });
-    status.textContent = "Вывод сохранён";
+  const setStatus = (message) => {
+    status.textContent = message;
     status.classList.remove("saved");
     void status.offsetWidth;
     status.classList.add("saved");
+  };
+
+  const commitTakeaway = async (value, options = {}) => {
+    const takeaway = String(value || "").trim();
+    if (!takeaway) return false;
+
+    const currentProgress = modProgress(mod.id);
+    const hadCommittedTakeaway = Boolean(currentProgress.takeaway || committedTakeaway);
+    const currentTakeaway = currentProgress.takeaway || committedTakeaway;
+    const currentDraft = currentProgress.takeawayDraft || draftTakeaway;
+
+    if (takeaway === currentTakeaway && !currentDraft) return true;
+
+    const now = new Date().toISOString();
+    const patch = {
+      takeaway,
+      takeawayDraft: "",
+      takeawayDraftUpdatedAt: "",
+    };
+    if (takeaway !== currentTakeaway || !currentProgress.takeawayUpdatedAt) {
+      patch.takeawayUpdatedAt = now;
+    }
+
+    await setModProgress(mod.id, patch);
+    committedTakeaway = takeaway;
+    draftTakeaway = "";
+    if (options.recordActivity && !hadCommittedTakeaway) {
+      await recordLearningActivity({ moduleStep: true });
+    }
+    return true;
+  };
+
+  const saveDraft = async (value) => {
+    const draft = String(value || "").trim();
+    if (!draft || draft === committedTakeaway) return false;
+    await setModProgress(mod.id, {
+      takeawayDraft: draft,
+      takeawayDraftUpdatedAt: new Date().toISOString(),
+    });
+    draftTakeaway = draft;
+    return true;
+  };
+
+  let draftTimer = null;
+  const refreshContinueState = () => {
+    continueBtn.disabled = !String(textarea.value || "").trim();
+  };
+
+  textarea.oninput = () => {
+    refreshContinueState();
+    if (draftTimer) clearTimeout(draftTimer);
+
+    const draft = String(textarea.value || "").trim();
+    if (!draft) {
+      setStatus("Пустой текст не заменяет вывод в журнале.");
+      return;
+    }
+
+    if (draft === committedTakeaway) {
+      setStatus("Вывод сохранён в журнале.");
+      return;
+    }
+
+    status.textContent = "Сохраняю правку как черновик...";
+    draftTimer = setTimeout(() => {
+      draftTimer = null;
+      void saveDraft(draft).then((saved) => {
+        if (saved) setStatus("Правка сохранена как черновик. Нажмите «Продолжить», чтобы обновить журнал.");
+      });
+    }, 500);
+  };
+
+  continueBtn.onclick = runAsync(async () => {
+    if (draftTimer) {
+      clearTimeout(draftTimer);
+      draftTimer = null;
+    }
+    const committed = await commitTakeaway(textarea.value, { recordActivity: true });
+    if (!committed) {
+      setStatus("Пустой текст не заменяет вывод в журнале.");
+      refreshContinueState();
+      return;
+    }
+    await goToLearningStep(adjacentLearningStep(mod, "summary.md", 1));
   });
 
-  controls.append(label, hint, textarea, save, status);
+  refreshContinueState();
+
+  if (committedTakeaway) {
+    status.textContent = draftTakeaway
+      ? "Есть сохранённая правка. Нажмите «Продолжить», чтобы обновить журнал."
+      : "Вывод сохранён в журнале.";
+  } else if (textarea.value.trim()) {
+    status.textContent = "Сохраняю вывод в журнал...";
+    void commitTakeaway(textarea.value, { recordActivity: true }).then((saved) => {
+      if (saved) setStatus("Вывод сохранён в журнале. Можно отредактировать своими словами.");
+    });
+  } else {
+    status.textContent = "Добавьте короткий вывод, чтобы закрыть станцию.";
+  }
+
+  controls.append(label, hint, textarea, continueBtn, status);
   $screen.appendChild(controls);
 }
 
@@ -2708,6 +3124,21 @@ function sessionHeader(plan, index, total, results) {
   );
 }
 
+function memoryLearningCardHtml(item, options = {}) {
+  const memory = weakSpotLearningCard(item);
+  const classes = ["memory-learning-note"];
+  if (options.compact) classes.push("is-compact");
+  return `<div class="${classes.join(" ")}" data-diagnostic-type="${escapeHtml(memory.diagnosticType)}">` +
+    `<div class="memory-learning-kicker">слабое место</div>` +
+    `<h3>${escapeHtml(memory.userLabel)}</h3>` +
+    `<p>${escapeHtml(memory.shortExplanation)}</p>` +
+    `<div class="memory-review-strategy">` +
+      `<span>Как тренируем</span>` +
+      `<strong>${escapeHtml(memory.reviewStrategy)}</strong>` +
+    `</div>` +
+  `</div>`;
+}
+
 function startSessionOrganism(root, mood = "focus") {
   cleanupHomeEffects();
   const mini = root.querySelector?.(".mini-organism");
@@ -2725,12 +3156,17 @@ async function startLearningSession(options = {}) {
   await refreshStorageCache();
   const nextModule = findNextModule();
   let plan = buildCurrentSessionPlan(nextModule, Boolean(options.reviewOnly));
+  plan = Object.assign({}, plan, {
+    reviews: plan.reviews.slice(0, TODAY_REVIEW_LIMIT),
+    estimatedMinutes: Math.max(3, Math.min(8, Math.min(plan.reviews.length, TODAY_REVIEW_LIMIT) + (plan.moduleStep ? 6 : 0))),
+  });
 
   if (Array.isArray(options.items)) {
     plan = Object.assign({}, plan, {
-      reviews: options.items.slice(0, reviewApi().DAILY_REVIEW_LIMIT),
+      reviews: options.items.slice(0, TODAY_REVIEW_LIMIT),
       reviewOnly: Boolean(options.reviewOnly),
       moduleStep: options.reviewOnly ? null : plan.moduleStep,
+      estimatedMinutes: Math.max(3, Math.min(8, Math.min(options.items.length, TODAY_REVIEW_LIMIT) + (options.reviewOnly ? 0 : 6))),
     });
   }
 
@@ -2754,7 +3190,7 @@ async function showReviewSession(plan) {
   $profile.classList.remove("active");
   $tabs.classList.add("hidden");
 
-  const items = plan.reviews.slice(0, reviewApi().DAILY_REVIEW_LIMIT);
+  const items = plan.reviews.slice(0, TODAY_REVIEW_LIMIT);
   const results = [];
   let index = 0;
 
@@ -2806,11 +3242,13 @@ async function showReviewSession(plan) {
     let answeredThisReview = false;
     card.className = "quiz-q session-question";
     card.innerHTML =
+      memoryLearningCardHtml(item, { compact: true }) +
       `<div class="weak-meta session-meta">` +
         `<span>${escapeHtml(mod?.id || item.moduleId)}</span>` +
         `<span>уровень: ${escapeHtml(item.level || "не указан")}</span>` +
         `<span>ошибок: ${escapeHtml(item.errors || 0)}</span>` +
       `</div>` +
+      `<div class="q-kicker">Тренировочный вопрос</div>` +
       `<div class="q-text">${renderMarkdownInline(question.text)}</div>`;
 
     const optButtons = [];
@@ -2863,12 +3301,14 @@ async function showReviewSession(plan) {
     let answeredThisConcept = false;
     card.className = "quiz-q session-question";
     card.innerHTML =
+      memoryLearningCardHtml(item, { compact: true }) +
       `<div class="weak-meta session-meta">` +
         `<span>${escapeHtml(mod?.id || item.moduleId)}</span>` +
         `<span>уровень: ${escapeHtml(item.level || "не указан")}</span>` +
         `<span>ошибок: ${escapeHtml(item.errors || 0)}</span>` +
       `</div>` +
-      `<div class="q-text">объясни себе: ${escapeHtml(item.text || item.mistakeType || "что здесь смешалось")}</div>`;
+      `<div class="q-kicker">Карточка памяти</div>` +
+      `<div class="q-text">объясните себе: ${escapeHtml(weakSpotLearningCard(item).shortExplanation || item.text || item.mistakeType || "что здесь смешалось")}</div>`;
 
     const remember = document.createElement("button");
     remember.className = "btn";
@@ -2921,7 +3361,7 @@ async function showReviewSession(plan) {
       `<div class="quiz-result">` +
         `<div class="score-label">Повторение завершено</div>` +
         `<div class="score">${right} / ${items.length}</div>` +
-        `<p>Повторили ${items.length} ${pluralizeQuestions(items.length)}. ${tomorrow} ${tomorrow === 1 ? "тема вернётся" : "тем вернутся"} завтра.</p>` +
+        `<p>Повторили ${items.length} ${pluralizeRepeats(items.length)}. ${tomorrow} ${tomorrow === 1 ? "слабое место вернётся" : "слабых мест вернутся"} завтра.</p>` +
       `</div>`;
     $screen.appendChild(wrap);
     startSessionOrganism(wrap, "glad");
@@ -2966,19 +3406,19 @@ function showQuizIntro(mod) {
     `<div>` +
     `<div class="section-kicker">${iconSvg("quiz", "kicker-icon")}<span>Проверка</span></div>` +
     `<h2>${escapeHtml(mod.id)} · Проверить понимание</h2>` +
-    `<p>Ответьте на вопросы модуля. Проверка засчитается после завершения всех ${questions.length} вопросов.</p>` +
+    `<p>Ответьте на вопросы станции. Проверка засчитается после завершения всех ${questions.length} вопросов.</p>` +
     `</div>` +
     `<div class="quiz-intro-mark" aria-hidden="true">${iconSvg("target", "quiz-intro-icon")}</div>` +
     `</div>` +
     `<div class="quiz-intro-metrics">` +
     metricHtml("next", "quiz", questions.length, `${pluralizeQuestions(questions.length)} всего`) +
-    metricHtml("info", "target", "5-8 мин", "обычно на модуль") +
+    metricHtml("info", "target", "5-8 мин", "обычно на станцию") +
     metricHtml("success", "check", "70%+", "ориентир прохождения") +
     `</div>` +
     safetyNoteHtml() +
     `<details class="quiz-rules"><summary>Как считается результат</summary>` +
     `<p>${gradedTotal} ${pluralizeQuestions(gradedTotal)} идут в автоматический балл. ${applicationTotal} ${pluralizeQuestions(applicationTotal)} используются для самопроверки и не снижают результат.</p>` +
-    `<p>Ошибки сохраняются как темы для закрепления после завершения теста.</p>` +
+    `<p>Ошибки сохраняются как слабые места и вернутся в короткой сессии памяти.</p>` +
     `</details>`;
 
   const start = document.createElement("button");
@@ -3215,10 +3655,10 @@ async function showQuiz(mod) {
       ? "Самопроверка завершена"
       : passed
         ? "Проверка пройдена"
-        : "Нужно повторить материал";
+        : "Нужно вернуться к слабым местам";
     const resultHint = weakCount
-      ? `Закрепите ${weakCount} ${pluralizeQuestions(weakCount)}, затем можно пройти проверку снова.`
-      : "Можно перейти к итогу модуля или пройти проверку снова.";
+      ? `Закрепите ${weakCount} ${pluralizeWeakSpots(weakCount)}, затем можно пройти проверку снова.`
+      : "Можно закрепить вывод станции или пройти проверку снова.";
 
     $screen.innerHTML = "";
     const div = document.createElement("div");
@@ -3230,7 +3670,7 @@ async function showQuiz(mod) {
       `<p class="muted">${escapeHtml(resultHint)}</p>` +
       safetyNoteHtml() +
       (applicationTotal ? `<p class="muted">Открытые вопросы: ${applicationTotal}. Они использованы для самопроверки и не входят в балл.</p>` : "") +
-      (weakCount ? `<p class="muted">Для закрепления сохранено: ${weakCount} ${pluralizeQuestions(weakCount)}.</p>` : "");
+      (weakCount ? `<p class="muted">Для закрепления сохранено: ${weakCount} ${pluralizeWeakSpots(weakCount)}.</p>` : "");
 
     if (weakCount) {
       const review = document.createElement("button");
@@ -3262,21 +3702,22 @@ function showWeakSpots(mod) {
   card.className = "review-card";
 
   if (!moduleItems.length) {
-    card.innerHTML = `<h2>Темы для закрепления</h2>${safetyNoteHtml()}<p>Сейчас нет тем для повторения.</p>`;
+    card.innerHTML = `<h2>Память слабых мест</h2>${safetyNoteHtml()}<p>Сейчас нет тем для повторения.</p>`;
     $screen.appendChild(card);
     return;
   }
 
   card.innerHTML =
-    `<h2>Темы для закрепления</h2>` +
+    `<div class="section-kicker">${iconSvg("review", "kicker-icon")}<span>Memory</span></div>` +
+    `<h2>Память слабых мест</h2>` +
     safetyNoteHtml() +
-    `<p class="muted">Сегодня повторяем темы, которые пора освежить. Остальные вернутся позже.</p>`;
+    `<p class="muted">Здесь хранятся не просто пропущенные вопросы, а типы непонимания: что смешалось, почему это важно и как это тренировать.</p>`;
 
-  const due = grouped.today.slice(0, reviewApi().DAILY_REVIEW_LIMIT);
+  const due = grouped.today.slice(0, TODAY_REVIEW_LIMIT);
   if (due.length) {
     const start = document.createElement("button");
     start.className = "btn btn-with-icon";
-    setButtonContent(start, "Закрепить сейчас", "arrow");
+    setButtonContent(start, `Начать короткую сессию памяти (${due.length})`, "arrow");
     start.onclick = runAsync(() => startLearningSession({ reviewOnly: true, items: due }));
     card.appendChild(start);
   }
@@ -3294,21 +3735,30 @@ function showWeakSpots(mod) {
     list.className = "weak-list";
     for (const item of items) {
       const li = document.createElement("article");
+      const memory = weakSpotLearningCard(item);
       li.className = `weak-card ${item.retired ? "is-retired" : item.due <= todayISO() ? "is-due" : ""}`;
       const levelKey = item.levelKey || conceptLevelFromText(item.text).key;
-      const number = item.questionNumber ? `Q${item.questionNumber}` : item.kind;
+      const number = item.questionNumber ? `источник Q${item.questionNumber}` : item.kind;
       li.innerHTML =
         `<div class="weak-card-head">` +
           `<span>${escapeHtml(number)}</span>` +
-          `<strong>${escapeHtml(item.mistakeType || "Смешение уровней анализа")}</strong>` +
+          `<strong>${escapeHtml(memory.userLabel)}</strong>` +
         `</div>` +
-        `<p>${escapeHtml(item.text)}</p>` +
+        `<p class="weak-explain">${escapeHtml(memory.shortExplanation)}</p>` +
+        `<div class="weak-review-strategy">` +
+          `<span>Как тренируем</span>` +
+          `<strong>${escapeHtml(memory.reviewStrategy)}</strong>` +
+        `</div>` +
         ConceptTrail(levelKey, { compact: true, className: "weak-concept-trail" }) +
         `<div class="weak-meta">` +
-          `<span>уровень: ${escapeHtml(item.level || conceptLevelFromText(item.text).label)}</span>` +
+          `<span>диагноз: ${escapeHtml(memory.diagnosticType)}</span>` +
+          `<span>уровень: ${escapeHtml(memory.level)}</span>` +
           `<span>ошибок: ${escapeHtml(item.errors || 0)}</span>` +
           `<span>${item.retired ? "усвоено" : `вернётся ${formatShortDate(item.due)}`}</span>` +
-        `</div>`;
+        `</div>` +
+        (memory.sourceText
+          ? `<details class="weak-source-question"><summary>Исходный вопрос</summary><p>${escapeHtml(memory.sourceText)}</p></details>`
+          : "");
       list.appendChild(li);
     }
     section.appendChild(list);
@@ -3328,7 +3778,7 @@ function showWeakSpots(mod) {
   clear.className = "btn secondary danger";
   clear.textContent = "Очистить список";
   clear.onclick = runAsync(async () => {
-    if (!confirm("Очистить слабые места этого модуля?")) return;
+    if (!confirm("Очистить слабые места этой станции?")) return;
     const mp = Object.assign({}, modProgress(mod.id), { weakSpots: {} });
     await replaceModProgress(mod.id, mp);
     const review = loadReviewState();
@@ -3421,7 +3871,7 @@ if (window.addEventListener) window.addEventListener("resize", updateTabsOverflo
 configureMarkedSecurity();
 
 (async function init() {
-  $screen.innerHTML = `<div class="loading">Загрузка модулей…</div>`;
+  $screen.innerHTML = `<div class="loading">Загрузка станций…</div>`;
   try {
     await storageApi().init();
     await withTimeoutFallback(storageApi().migrateFromLocalStorage(), MIGRATION_TIMEOUT_MS, null, "legacy localStorage migration");

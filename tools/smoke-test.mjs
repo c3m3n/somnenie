@@ -242,10 +242,19 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function elementTreeText(element) {
+  if (!element) return "";
+  return [
+    element.textContent || "",
+    element.innerHTML || "",
+    ...((element.children || []).map(elementTreeText)),
+  ].join(" ");
+}
+
 async function waitUntil(predicate, message, timeoutMs = 3000) {
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
-    if (predicate()) return;
+    if (await predicate()) return;
     await new Promise((resolve) => setTimeout(resolve, 25));
   }
   throw new Error(message);
@@ -366,26 +375,28 @@ const title = elementsById.get("title");
 const storage = context.window.NutrioStorage;
 
 await waitUntil(
-  () => title.textContent === "Нутрициология" && screen.children.some((child) => child.className === "module-card"),
+  () => title.textContent === "Сегодня" && screen.children.some((child) => child.className.includes("today-screen")),
   "Home screen did not finish rendering",
 );
 
-assert(title.textContent === "Нутрициология", "Home title did not render");
-assert(screen.children[0].className === "intro-card", "Intro card is missing");
+assert(title.textContent === "Сегодня", "Today title did not render");
+assert(screen.children[0].className.includes("intro-card"), "Intro card is missing");
+assert(screen.children[0].className.includes("today-screen"), "Today screen container is missing");
 assert(screen.children[0].innerHTML.includes("next-step-card"), "Home should lead with the next learning step");
+assert(screen.children[0].innerHTML.includes("today-card"), "Today should render the next act as the primary card");
 assert(screen.children[0].innerHTML.includes("safety-note"), "Home should expose the medical safety boundary");
 assert(!screen.children[0].innerHTML.includes("hero-visual"), "Home should not lead with a decorative hero visual");
 assert(screen.children[0].innerHTML.includes("course-map-segment"), "Home should expose a segmented course map");
 const initialHomeActions = screen.children[0].children.find((child) => child.className === "home-actions");
 assert(initialHomeActions, "Home actions are missing");
 assert(initialHomeActions.children.length === 1, "Home should expose exactly one primary learning action");
-assert(initialHomeActions.children[0].textContent === "начать M01 ▸", "New learner CTA should name the next module");
+assert(initialHomeActions.children[0].textContent === "Начать", "Today CTA should expose one direct action");
 
 let appState = await storage.getAppState();
 assert(appState.schemaVersion === 2, "Storage appState should use schema v2");
 assert(appState.review.courseId === "nutrition", "Review state should carry the nutrition course id");
 assert(appState.sessions.courseId === "nutrition", "Session state should carry the nutrition course id");
-assert(screen.children[0].innerHTML.includes("шагов курса"), "Home should explain course progress as learning steps");
+assert(screen.children[0].innerHTML.includes("учебных станций"), "Home should explain progress as completed stations");
 assert(screen.children[0].innerHTML.includes("map-legend"), "Home course map should explain its states with a legend");
 assert(screen.children[0].innerHTML.includes("SOMNENIE"), "Home statusbar should carry the platform brand, not the course");
 assert(!screen.children[0].innerHTML.includes("NUTRIO"), "Old NUTRIO brand should not remain on home");
@@ -394,9 +405,18 @@ assert(!screen.children[0].innerHTML.includes("Экспорт прогресса
 assert(!screen.children[0].innerHTML.includes("Сбросить прогресс"), "Home should not expose reset action");
 assert(!screen.children[0].innerHTML.includes("Открыть кабинет"), "Home should not duplicate progress action");
 const homeModuleCards = screen.children.filter((child) => child.className === "module-card");
-assert(homeModuleCards.length === 24, `Expected 24 module cards, got ${homeModuleCards.length}`);
+assert(homeModuleCards.length === 0, "Today should not expose the course catalog as module cards");
 const homePhaseHeaders = screen.children.filter((child) => child.className === "phase-header");
-assert(homePhaseHeaders.length === 6, `Expected 6 phase headers, got ${homePhaseHeaders.length}`);
+assert(homePhaseHeaders.length === 0, "Today should not expose phase headers as the main navigation");
+assert(typeof context.showAtlas === "function", "Atlas screen function should be available");
+await context.showAtlas();
+assert(title.textContent === "Карта курса", "Atlas screen did not open");
+const atlasModuleCards = screen.children.filter((child) => child.className === "module-card");
+assert(atlasModuleCards.length === 24, `Expected 24 module cards in Atlas, got ${atlasModuleCards.length}`);
+const atlasPhaseHeaders = screen.children.filter((child) => child.className === "phase-header");
+assert(atlasPhaseHeaders.length === 6, `Expected 6 phase headers in Atlas, got ${atlasPhaseHeaders.length}`);
+await elementsById.get("back-btn").onclick();
+assert(title.textContent === "Сегодня", "Back from Atlas did not return Today");
 assert(fetchLog.includes("content/manifest.json"), "App should load content/manifest.json");
 assert(!fetchLog.some((url) => /content[\\/]M(2[5-9]|[3-5][0-9]|60)[\\/]theory\.md/.test(url)), "App should not probe missing M25-M60 theory files");
 
@@ -420,7 +440,7 @@ assert(title.textContent === "Прогресс обучения", "Progress scre
 const profileCard = screen.children.find((child) => child.className === "profile-card");
 assert(profileCard, "Profile card is missing");
 const profileDashboardIndex = screen.children.findIndex((child) => child.className.includes("dashboard-card") && child.innerHTML.includes("Прогресс"));
-const profileReviewIndex = screen.children.findIndex((child) => child.className.includes("dashboard-card") && child.innerHTML.includes("Темы для закрепления"));
+const profileReviewIndex = screen.children.findIndex((child) => child.className.includes("dashboard-card") && child.innerHTML.includes("Память слабых мест"));
 const profileTakeawaysIndex = screen.children.findIndex((child) => child.className.includes("dashboard-card") && child.innerHTML.includes("История выводов"));
 const profilePhasesIndex = screen.children.findIndex((child) => child.className.includes("dashboard-card") && child.innerHTML.includes("Прогресс по фазам"));
 const profileCardIndex = screen.children.findIndex((child) => child === profileCard);
@@ -455,20 +475,22 @@ assert(profile.name === "Test Learner", "Profile name was not saved");
 assert(profile.level === "familiar", "Profile level was not saved");
 
 await elementsById.get("back-btn").onclick();
-assert(title.textContent === "Нутрициология", "Back from profile did not return home");
+assert(title.textContent === "Сегодня", "Back from profile did not return Today");
 
+await context.showAtlas();
 const firstModuleCard = screen.children.find((child) => child.className === "module-card");
 await firstModuleCard.onclick();
 
 assert(title.textContent === "M01", "Module header should use a compact module id");
 const tabButtons = tabs.children.filter((child) => child.tagName === "button" && child.dataset.file);
 const mobileTabSelect = tabs.children.find((child) => child.tagName === "select" && child.className === "mobile-tab-select");
-assert(tabButtons.length === 3, `Expected 3 route buttons before weak-spot review exists, got ${tabButtons.length}`);
+assert(tabButtons.length === 4, `Expected 4 station route buttons before weak-spot review exists, got ${tabButtons.length}`);
 assert(tabButtons.some((child) => child.innerHTML.includes("tab-icon")), "Study tabs should expose activity icons");
 assert(!mobileTabSelect, "Mobile module navigation should not use a hidden route select");
-assert(tabButtons.map((child) => child.textContent).join("|") === "Материал|Проверка|Итог", "Module route should use Material, Check, Summary");
-assert(screen.children.some((child) => child.className === "study-card"), "Study controls are missing on theory tab");
+assert(tabButtons.map((child) => child.textContent).join("|") === "Понять|Применить|Проверить|Закрепить", "Station route should use Understand, Apply, Check, Anchor");
+assert(!screen.children.some((child) => child.className === "study-card"), "Theory should not close station progress on the first block");
 assert(screen.children.some((child) => child.className === "material-subnav"), "Material blocks should render local navigation");
+assert(screen.children.some((child) => child.className === "material-subnav" && child.children.filter((tab) => tab.dataset.file).map((tab) => tab.dataset.file).join("|") === "theory.md|terms.md"), "Understand step should only expose theory and terms blocks");
 
 let lessonNav = screen.children.filter((child) => child.className === "lesson-nav").at(-1);
 assert(lessonNav, "Theory tab should render bottom lesson navigation");
@@ -476,18 +498,33 @@ let navActions = lessonNav.children.find((child) => child.className === "lesson-
 const theoryNext = navActions.children.find((child) => child.className.includes("lesson-nav-next"));
 assert(theoryNext?.textContent === "Перейти к терминам", "Theory next action should lead to terms");
 await theoryNext.onclick();
-assert(tabs.children.some((child) => child.dataset.file === "theory.md" && child.classList.contains("active")), "Top route should keep Material active for terms");
+assert(tabs.children.some((child) => child.dataset.file === "theory.md" && child.classList.contains("active")), "Top route should keep Understand active for terms");
 assert(screen.children.some((child) => child.className === "material-subnav" && child.children.some((tab) => tab.dataset.file === "terms.md" && tab.classList.contains("active"))), "Material subnav should open the terms block");
 
 lessonNav = screen.children.filter((child) => child.className === "lesson-nav").at(-1);
 navActions = lessonNav.children.find((child) => child.className === "lesson-nav-actions");
 const termsPrev = navActions.children.find((child) => child.className.includes("lesson-nav-prev"));
-assert(termsPrev?.textContent === "Назад: Теория", "Terms tab should offer a route back to theory");
+assert(termsPrev?.textContent === "Назад: Главная мысль", "Terms tab should offer a route back to the key idea");
 await termsPrev.onclick();
 assert(tabs.children.some((child) => child.dataset.file === "theory.md" && child.classList.contains("active")), "Bottom navigation should return to theory");
 
-const theoryStudyCard = screen.children.find((child) => child.className === "study-card");
-assert(!theoryStudyCard.children.some((child) => child.tagName === "textarea"), "Takeaway input should not live on the theory screen");
+await theoryNext.onclick();
+lessonNav = screen.children.filter((child) => child.className === "lesson-nav").at(-1);
+navActions = lessonNav.children.find((child) => child.className === "lesson-nav-actions");
+const termsNext = navActions.children.find((child) => child.className.includes("lesson-nav-next"));
+assert(termsNext?.textContent === "Перейти к примеру", "Terms should lead into the Apply step");
+await termsNext.onclick();
+assert(tabs.children.some((child) => child.dataset.file === "practice.md" && child.classList.contains("active")), "Top route should switch to Apply for practice");
+assert(screen.children.some((child) => child.className === "material-subnav" && child.children.filter((tab) => tab.dataset.file).map((tab) => tab.dataset.file).join("|") === "practice.md|diagrams.md"), "Apply step should only expose practice and diagrams blocks");
+
+lessonNav = screen.children.filter((child) => child.className === "lesson-nav").at(-1);
+navActions = lessonNav.children.find((child) => child.className === "lesson-nav-actions");
+const practiceNext = navActions.children.find((child) => child.className.includes("lesson-nav-next"));
+assert(practiceNext?.textContent === "Перейти к схемам", "Practice should lead to diagrams before check");
+await practiceNext.onclick();
+const materialStudyCard = screen.children.find((child) => child.className === "study-card");
+assert(materialStudyCard, "Completion controls should appear on the last material block");
+assert(!materialStudyCard.children.some((child) => child.tagName === "textarea"), "Takeaway input should not live on the material screen");
 
 const summaryTab = tabs.children.find((child) => child.dataset.file === "summary.md");
 await summaryTab.onclick();
@@ -495,12 +532,44 @@ const summaryStudyCard = screen.children.filter((child) => child.className === "
 assert(summaryStudyCard, "Summary step should host the takeaway controls");
 const takeawayInput = summaryStudyCard.children.find((child) => child.tagName === "textarea");
 assert(takeawayInput, "Summary step should expose the takeaway input");
-const saveTakeaway = summaryStudyCard.children.find((child) => child.textContent === "Сохранить вывод");
-takeawayInput.value = "Проверочный вывод";
-await saveTakeaway.onclick();
+assert(!summaryStudyCard.children.some((child) => child.textContent === "Сохранить вывод"), "Summary should not require a manual save button");
+const continueAfterTakeaway = summaryStudyCard.children.find((child) => child.textContent === "Продолжить");
+assert(continueAfterTakeaway, "Summary should expose a continue CTA");
+
+await waitUntil(async () => {
+  const savedProgress = await storage.getAllProgress();
+  return Boolean(savedProgress.M01?.takeaway);
+}, "Summary takeaway was not auto-saved");
 
 let progress = await storage.getAllProgress();
+const autoTakeaway = progress.M01.takeaway;
+takeawayInput.value = "";
+takeawayInput.oninput?.();
+await new Promise((resolve) => setTimeout(resolve, 550));
+progress = await storage.getAllProgress();
+assert(progress.M01.takeaway === autoTakeaway, "Empty draft should not erase the saved takeaway");
+
+takeawayInput.value = "Проверочный вывод";
+takeawayInput.oninput?.();
+await waitUntil(async () => {
+  const draftProgress = await storage.getAllProgress();
+  return draftProgress.M01?.takeawayDraft === "Проверочный вывод";
+}, "Takeaway draft was not auto-saved");
+
+progress = await storage.getAllProgress();
+assert(progress.M01.takeaway === autoTakeaway, "Draft should not replace the journal takeaway before continue");
+await continueAfterTakeaway.onclick();
+await waitUntil(async () => {
+  const committedProgress = await storage.getAllProgress();
+  return committedProgress.M01?.takeaway === "Проверочный вывод";
+}, "Edited takeaway was not committed");
+
+progress = await storage.getAllProgress();
 assert(progress.M01.takeaway === "Проверочный вывод", "Takeaway was not saved");
+
+await context.showAtlas();
+const firstModuleCardForQuiz = screen.children.find((child) => child.className === "module-card");
+await firstModuleCardForQuiz.onclick();
 
 const quizMd = await fs.readFile(path.join(projectRoot, "content", "M01", "quiz.md"), "utf8");
 const parsedQuestions = context.parseQuiz(quizMd);
@@ -516,7 +585,7 @@ assert(quizIntro, "Quiz intro did not render");
 assert(quizIntro.innerHTML.includes("safety-note"), "Quiz intro should expose the medical safety boundary");
 assert(quizIntro.innerHTML.includes("7") && quizIntro.innerHTML.includes("автоматический балл"), "Quiz intro should explain scored questions");
 assert(quizIntro.innerHTML.includes("3") && quizIntro.innerHTML.includes("самопроверки"), "Quiz intro should explain self-check questions");
-assert(quizIntro.innerHTML.includes("закрепления"), "Quiz intro should explain reinforcement routing");
+assert(quizIntro.innerHTML.includes("слабые места") && quizIntro.innerHTML.includes("памяти"), "Quiz intro should explain weak-spot memory routing");
 assert(quizIntro.innerHTML.includes("70%") && quizIntro.innerHTML.includes("5-8 мин"), "Quiz intro should explain success criteria and expected duration");
 assert(!screen.children.some((child) => child.className === "quiz-q"), "Quiz should not start before the intro button");
 lessonNav = screen.children.filter((child) => child.className === "lesson-nav").at(-1);
@@ -544,28 +613,66 @@ assert(appState.review.items.filter((item) => item.id === "M01-q1").length === 1
 assert(reviewItem, "Wrong answer should create an SRS review item");
 assert(reviewItem.courseId === "nutrition", "Review item should carry courseId");
 assert(reviewItem.interval === 1 && reviewItem.lastResult === "wrong", "Wrong answer should schedule the signal for tomorrow");
+assert(reviewItem.diagnosticType, "Review item should carry an internal diagnostic type");
+assert(reviewItem.userLabel, "Review item should carry a human-readable weak spot label");
+assert(reviewItem.shortExplanation, "Review item should carry a short weak spot explanation");
+assert(reviewItem.reviewStrategy, "Review item should carry a weak spot review strategy");
 
 await elementsById.get("back-btn").onclick();
 assert(!screen.children.find((child) => child.className === "home-review"), "Home should not show reinforcement before the quiz is complete");
 
-await storage.saveModuleProgress("M01", {
+assert(typeof context.setModProgress === "function", "setModProgress helper should be available in smoke context");
+await context.setModProgress("M01", {
+  theoryRead: true,
+  takeaway: "Проверочный вывод",
+  takeawayUpdatedAt: "2026-06-10T12:00:00.000Z",
+  weakSpots: {
+    1: {
+      number: 1,
+      text: "Проверочное слабое место",
+      level: "Базовое различение",
+      levelKey: "concept",
+      mistakeType: "Смешение уровней анализа",
+      diagnosticType: "смешение_уровней_анализа",
+      userLabel: "Смешение уровней анализа",
+      shortExplanation: "Сначала определить уровень вопроса, затем делать вывод.",
+      reviewStrategy: "Ответить на новый вопрос с тем же типом рассуждения.",
+      misses: 1,
+      updatedAt: "2026-06-10T12:00:00.000Z",
+    },
+  },
   quizAttemptStatus: "complete",
   quizBest: 0,
   quizTotal: 7,
   quizOpenTotal: 3,
   quizVersion: 2,
 });
+const forcedProgress = await storage.getAllProgress();
+assert(forcedProgress.M01?.theoryRead === true, `Forced M01 progress was not saved: ${JSON.stringify(forcedProgress.M01 || null)}`);
 await context.showHome();
-const homeReview = screen.children.find((child) => child.className === "home-review");
-assert(homeReview, "Home should show review block when weak spots exist");
-const reviewList = homeReview.children.find((child) => child.className === "review-module-list");
-assert(reviewList?.children.length === 1, "Home review block should list the weak module");
-const reviewButton = reviewList.children[0];
-assert(reviewButton.innerHTML.includes("M01"), "Home review block should identify the weak module");
+assert(!screen.children.find((child) => child.className === "home-review"), "Today should not become a review dashboard after quiz completion");
+assert(
+  screen.children[0].innerHTML.includes("M01.1"),
+  `Today should keep the user in the unfinished station loop: ${screen.children[0].innerHTML.slice(0, 500)}`,
+);
+await context.showAtlas();
+const reviewButton = screen.children
+  .filter((child) => child.className === "module-card" && child.innerHTML.includes("M01"))
+  .at(-1);
+assert(reviewButton, "Atlas should still expose modules with weak spots");
+assert(reviewButton.innerHTML.includes("M01"), "Atlas review module should identify the weak module");
+assert(reviewButton.innerHTML.includes("закрепить"), `Atlas should mark the weak module for reinforcement: ${reviewButton.innerHTML}`);
 await reviewButton.onclick();
 assert(title.textContent === "M01", "Review shortcut should open the module");
-assert(tabs.children.some((child) => child.dataset.file === "__review__" && child.classList.contains("active")), "Review shortcut should open the review tab");
-assert(screen.children.some((child) => child.className === "review-card" && child.innerHTML.includes("Темы для закрепления")), "Review screen should use reinforcement terminology");
+const reviewTab = tabs.children.find((child) => child.dataset.file === "__review__");
+assert(reviewTab, "Module with weak spots should expose the review tab");
+await reviewTab.onclick();
+assert(tabs.children.some((child) => child.dataset.file === "__review__" && child.classList.contains("active")), "Review tab should open the review screen");
+const memoryScreen = screen.children.find((child) => child.className === "review-card");
+const memoryScreenText = elementTreeText(memoryScreen);
+assert(memoryScreenText.includes("Память слабых мест"), "Review screen should use weak-spot memory terminology");
+assert(memoryScreenText.includes("Как тренируем"), "Memory screen should explain the review strategy");
+assert(memoryScreenText.includes("Исходный вопрос"), "Memory screen should keep the original question as source context");
 
 await context.exportProgress();
 assert(lastAppendedElement?.download?.startsWith("nutrio-data-"), "Export filename should start with nutrio-data-");
@@ -608,11 +715,11 @@ for (let i = 1; i <= 24; i++) {
   });
 }
 await context.showHome();
-const completedIntros = screen.children.filter((child) => child.className === "intro-card");
+const completedIntros = screen.children.filter((child) => child.className.includes("today-screen"));
 const completedIntro = completedIntros[completedIntros.length - 1];
 const completedActions = completedIntro.children.find((child) => child.className === "home-actions");
-assert(completedActions.children.length === 1, "Completed course should show one completion state");
-assert(completedActions.children[0].className === "course-complete", "Completed course should not show a stale primary CTA");
+assert(completedActions.children.length === 1, "Completed course should still show one recommended action");
+assert(completedActions.children[0].textContent === "Открыть журнал", "Completed course should route to a supporting mode, not a stale learning CTA");
 assert(!completedIntro.innerHTML.includes("%%"), "Average score should not render a double percent sign");
 
 const maliciousMarkdown = `<script>alert(1)</script><img src=x onerror=alert(1)>[bad](javascript:alert(1))<span onclick=alert(1)>x</span>`;

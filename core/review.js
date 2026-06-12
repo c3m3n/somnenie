@@ -49,6 +49,15 @@
     return Number.isFinite(n) ? n : fallback;
   }
 
+  function diagnosticTypeFrom(value) {
+    const clean = String(value || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9а-яё]+/gi, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 80);
+    return clean || "mixed_reasoning";
+  }
+
   function normalizeReviewState(review, today = toISODate()) {
     const source = review && typeof review === "object" && !Array.isArray(review) ? review : {};
     return {
@@ -77,6 +86,11 @@
       level: item.level || null,
       levelKey: item.levelKey || null,
       mistakeType: item.mistakeType || "Смешение уровней анализа",
+      diagnosticType: item.diagnosticType || diagnosticTypeFrom(item.mistakeType || item.userLabel),
+      userLabel: item.userLabel || item.mistakeType || "Смешение уровней анализа",
+      shortExplanation: item.shortExplanation || item.repair || "",
+      reviewStrategy: item.reviewStrategy || "",
+      repair: item.repair || item.shortExplanation || "",
       errors: Math.max(0, numberOr(item.errors ?? item.misses, 0)),
       streak: Math.max(0, numberOr(item.streak, 0)),
       due: item.retired ? null : (item.due || today),
@@ -106,6 +120,8 @@
     const id = payload.id || questionReviewId(moduleId, questionNumber);
     const index = state.items.findIndex((item) => item.id === id && item.courseId === COURSE_ID);
     const previous = index >= 0 ? state.items[index] : {};
+    const mistakeType = diagnosis.mistakeType || payload.mistakeType || previous.mistakeType || "Смешение уровней анализа";
+    const repair = diagnosis.repair || payload.repair || previous.repair || previous.shortExplanation || "";
     const item = {
       id,
       courseId: COURSE_ID,
@@ -115,7 +131,12 @@
       text: String(payload.text || question.text || previous.text || "").slice(0, 320),
       level: diagnosis.level?.label || payload.level || previous.level || null,
       levelKey: diagnosis.level?.key || payload.levelKey || previous.levelKey || null,
-      mistakeType: diagnosis.mistakeType || payload.mistakeType || previous.mistakeType || "Смешение уровней анализа",
+      mistakeType,
+      diagnosticType: payload.diagnosticType || previous.diagnosticType || diagnosticTypeFrom(mistakeType),
+      userLabel: payload.userLabel || previous.userLabel || mistakeType,
+      shortExplanation: payload.shortExplanation || previous.shortExplanation || repair,
+      reviewStrategy: payload.reviewStrategy || previous.reviewStrategy || "Ответить на новый вопрос с тем же типом рассуждения.",
+      repair,
       errors: Math.max(0, numberOr(previous.errors, 0)) + 1,
       streak: 0,
       due: addDaysISO(today, 1),
@@ -143,6 +164,11 @@
       level: spot?.level || null,
       levelKey: spot?.levelKey || null,
       mistakeType: spot?.mistakeType || "Смешение уровней анализа",
+      diagnosticType: spot?.diagnosticType || diagnosticTypeFrom(spot?.mistakeType),
+      userLabel: spot?.userLabel || spot?.mistakeType || "Смешение уровней анализа",
+      shortExplanation: spot?.shortExplanation || spot?.repair || "",
+      reviewStrategy: spot?.reviewStrategy || "Ответить на новый вопрос с тем же типом рассуждения.",
+      repair: spot?.repair || spot?.shortExplanation || "",
       errors: Math.max(1, numberOr(spot?.errors ?? spot?.misses, 1)),
       streak: 0,
       due: today,
@@ -331,6 +357,7 @@
     daysBetweenISO,
     normalizeReviewState,
     normalizeReviewItem,
+    diagnosticTypeFrom,
     questionReviewId,
     conceptReviewId,
     upsertWrongQuestion,
