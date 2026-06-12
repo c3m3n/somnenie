@@ -379,6 +379,160 @@
       "url": "https://www.nccih.nih.gov/health/weight-control",
       "jurisdiction": "US/NCCIH",
       "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "WHO_FREE_SUGARS_2015",
+      "title": "WHO — Free sugars intake (ELENA)",
+      "url": "https://www.who.int/tools/elena/interventions/free-sugars-adults-ncds",
+      "jurisdiction": "WHO/global",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "FDA_ADDED_SUGARS",
+      "title": "FDA — Added Sugars on the Nutrition Facts Label",
+      "url": "https://www.fda.gov/food/nutrition-facts-label/added-sugars-nutrition-facts-label",
+      "jurisdiction": "US/FDA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "WHO_TOTAL_FAT_2023",
+      "title": "WHO — Total fat intake guideline (2023)",
+      "url": "https://www.who.int/publications/i/item/9789240073654",
+      "jurisdiction": "WHO/global",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "AHA_FATS",
+      "title": "American Heart Association — Fats in Foods",
+      "url": "https://www.heart.org/en/healthy-living/healthy-eating/eat-smart/fats/fats-in-foods",
+      "jurisdiction": "US/AHA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NASEM_WATER_2005",
+      "title": "National Academies — Dietary Reference Intakes for Water",
+      "url": "https://www.nationalacademies.org/read/10925/chapter/6",
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "ACADEMY_RMR",
+      "title": "Academy of Nutrition and Dietetics — Determination of Resting Metabolic Rate",
+      "url": "https://www.andeal.org/template.cfm?key=621",
+      "jurisdiction": "US/Academy",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "MIFFLIN_STJEOR_1990",
+      "title": "Mifflin et al. — A new predictive equation for resting energy expenditure",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/2305711/",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "MORTON_PROTEIN_2018",
+      "title": "Morton et al. — Protein supplementation and resistance training meta-analysis",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/28615996/",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "KETO_LOWCARB_LONGTERM_2024",
+      "title": "Frontiers in Nutrition — Low-carb vs low-fat long-term weight outcomes",
+      "url": "https://www.frontiersin.org/journals/nutrition/articles/10.3389/fnut.2024.1516086/full",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "IF_VS_CR_BMJ_2025",
+      "title": "BMJ (2025) — Intermittent fasting versus continuous calorie restriction",
+      "url": "https://www.bmj.com/content/389/bmj-2024-082007",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "AGA_PROBIOTICS_2020",
+      "title": "American Gastroenterological Association — Probiotics guideline",
+      "url": "https://gastro.org/news/aga-does-not-recommend-the-use-of-probiotics-for-most-digestive-conditions-2/",
+      "jurisdiction": "US/AGA clinical guideline",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "ISAPP_DEFINITIONS",
+      "title": "ISAPP — Consensus definitions (probiotics, prebiotics, postbiotics, fermented foods)",
+      "url": "https://isappscience.org/a-roundup-of-the-isapp-consensus-definitions-probiotics-prebiotics-synbiotics-postbiotics-and-fermented-foods/",
+      "jurisdiction": "scientific consensus",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "PROTEIN_SATIETY_META_2020",
+      "title": "Protein consumption and satiety — meta-analysis",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/32768415/",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "STATPEARLS_APPETITE",
+      "title": "StatPearls — Physiology, Appetite and Weight Regulation",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK574539/",
+      "jurisdiction": "physiology reference",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIDDK_DIGESTION",
+      "title": "NIDDK — Your Digestive System & How it Works",
+      "url": "https://www.niddk.nih.gov/health-information/digestive-diseases/digestive-system-how-it-works",
+      "jurisdiction": "US/NIDDK",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "STATPEARLS_ABSORPTION",
+      "title": "StatPearls — Physiology, Nutrient Absorption",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK597379/",
+      "jurisdiction": "physiology reference",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "STATPEARLS_GLUCOSE",
+      "title": "StatPearls — Physiology, Glucose Metabolism",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK560599/",
+      "jurisdiction": "physiology reference",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "STATPEARLS_FASTING",
+      "title": "StatPearls — Physiology, Fasting",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK534877/",
+      "jurisdiction": "physiology reference",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "CEBM_LOE",
+      "title": "Oxford CEBM — Levels of Evidence",
+      "url": "https://www.cebm.ox.ac.uk/resources/levels-of-evidence/ocebm-levels-of-evidence",
+      "jurisdiction": "methodology",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "CDC_GRADE",
+      "title": "CDC/ACIP — GRADE criteria for certainty of evidence",
+      "url": "https://www.cdc.gov/acip-grade-handbook/hcp/chapter-7-grade-criteria-determining-certainty-of-evidence/index.html",
+      "jurisdiction": "methodology",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "HABIT_FORMATION_META_2024",
+      "title": "Habit formation time — systematic review and meta-analysis",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11641623/",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "WOOD_NEAL_HABIT_2016",
+      "title": "Wood & Neal — Healthy through habit: behavior change and habit formation",
+      "url": "https://dornsife.usc.edu/wendy-wood/wp-content/uploads/sites/183/2023/10/Wood.Neal_.2016.pdf",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
     }
   ],
   "claims": [
@@ -843,6 +997,171 @@
       "jurisdiction": "US/FDA/DGA",
       "reviewedAt": "2026-06-11",
       "files": ["content/M22/theory.md", "content/M22/quiz.md", "content/M22/practice.md", "content/M22/terms.md", "content/M22/summary.md", "content/M22/diagrams.md"]
+    },
+    {
+      "claimId": "M03-GRADE-CERTAINTY-VS-DESIGN",
+      "moduleId": "M03",
+      "kind": "evidence_claim",
+      "claim": "Evidence hierarchies rank study designs, but GRADE assesses certainty in a specific result rather than the design label: interventional RCTs typically start as high certainty and observational studies as low certainty, and a high-tier design does not by itself guarantee high certainty.",
+      "sourceId": "CEBM_LOE",
+      "supportingSourceIds": ["CDC_GRADE"],
+      "jurisdiction": "methodology",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M03/theory.md", "content/M03/summary.md"]
+    },
+    {
+      "claimId": "M05-CARB-RDA-AMDR",
+      "moduleId": "M05",
+      "kind": "numeric_norm",
+      "claim": "The digestible-carbohydrate RDA is 130 g/day, set to cover brain glucose needs, and the carbohydrate AMDR is 45-65% of energy.",
+      "sourceId": "NASEM_AMDR_2024",
+      "supportingSourceIds": ["HEALTH_CANADA_DRI_MACROS"],
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M05/theory.md", "content/M05/summary.md"]
+    },
+    {
+      "claimId": "M05-FREE-VS-ADDED-SUGARS",
+      "moduleId": "M05",
+      "kind": "numeric_norm",
+      "claim": "WHO recommends free sugars below 10% of energy (about under 50 g/day on a 2000 kcal diet), with conditional extra benefit below 5%, while FDA's added-sugars label target is below 10% of calories; WHO free sugars are broader than FDA added sugars because they also include sugars naturally present in honey, syrups, and fruit juices.",
+      "sourceId": "WHO_FREE_SUGARS_2015",
+      "supportingSourceIds": ["FDA_ADDED_SUGARS"],
+      "jurisdiction": "WHO/global and US/FDA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M05/theory.md", "content/M05/summary.md"]
+    },
+    {
+      "claimId": "M06-FAT-TYPE-LIMITS",
+      "moduleId": "M06",
+      "kind": "safety_claim",
+      "claim": "Total fat AMDR is 20-35% of energy; WHO advises saturated fat at or below 10% of energy and industrial trans fat at or below 1% with a goal of elimination, and AHA suggests under 6% of calories from saturated fat for people needing to lower LDL. Industrial trans fats uniquely raise LDL and lower HDL.",
+      "sourceId": "WHO_TOTAL_FAT_2023",
+      "supportingSourceIds": ["AHA_FATS"],
+      "jurisdiction": "WHO/global and US/AHA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M06/theory.md", "content/M06/summary.md"]
+    },
+    {
+      "claimId": "M06-ESSENTIAL-FATTY-ACIDS",
+      "moduleId": "M06",
+      "kind": "numeric_norm",
+      "claim": "Essential fatty-acid AIs for adults 19-50 are linoleic acid (omega-6) 17 g/day for men and 12 g/day for women, and alpha-linolenic acid (omega-3) 1.6 g/day for men and 1.1 g/day for women; EFSA suggests about 250 mg/day EPA+DHA for cardiovascular benefit, and major bodies set separate LA and ALA targets rather than a single ideal omega-6/omega-3 ratio.",
+      "sourceId": "HEALTH_CANADA_DRI_MACROS",
+      "supportingSourceIds": ["NIH_ODS_OMEGA3"],
+      "jurisdiction": "US/Canada DRI and EU/EFSA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M06/theory.md", "content/M06/terms.md", "content/M06/summary.md"]
+    },
+    {
+      "claimId": "M07-FIBER-DRI",
+      "moduleId": "M07",
+      "kind": "numeric_norm",
+      "claim": "Adequate fiber intake per DRI is about 14 g per 1000 kcal, roughly 38 g/day for younger men and 25 g/day for women; reference targets decline after age 50 along with average energy needs.",
+      "sourceId": "HEALTH_CANADA_DRI_MACROS",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M07/theory.md", "content/M07/terms.md", "content/M07/summary.md"]
+    },
+    {
+      "claimId": "M07-WATER-NO-UNIVERSAL-TARGET",
+      "moduleId": "M07",
+      "kind": "numeric_norm",
+      "claim": "There is no single universal daily water target; the US/Canada total-water AI is about 3.7 L/day for men and 2.7 L/day for women including water from both beverages and food (about 19% from food), and needs rise with heat, physical activity, fever, vomiting, or diarrhea.",
+      "sourceId": "NASEM_WATER_2005",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M07/theory.md", "content/M07/summary.md"]
+    },
+    {
+      "claimId": "M12-SMALL-INTESTINE-BILE-B12",
+      "moduleId": "M12",
+      "kind": "evidence_claim",
+      "claim": "Most nutrient digestion and absorption occurs in the small intestine rather than the stomach; bile is an emulsifier produced by the liver, not an enzyme, and vitamin B12 is absorbed in the terminal ileum only when bound to intrinsic factor.",
+      "sourceId": "NIDDK_DIGESTION",
+      "supportingSourceIds": ["STATPEARLS_ABSORPTION"],
+      "jurisdiction": "US/NIDDK and physiology reference",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M12/theory.md", "content/M12/summary.md"]
+    },
+    {
+      "claimId": "M13-FED-FASTED-SWITCHING",
+      "moduleId": "M13",
+      "kind": "evidence_claim",
+      "claim": "In the fed state insulin drives storage (glycogen, triglycerides, protein synthesis); during fasting the body shifts through glycogenolysis, then gluconeogenesis, lipolysis, and ketogenesis. There is no dedicated protein storage depot, so protein is a structural nutrient rather than stored fuel.",
+      "sourceId": "STATPEARLS_GLUCOSE",
+      "supportingSourceIds": ["STATPEARLS_FASTING"],
+      "jurisdiction": "physiology reference",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M13/theory.md", "content/M13/summary.md"]
+    },
+    {
+      "claimId": "M14-APPETITE-MULTISIGNAL",
+      "moduleId": "M14",
+      "kind": "evidence_claim",
+      "claim": "Appetite is a multi-signal system: ghrelin signals hunger before meals, leptin reports long-term fat stores, and CCK, PYY, and GLP-1 plus gastric stretch signal fullness during meals, so no single-hormone supplement 'hack' is physiologic; higher-protein meals are reliably more satiating.",
+      "sourceId": "STATPEARLS_APPETITE",
+      "supportingSourceIds": ["PROTEIN_SATIETY_META_2020"],
+      "jurisdiction": "physiology reference and research",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M14/theory.md", "content/M14/summary.md"]
+    },
+    {
+      "claimId": "M15-PROBIOTICS-STRAIN-SPECIFIC",
+      "moduleId": "M15",
+      "kind": "safety_claim",
+      "claim": "The American Gastroenterological Association does not recommend routine probiotics for most digestive conditions because evidence is insufficient, and any effect is strain-specific; ISAPP consensus separates prebiotics, probiotics, postbiotics, and fermented foods, so a 'probiotic' or 'fermented' label alone does not guarantee benefit.",
+      "sourceId": "AGA_PROBIOTICS_2020",
+      "supportingSourceIds": ["ISAPP_DEFINITIONS"],
+      "jurisdiction": "US/AGA and scientific consensus",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M15/theory.md", "content/M15/terms.md", "content/M15/summary.md"]
+    },
+    {
+      "claimId": "M16-RMR-EQUATION-CHOICE",
+      "moduleId": "M16",
+      "kind": "evidence_claim",
+      "claim": "When indirect calorimetry is unavailable, predictive equations estimate resting metabolic rate, and the Academy of Nutrition and Dietetics finds the Mifflin-St Jeor equation generally more accurate for adults, including people with overweight, than the older Harris-Benedict equation; a calculator is a starting estimate to be validated by the weight trend over 2-3 weeks.",
+      "sourceId": "ACADEMY_RMR",
+      "supportingSourceIds": ["MIFFLIN_STJEOR_1990"],
+      "jurisdiction": "US/Academy",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M16/theory.md", "content/M16/summary.md"]
+    },
+    {
+      "claimId": "M18-PROTEIN-PLATEAU-CREATINE",
+      "moduleId": "M18",
+      "kind": "numeric_norm",
+      "claim": "For trained people the ISSN protein range is 1.4-2.0 g/kg/day, and a meta-analysis places the hypertrophy benefit plateau around 1.6 g/kg/day; creatine monohydrate at about 3-5 g/day (optionally a loading phase near 0.3 g/kg/day for 5-7 days) is the most evidence-backed performance supplement and is well tolerated by healthy adults.",
+      "sourceId": "ISSN_PROTEIN_EXERCISE_2017",
+      "supportingSourceIds": ["MORTON_PROTEIN_2018"],
+      "jurisdiction": "sports nutrition position stand and research",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M18/theory.md", "content/M18/summary.md"]
+    },
+    {
+      "claimId": "M23-FAD-DIETS-WORK-VIA-DEFICIT",
+      "moduleId": "M23",
+      "kind": "evidence_claim",
+      "claim": "Popular diets such as keto and intermittent fasting produce weight outcomes broadly similar to ordinary calorie restriction over the long term, working through energy deficit, structure, and adherence rather than metabolic magic; detox/cleanse and alkaline-diet weight or health claims are not supported by evidence.",
+      "sourceId": "KETO_LOWCARB_LONGTERM_2024",
+      "supportingSourceIds": ["IF_VS_CR_BMJ_2025", "NCCIH_WEIGHT_CONTROL"],
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M23/theory.md", "content/M23/summary.md"]
+    },
+    {
+      "claimId": "M24-HABIT-FORMATION-TIME",
+      "moduleId": "M24",
+      "kind": "evidence_claim",
+      "claim": "Habit-formation research finds new habits typically take on the order of two months to become automatic, not 21 days, with wide individual variation; durable behavior change relies on repeating an action in a stable context and redesigning the environment rather than on sustained willpower.",
+      "sourceId": "HABIT_FORMATION_META_2024",
+      "supportingSourceIds": ["WOOD_NEAL_HABIT_2016"],
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M24/theory.md", "content/M24/summary.md"]
     }
   ]
 }
