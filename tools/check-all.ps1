@@ -25,6 +25,8 @@ function Invoke-CheckedCommand {
 Invoke-CheckedCommand node --check app.js
 Invoke-CheckedCommand node --check core\storage.js
 Invoke-CheckedCommand node --check core\review.js
+Invoke-CheckedCommand node --check core\quiz.js
+Invoke-CheckedCommand node --test .\tools\quiz.test.mjs
 Invoke-CheckedCommand node .\tools\test-review.mjs
 Invoke-CheckedCommand node .\tools\smoke-test.mjs
 Invoke-CheckedCommand powershell -ExecutionPolicy Bypass -File .\tools\validate-content.ps1

@@ -21,7 +21,8 @@ const REVIEW_SCHEMA_VERSION = 2;
 const COURSE_ID = "nutrition";
 const MIGRATION_TIMEOUT_MS = 4000;
 const CONTENT_FETCH_TIMEOUT_MS = 4000;
-const TODAY_REVIEW_LIMIT = 5;
+// Источник истины — core/review.js (review.js загружается раньше app.js).
+const TODAY_REVIEW_LIMIT = (window.NutrioReview || globalThis.NutrioReview)?.TODAY_REVIEW_LIMIT ?? 5;
 const SAFETY_NOTE = "Учебный материал. Не заменяет врача, диагностику, лечение или индивидуальные рекомендации по питанию.";
 const PROFILE_LEVELS = {
   beginner: "Новичок",
@@ -216,6 +217,10 @@ function configureMarkedSecurity() {
 
 function markdownApi() {
   return window.marked || globalThis.marked;
+}
+
+function quizApi() {
+  return window.NutrioQuiz || globalThis.NutrioQuiz;
 }
 
 function safeMarkdownHref(href) {
@@ -1494,6 +1499,9 @@ async function runTodayAction(action) {
     const mod = firstWeak ? modules.find((item) => item.id === firstWeak.id) : null;
     if (mod) return openModuleReview(mod);
   }
+  if (action?.targetRoute === "journal") {
+    return showProfile({ focus: "journal" });
+  }
   return showProfile();
 }
 
@@ -1810,7 +1818,7 @@ function memoryDayCells(sessions) {
   return html;
 }
 
-async function showProfile() {
+async function showProfile(options = {}) {
   resetReadingProgress();
   cleanupHomeEffects();
   setScreenMode("profile");
@@ -1970,6 +1978,7 @@ async function showProfile() {
 
   const takeaways = document.createElement("section");
   takeaways.className = "dashboard-card";
+  takeaways.id = "journal";
   takeaways.innerHTML = `<h2>История выводов</h2>`;
   if (summary.takeaways.length) {
     const list = document.createElement("ol");
@@ -2006,6 +2015,10 @@ async function showProfile() {
   if (phases) $screen.appendChild(phases);
   $screen.appendChild(form);
   $screen.appendChild(actions);
+
+  if (options.focus === "journal") {
+    takeaways.scrollIntoView?.({ behavior: "smooth", block: "start" });
+  }
 }
 
 function createFieldLabel(text) {
@@ -3014,73 +3027,18 @@ function appendSummaryControls(mod) {
 
 /* ---------- квиз: парсинг ---------- */
 
+// Разбор тестов вынесен в core/quiz.js (чистые функции). Здесь — тонкие обёртки,
+// чтобы сохранить существующие вызовы и доступ из smoke-теста как глобали.
 function parseQuiz(md) {
-  if (!md) return [];
-
-  const blocks = md.split(/\r?\n---+\r?\n/);
-  const questions = [];
-
-  for (const block of blocks) {
-    const head = block.match(/^##\s*Q(\d+)\s*\(([^)]+)\)\s*$/m);
-    if (!head) continue;
-
-    const number = Number(head[1]);
-    const rawType = head[2].trim();
-    const body = block.slice(head.index + head[0].length).trim();
-
-    if (rawType === "MCQ" || rawType === "True/False") {
-      const q = parseAutoQuestion(number, rawType, body);
-      if (q) questions.push(q);
-    } else if (rawType === "Применение") {
-      const q = parseApplicationQuestion(number, body);
-      if (q) questions.push(q);
-    }
-  }
-
-  return questions;
+  return quizApi().parseQuiz(md);
 }
 
 function parseAutoQuestion(number, type, body) {
-  const answerMatch = body.match(/\*\*Правильный ответ:\s*(.+?)\*\*/);
-  if (!answerMatch) return null;
-
-  const beforeAnswer = body.slice(0, answerMatch.index).trim();
-  const answerRaw = answerMatch[1].trim();
-  const explainMatch = body.match(/\*\*Объяснение:\*\*\s*([\s\S]*)$/);
-  const explain = explainMatch ? explainMatch[1].trim() : "";
-
-  let answer = null;
-  let options = [];
-  let text = beforeAnswer;
-
-  if (type === "MCQ") {
-    options = Array.from(beforeAnswer.matchAll(/^([A-D])\.\s+(.+)$/gm), (m) => ({
-      key: m[1],
-      text: m[2].trim(),
-    }));
-    text = beforeAnswer.replace(/^([A-D])\.\s+.+$/gm, "").trim();
-
-    const letter = answerRaw.match(/^([A-D])/i);
-    answer = letter ? letter[1].toUpperCase() : null;
-    if (!options.some((opt) => opt.key === answer)) return null;
-  } else {
-    text = beforeAnswer.trim();
-    options = [{ key: true, text: "Верно" }, { key: false, text: "Неверно" }];
-    if (/НЕВЕРНО|False/i.test(answerRaw)) answer = false;
-    else if (/ВЕРНО|True/i.test(answerRaw)) answer = true;
-  }
-
-  if (answer === null || !text) return null;
-  return { kind: "auto", number, type, text, options, answer, explain };
+  return quizApi().parseAutoQuestion(number, type, body);
 }
 
 function parseApplicationQuestion(number, body) {
-  const answerMatch = body.match(/\*\*Ответ и разбор:\*\*\s*/);
-  const text = answerMatch ? body.slice(0, answerMatch.index).trim() : body.trim();
-  const explain = answerMatch ? body.slice(answerMatch.index + answerMatch[0].length).trim() : "";
-
-  if (!text) return null;
-  return { kind: "application", number, type: "Применение", text, explain };
+  return quizApi().parseApplicationQuestion(number, body);
 }
 
 /* ---------- сеанс повторения ---------- */

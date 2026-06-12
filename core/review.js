@@ -11,7 +11,10 @@
   const COURSE_ID = "nutrition";
   const REVIEW_SCHEMA_VERSION = 2;
   const REVIEW_INTERVALS = [1, 3, 7, 14, 30, 60];
+  // DAILY_REVIEW_LIMIT — максимум, который очередь готова выдать за день.
+  // TODAY_REVIEW_LIMIT — сколько показываем в дневной карточке/сеансе (короткая сессия).
   const DAILY_REVIEW_LIMIT = 10;
+  const TODAY_REVIEW_LIMIT = 5;
 
   function clone(value) {
     if (value === undefined) return undefined;
@@ -352,6 +355,7 @@
     REVIEW_SCHEMA_VERSION,
     REVIEW_INTERVALS,
     DAILY_REVIEW_LIMIT,
+    TODAY_REVIEW_LIMIT,
     toISODate,
     addDaysISO,
     daysBetweenISO,

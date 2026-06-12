@@ -10,6 +10,7 @@ const APP_SHELL = [
   "./style.css",
   "./core/storage.js",
   "./core/review.js",
+  "./core/quiz.js",
   "./app.js",
   "./manifest.webmanifest",
   "./lib/marked.min.js",
@@ -119,6 +120,7 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith("/app.js") ||
     url.pathname.endsWith("/core/storage.js") ||
     url.pathname.endsWith("/core/review.js") ||
+    url.pathname.endsWith("/core/quiz.js") ||
     url.pathname.endsWith("/style.css") ||
     url.pathname.endsWith("/manifest.webmanifest");
 

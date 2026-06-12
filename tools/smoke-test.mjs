@@ -366,6 +366,9 @@ vm.runInContext(storageJs, context, { filename: "core/storage.js" });
 const reviewJs = await fs.readFile(path.join(projectRoot, "core", "review.js"), "utf8");
 vm.runInContext(reviewJs, context, { filename: "core/review.js" });
 
+const quizJs = await fs.readFile(path.join(projectRoot, "core", "quiz.js"), "utf8");
+vm.runInContext(quizJs, context, { filename: "core/quiz.js" });
+
 const appJs = await fs.readFile(path.join(projectRoot, "app.js"), "utf8");
 vm.runInContext(appJs, context, { filename: "app.js" });
 
