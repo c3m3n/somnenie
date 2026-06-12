@@ -3542,7 +3542,7 @@ async function showQuiz(mod) {
           exp.classList.add("answer-block");
           card.appendChild(exp);
         }
-        appendNextButton(card);
+        appendSelfGrade(card, q);
       } catch (error) {
         revealed = false;
         reveal.disabled = false;
@@ -3552,6 +3552,52 @@ async function showQuiz(mod) {
 
     card.appendChild(reveal);
     $screen.appendChild(card);
+  }
+
+  // Самопроверка вопросов «Применение»: оценка не идёт в автоматический балл,
+  // но «частично/не справился» заводит слабое место и карточку в очередь повторения.
+  function appendSelfGrade(container, q) {
+    let graded = false;
+    const block = document.createElement("div");
+    block.className = "self-grade";
+    block.innerHTML = `<div class="self-grade-prompt">Сравните свой ответ с разбором — как получилось?</div>`;
+
+    const row = document.createElement("div");
+    row.className = "self-grade-options";
+
+    const choices = [
+      { label: "Ответил верно", right: true },
+      { label: "Частично", right: false },
+      { label: "Не справился", right: false },
+    ];
+
+    const buttons = [];
+    for (const choice of choices) {
+      const b = document.createElement("button");
+      b.className = "btn secondary self-grade-btn";
+      b.textContent = choice.label;
+      b.onclick = runAsync(async () => {
+        if (graded) return;
+        graded = true;
+        for (const button of buttons) button.disabled = true;
+        b.classList.add("chosen");
+        try {
+          await updateWeakSpot(mod.id, q, choice.right, null);
+          if (!choice.right) container.appendChild(ReviewAddedLine());
+          appendNextButton(container);
+        } catch (error) {
+          graded = false;
+          for (const button of buttons) button.disabled = false;
+          b.classList.remove("chosen");
+          throw error;
+        }
+      });
+      buttons.push(b);
+      row.appendChild(b);
+    }
+
+    block.appendChild(row);
+    container.appendChild(block);
   }
 
   function appendNextButton(container) {
