@@ -762,6 +762,8 @@ const appJsSource = await fs.readFile(path.join(projectRoot, "app.js"), "utf8");
 assert(appJsSource.includes("navigator.serviceWorker.addEventListener(\"controllerchange\""), "App should reload after an accepted service worker update");
 assert(appJsSource.includes("registration.addEventListener(\"updatefound\""), "App should detect waiting service worker updates");
 assert(appJsSource.includes("registration.waiting.postMessage"), "App should activate a waiting service worker only after user confirmation");
+assert(appJsSource.includes("serviceWorkerReloadPending = true"), "App should mark reload intent only after the user accepts an update");
+assert(appJsSource.includes("if (!serviceWorkerReloadPending) return;"), "App should not reload on first service worker control claim");
 
 const vercelIgnore = await fs.readFile(path.join(projectRoot, ".vercelignore"), "utf8");
 assert(vercelIgnore.split(/\r?\n/).includes(".vercel"), ".vercelignore should exclude .vercel");

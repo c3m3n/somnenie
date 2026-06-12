@@ -2,7 +2,7 @@
 
 importScripts("./core/constants.js");
 
-const VERSION = "nutrio-v16";
+const VERSION = "nutrio-v17";
 const SHELL_CACHE = `${VERSION}-shell`;
 const CONTENT_CACHE = `${VERSION}-content`;
 const MODULE_FILES = self.NutrioConst?.MODULE_FILES || ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"];
@@ -29,6 +29,26 @@ const APP_SHELL = [
   "./icons/icon-maskable-512.png",
   "./icons/apple-touch-icon.png",
   "./icons/favicon-32.png",
+  "./assets/generated/icon-today.png",
+  "./assets/generated/icon-atlas.png",
+  "./assets/generated/icon-memory.png",
+  "./assets/generated/icon-journal.png",
+  "./assets/generated/icon-understand.png",
+  "./assets/generated/icon-apply.png",
+  "./assets/generated/icon-check.png",
+  "./assets/generated/icon-anchor.png",
+  "./assets/generated/icon-progress.png",
+  "./assets/generated/icon-install.png",
+  "./assets/generated/icon-offline.png",
+  "./assets/generated/icon-next.png",
+  "./assets/generated/icon-nutrient.png",
+  "./assets/generated/icon-product.png",
+  "./assets/generated/icon-diet.png",
+  "./assets/generated/icon-evidence.png",
+  "./assets/generated/organism-calm.png",
+  "./assets/generated/organism-focus.png",
+  "./assets/generated/organism-review.png",
+  "./assets/generated/organism-complete.png",
   "./screenshots/home-narrow.png",
   "./screenshots/progress-wide.png",
 ];

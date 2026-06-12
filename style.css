@@ -155,6 +155,10 @@
   border-radius: 2px;
 }
 
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
 html,
 body {
   width: 100%;
@@ -5705,6 +5709,149 @@ body.quiet .glow-pool {
   }
 }
 
+.generated-icon {
+  object-fit: cover;
+  border-radius: 4px;
+  background: #111;
+  box-shadow: inset 0 0 0 1px rgba(207, 201, 184, 0.1);
+  vertical-align: middle;
+}
+
+.brand-mark {
+  position: relative;
+  overflow: hidden;
+  color: var(--ember);
+  background: #111;
+  border: 1px solid rgba(255, 122, 77, 0.24);
+  box-shadow: 0 0 18px rgba(255, 122, 77, 0.12);
+}
+
+.brand-mark-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.95;
+}
+
+.brand-mark-svg {
+  display: none;
+}
+
+.btn-icon.generated-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+}
+
+#profile-btn .profile-button-icon {
+  position: relative;
+  z-index: 1;
+}
+
+.tab-glyph .generated-icon,
+.material-subtab .tab-glyph .generated-icon {
+  width: 100%;
+  height: 100%;
+  border-radius: 4px;
+  box-shadow: none;
+}
+
+.step-icon.generated-icon,
+.kicker-icon.generated-icon,
+.trust-icon.generated-icon {
+  border-radius: 3px;
+}
+
+.module-visual {
+  overflow: hidden;
+}
+
+.module-visual .generated-icon,
+.quiz-intro-mark .generated-icon {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  box-shadow: none;
+}
+
+.module-visual .generated-icon {
+  opacity: 0.9;
+}
+
+.metric-icon.generated-icon {
+  border-radius: 5px;
+  box-shadow: 0 0 12px rgba(255, 122, 77, 0.12);
+}
+
+.quiz-intro-mark {
+  overflow: hidden;
+}
+
+.quiz-intro-icon.generated-icon {
+  width: 100%;
+  height: 100%;
+}
+
+.organism-visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(318px, 72vw);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(255, 122, 77, 0.16);
+  border-radius: 8px;
+  background: #101010;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34), inset 0 0 0 1px rgba(207, 201, 184, 0.05);
+}
+
+.organism-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.86;
+  transform: scale(1.01);
+}
+
+.organism-visual #organism {
+  position: absolute;
+  inset: 18%;
+  display: grid;
+  place-items: center;
+  opacity: 0.34;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.mini-organism-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 142px;
+  overflow: hidden;
+  border: 1px solid rgba(207, 201, 184, 0.12);
+  border-radius: 8px;
+  background: #101010;
+}
+
+.mini-organism-image {
+  width: 100%;
+  height: 100%;
+  min-height: 142px;
+  object-fit: cover;
+  opacity: 0.82;
+}
+
+.mini-organism-frame .mini-organism {
+  position: absolute;
+  inset: 16%;
+  display: grid;
+  place-items: center;
+  opacity: 0.36;
+  mix-blend-mode: screen;
+}
+
 @media (max-width: 760px) {
   .lesson-nav {
     grid-template-columns: 1fr;
@@ -5757,6 +5904,18 @@ body.quiet .glow-pool {
 
   .organism-caption {
     font-size: 0.72em;
+  }
+
+  .organism-visual {
+    width: min(278px, 78vw);
+  }
+
+  .mini-organism-frame {
+    min-height: 104px;
+  }
+
+  .mini-organism-image {
+    min-height: 104px;
   }
 }
 

@@ -27,28 +27,28 @@
       "short_name": "Сегодня",
       "description": "Открыть следующий учебный шаг.",
       "url": "./index.html#today",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "assets/generated/icon-today.png", "sizes": "256x256", "type": "image/png" }]
     },
     {
       "name": "Карта курса",
       "short_name": "Карта",
       "description": "Открыть карту учебных станций.",
       "url": "./index.html#atlas",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "assets/generated/icon-atlas.png", "sizes": "256x256", "type": "image/png" }]
     },
     {
       "name": "Память",
       "short_name": "Память",
       "description": "Открыть слабые места и повторения.",
       "url": "./index.html#memory",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "assets/generated/icon-memory.png", "sizes": "256x256", "type": "image/png" }]
     },
     {
       "name": "Журнал",
       "short_name": "Журнал",
       "description": "Открыть историю выводов.",
       "url": "./index.html#journal",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+      "icons": [{ "src": "assets/generated/icon-journal.png", "sizes": "256x256", "type": "image/png" }]
     }
   ],
   "screenshots": [

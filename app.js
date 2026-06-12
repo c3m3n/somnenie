@@ -49,6 +49,7 @@ let readingProgressCleanup = null;
 let appStateCache = defaultAppState();
 let deferredInstallPrompt = null;
 let pwaStatusTimer = null;
+let serviceWorkerReloadPending = false;
 
 function setScreenMode(mode) {
   if (!document.body?.classList) return;
@@ -107,8 +108,9 @@ function todayISO() {
 
 async function withTimeoutFallback(promise, timeoutMs, fallback, label = "operation") {
   if (!promise || typeof promise.then !== "function") return promise;
+  let timer = null;
   const timeout = new Promise((resolve) => {
-    setTimeout(() => {
+    timer = setTimeout(() => {
       console.warn(`Nutrio timeout: ${label}`);
       resolve(fallback);
     }, timeoutMs);
@@ -118,6 +120,8 @@ async function withTimeoutFallback(promise, timeoutMs, fallback, label = "operat
   } catch (error) {
     console.warn(`Nutrio ${label} failed`, error);
     return fallback;
+  } finally {
+    if (timer) clearTimeout(timer);
   }
 }
 
@@ -785,7 +789,59 @@ function moduleStateLabel(mod) {
   return "Не начат";
 }
 
+const GENERATED_ICON_ASSETS = Object.freeze({
+  arrow: "assets/generated/icon-next.png",
+  book: "assets/generated/icon-understand.png",
+  terms: "assets/generated/icon-evidence.png",
+  quiz: "assets/generated/icon-check.png",
+  practice: "assets/generated/icon-apply.png",
+  diagram: "assets/generated/icon-atlas.png",
+  summary: "assets/generated/icon-anchor.png",
+  review: "assets/generated/icon-memory.png",
+  check: "assets/generated/icon-check.png",
+  idea: "assets/generated/icon-understand.png",
+  nutrient: "assets/generated/icon-nutrient.png",
+  plate: "assets/generated/icon-diet.png",
+  profile: "assets/generated/icon-progress.png",
+  target: "assets/generated/icon-progress.png",
+  today: "assets/generated/icon-today.png",
+  atlas: "assets/generated/icon-atlas.png",
+  memory: "assets/generated/icon-memory.png",
+  journal: "assets/generated/icon-journal.png",
+  product: "assets/generated/icon-product.png",
+  evidence: "assets/generated/icon-evidence.png",
+  install: "assets/generated/icon-install.png",
+  offline: "assets/generated/icon-offline.png",
+});
+
+const ORGANISM_ASSETS = Object.freeze({
+  calm: "assets/generated/organism-calm.png",
+  focus: "assets/generated/organism-focus.png",
+  review: "assets/generated/organism-review.png",
+  complete: "assets/generated/organism-complete.png",
+});
+
+function generatedIconHtml(name, className = "ui-icon") {
+  const src = GENERATED_ICON_ASSETS[name];
+  if (!src) return "";
+  return `<img class="${escapeHtmlAttribute(className)} generated-icon" src="${src}" alt="" aria-hidden="true" loading="lazy" decoding="async">`;
+}
+
+function organismAssetStateForAction(action) {
+  if (action?.type === "repeat") return "review";
+  if (action?.type === "course_complete") return "complete";
+  if (action?.type === "continue_station" || action?.type === "start_station") return "focus";
+  return "calm";
+}
+
+function organismImageHtml(state = "calm", className = "organism-image") {
+  const src = ORGANISM_ASSETS[state] || ORGANISM_ASSETS.calm;
+  return `<img class="${escapeHtmlAttribute(className)}" src="${src}" alt="" aria-hidden="true" loading="lazy" decoding="async">`;
+}
+
 function iconSvg(name, className = "ui-icon") {
+  const generated = generatedIconHtml(name, className);
+  if (generated) return generated;
   const icons = {
     arrow: `<path d="M5 12h13"/><path d="m13 6 6 6-6 6"/>`,
     book: `<path d="M5 5.5A2.5 2.5 0 0 1 7.5 3H20v16H7.5A2.5 2.5 0 0 0 5 21V5.5Z"/><path d="M5 5.5V21"/><path d="M9 7h6"/><path d="M9 10h7"/>`,
@@ -1588,6 +1644,7 @@ async function showHome() {
   const nextModule = findNextModule();
   const sessionPlan = buildCurrentSessionPlan(nextModule);
   const todayAction = buildTodayAction(summary, nextModule);
+  const organismState = organismAssetStateForAction(todayAction);
   const stationTotal = modules.length;
   const stationCompleted = completedStationCount();
   updateProfileButton(summary);
@@ -1614,7 +1671,13 @@ async function showHome() {
       `<span class="instrument-path">маршрут/сегодня/следующий-шаг</span>` +
       `<span class="instrument-clock" data-instrument-clock>--:--:--</span>` +
     `</header>` +
-    `<div class="organism-wrap rise" aria-label="Контур учебного маршрута"><pre id="organism" aria-hidden="true"></pre>${homeRouteStatusHtml(summary, nextModule, sessionPlan)}</div>` +
+    `<div class="organism-wrap rise" aria-label="Контур учебного маршрута">` +
+      `<div class="organism-visual" data-organism-state="${escapeHtmlAttribute(organismState)}">` +
+        organismImageHtml(organismState) +
+        `<pre id="organism" aria-hidden="true"></pre>` +
+      `</div>` +
+      homeRouteStatusHtml(summary, nextModule, sessionPlan) +
+    `</div>` +
     `<section class="console rise" aria-live="polite" aria-label="Состояние прибора"><div data-console-lines></div></section>` +
     `<nav class="home-atlas-foot rise" aria-label="Карта курса">` +
       `<button type="button" class="atlas-link home-atlas-link">Карта курса · ${stationCompleted}/${stationTotal} учебных станций</button>` +
@@ -2083,10 +2146,10 @@ function buildPwaCard() {
     setButtonContent(install, "Приложение установлено", "check");
     install.disabled = true;
   } else if (canInstall) {
-    setButtonContent(install, "Установить приложение", "arrow");
+    setButtonContent(install, "Установить приложение", "install");
     install.onclick = runAsync(triggerPwaInstall);
   } else {
-    setButtonContent(install, "Установка через меню браузера", "profile");
+    setButtonContent(install, "Установка через меню браузера", "install");
     install.disabled = true;
   }
 
@@ -3236,9 +3299,13 @@ function sessionProgressCells(total, index, results) {
 }
 
 function sessionHeader(plan, index, total, results) {
+  const organismState = index >= total ? "complete" : "review";
   return (
     `<header class="session-head">` +
-      `<pre class="mini-organism" aria-hidden="true"></pre>` +
+      `<span class="mini-organism-frame" data-organism-state="${organismState}">` +
+        organismImageHtml(organismState, "mini-organism-image") +
+        `<pre class="mini-organism" aria-hidden="true"></pre>` +
+      `</span>` +
       `<div>` +
         `<div class="section-kicker">Сеанс памяти</div>` +
         `<h2>${index < total ? `повторение ${index + 1}/${total}` : "повторение завершено"}</h2>` +
@@ -4118,7 +4185,10 @@ function showServiceWorkerUpdatePrompt(registration) {
   reload.textContent = "Обновить";
   reload.onclick = () => {
     reload.disabled = true;
-    if (registration.waiting) registration.waiting.postMessage({ type: "SKIP_WAITING" });
+    if (registration.waiting) {
+      serviceWorkerReloadPending = true;
+      registration.waiting.postMessage({ type: "SKIP_WAITING" });
+    }
   };
 
   banner.append(text, reload);
@@ -4130,6 +4200,7 @@ async function registerServiceWorker() {
 
   let reloading = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!serviceWorkerReloadPending) return;
     if (reloading) return;
     reloading = true;
     window.location.reload();
