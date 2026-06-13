@@ -1,4 +1,57 @@
-﻿:root {
+﻿@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+:root {
+  /* Поверхности и текст */
+  --bg:           #F1F1EA;
+  --ink:          #1A1B12;
+  --text:         #2B2C22;
+  --muted:        #6B6D60;
+  --faint:        #9B9C8F;
+  --hairline:     #D6D6CB;
+  --locked:       #B7B8AD;
+
+  /* Акцент — только «ты здесь» / «верно» */
+  --accent:       #C9F23E;
+  --on-accent:    #1A1B12;
+
+  /* Семантика */
+  --correct:      var(--accent);
+  --error:        #C0492C;
+
+  /* Кнопка */
+  --btn-bg:       var(--ink);
+  --btn-text:     #F1F1EA;
+
+  /* Типографика */
+  --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-body:    'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono:    'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Шкала размеров */
+  --t-hero:    38px;
+  --t-title:   27px;
+  --t-h:       17px;
+  --t-body:    15px;
+  --t-meta:    12px;
+  --t-label:   11px;
+
+  /* Радиус и отступы */
+  --radius: 0;
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 18px;
+  --s6: 24px;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+:root {
   --bg: #f5f7f1;
   --card: #ffffff;
   --surface-soft: #edf4ef;
