@@ -279,6 +279,8 @@ async function run() {
           activeTab: document.querySelector('#tabs button.active')?.dataset.file,
         };
 
+        await click(document.getElementById('back-btn'), 'Back to Atlas');
+        await waitFor(() => document.body.classList.contains('mode-atlas') && document.querySelectorAll('.module-card').length === 24, 'Atlas after station');
         await click(document.getElementById('back-btn'), 'Back to Today');
         await waitFor(() => document.querySelector('.today-screen'), 'Today after station');
         await click(document.querySelector('.atlas-link'), 'Atlas after Journal');
@@ -287,12 +289,11 @@ async function run() {
         await waitFor(() => document.querySelector('#tabs button[data-file="quiz.md"]'), 'M01 tabs for quiz');
         await click(document.querySelector('#tabs button[data-file="quiz.md"]'), 'Quiz tab');
         await waitFor(() => document.querySelector('.quiz-intro'), 'Quiz intro');
+        const quizIntroRouteText = document.querySelector('.lesson-route')?.textContent || '';
+        const quizIntroDuplicateStart = Boolean(document.querySelector('.lesson-nav .module-next-sticky'));
         await click(buttons(document.querySelector('.quiz-intro')).find((button) => button.textContent.includes('Начать')), 'Start quiz');
         await waitFor(() => document.querySelectorAll('.quiz-q .opt').length > 0, 'Quiz options');
-        const quizMd = await (await fetch('content/M01/quiz.md')).text();
-        const firstQuestion = parseQuiz(quizMd)[0];
-        const wrongIndex = firstQuestion.options.findIndex((option) => option.key !== firstQuestion.answer);
-        const wrongOption = document.querySelectorAll('.quiz-q .opt')[wrongIndex >= 0 ? wrongIndex : 0];
+        const wrongOption = document.querySelectorAll('.quiz-q .opt')[0];
         wrongOption.click();
         wrongOption.click();
         await waitFor(() => document.querySelectorAll('.quiz-diagnosis').length === 1, 'single quiz diagnosis');
@@ -315,6 +316,8 @@ async function run() {
         const progressAfterWrong = await window.NutrioStorage.getModuleProgress('M01');
         const reviewItem = (await window.NutrioStorage.getAppState()).review.items.find((item) => item.id === 'M01-q1');
 
+        await click(document.getElementById('back-btn'), 'Back to Atlas with due memory');
+        await waitFor(() => document.body.classList.contains('mode-atlas') && document.querySelectorAll('.module-card').length === 24, 'Atlas with due memory');
         await click(document.getElementById('back-btn'), 'Back to Today with due memory');
         await waitFor(() => document.querySelector('.today-screen') && document.querySelector('.today-weak-list'), 'Today due weak spot');
         const todayWithMemory = {
@@ -346,6 +349,8 @@ async function run() {
             nextStation,
           },
           quizDiagnosis: {
+            introRouteText: quizIntroRouteText,
+            introDuplicateStart: quizIntroDuplicateStart,
             diagnosisCount: quizDiagnosisDom.diagnosisCount,
             weakSpotCount: Object.keys(progressAfterWrong.weakSpots || {}).length,
             reviewItemCopies: (await window.NutrioStorage.getAppState()).review.items.filter((item) => item.id === 'M01-q1').length,
@@ -409,6 +414,8 @@ async function run() {
     assert(desktopSummary.journal.nextStation.title === "M02", "Continue from Anchor should move to the next station");
 
     assert(desktopSummary.quizDiagnosis.diagnosisCount === 1, "Double-clicked wrong answer should render one diagnosis");
+    assert(desktopSummary.quizDiagnosis.introRouteText.includes("шаг 3 из 4"), "Quiz intro should count station steps, not markdown files");
+    assert(desktopSummary.quizDiagnosis.introDuplicateStart === false, "Quiz intro should not duplicate the primary start CTA");
     assert(desktopSummary.quizDiagnosis.weakSpotCount === 1, "Wrong quiz answer should create one weak spot");
     assert(desktopSummary.quizDiagnosis.reviewItemCopies === 1, "Wrong quiz answer should create one review item");
     assert(desktopSummary.quizDiagnosis.reviewItemCourseId === "nutrition", "Review item should carry the nutrition course id");

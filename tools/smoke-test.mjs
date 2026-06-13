@@ -419,7 +419,7 @@ assert(appState.review.courseId === "nutrition", "Review state should carry the 
 assert(appState.sessions.courseId === "nutrition", "Session state should carry the nutrition course id");
 assert(screen.children[0].innerHTML.includes("учебных станций"), "Home should explain progress as completed stations");
 assert(!screen.children[0].innerHTML.includes("map-legend"), "Home should not carry the course-map legend (Atlas owns the map)");
-assert(screen.children[0].innerHTML.includes("маршрут · сегодня"), "Home should carry the instrument route locator");
+assert(screen.children[0].innerHTML.includes("сегодня ·"), "Home should carry the current-day station locator");
 assert(screen.children[0].innerHTML.includes("home-protocol"), "Home should expose the protocol scale");
 assert(!screen.children[0].innerHTML.includes("NUTRIO"), "Old NUTRIO brand should not remain on home");
 assert(!screen.children[0].innerHTML.includes("home-metrics"), "Home should not lead with dashboard-style KPI cards");
@@ -617,12 +617,13 @@ assert(quizIntro.innerHTML.includes("7") && quizIntro.innerHTML.includes("авт
 assert(quizIntro.innerHTML.includes("3") && quizIntro.innerHTML.includes("самопроверки"), "Quiz intro should explain self-check questions");
 assert(quizIntro.innerHTML.includes("материалы на повторение") && quizIntro.innerHTML.includes("сессии памяти"), "Quiz intro should explain memory routing");
 assert(quizIntro.innerHTML.includes("70%") && quizIntro.innerHTML.includes("5-8 мин"), "Quiz intro should explain success criteria and expected duration");
-assert(!screen.children.some((child) => child.className === "quiz-q"), "Quiz should not start before the intro button");
-lessonNav = screen.children.filter((child) => child.className === "lesson-nav").at(-1);
-assert(lessonNav, "Quiz intro should keep module navigation visible");
-const quizSticky = lessonNav.children.find((child) => child.className === "module-next-sticky");
-assert(quizSticky?.textContent === "Начать проверку", "Quiz intro should expose a mobile start CTA");
-const startQuiz = quizIntro.children.find((child) => child.textContent === "Начать проверку");
+  assert(!screen.children.some((child) => child.className === "quiz-q"), "Quiz should not start before the intro button");
+  lessonNav = screen.children.filter((child) => child.className === "lesson-nav").at(-1);
+  assert(lessonNav, "Quiz intro should keep module navigation visible");
+  assert(elementTreeText(lessonNav).includes("шаг 3 из 4"), "Quiz intro route should count station steps, not markdown files");
+  const quizSticky = lessonNav.children.find((child) => child.className === "module-next-sticky");
+  assert(!quizSticky, "Quiz intro should not duplicate the primary start CTA");
+  const startQuiz = quizIntro.children.find((child) => child.textContent === "Начать проверку");
 assert(startQuiz, "Quiz intro start button is missing");
 await startQuiz.onclick();
 

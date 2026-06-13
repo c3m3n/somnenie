@@ -44,10 +44,7 @@ function showQuizIntro(mod) {
 
   $screen.innerHTML = "";
   $screen.appendChild(card);
-  appendModuleNavigation(mod, "quiz.md", {
-    includeNext: false,
-    mobilePrimary: { kind: "action", label: "Начать проверку", run: () => showQuiz(mod) },
-  });
+  appendModuleNavigation(mod, "quiz.md", { includeNext: false });
   focusScreenStart();
 }
 
@@ -173,15 +170,18 @@ async function showQuiz(mod) {
   function renderApplicationQuestion(q) {
     const card = document.createElement("div");
     let revealed = false;
-    card.className = "quiz-q";
+    card.className = "quiz-q quiz-application";
     card.innerHTML =
-      `<div class="q-kicker">Для самопроверки</div>` +
+      `<div class="application-head">` +
+        `<span>самопроверка</span>` +
+        `<strong>не влияет на балл</strong>` +
+      `</div>` +
       `<div class="q-text app-text">${renderMarkdown(q.text)}</div>` +
-      `<div class="application-prompt">Сформулируйте ответ самостоятельно, затем откройте разбор. Этот вопрос не входит в автоматический балл.</div>`;
+      `<div class="application-prompt">Сначала сформулируйте короткий ответ своими словами. Затем откройте разбор и отметьте, насколько совпала логика.</div>`;
 
     const reveal = document.createElement("button");
-    reveal.className = "btn";
-    reveal.textContent = "Показать разбор";
+    reveal.className = "btn application-reveal";
+    setButtonContent(reveal, "Показать разбор", "arrow");
     reveal.onclick = runAsync(async () => {
       if (revealed) return;
       revealed = true;

@@ -50,6 +50,16 @@ let appStateCache = defaultAppState();
 let deferredInstallPrompt = null;
 let pwaStatusTimer = null;
 let serviceWorkerReloadPending = false;
+let screenRenderVersion = 0;
+
+function beginScreenRender() {
+  screenRenderVersion += 1;
+  return screenRenderVersion;
+}
+
+function isCurrentScreenRender(version) {
+  return version === screenRenderVersion;
+}
 
 // Навигация «Назад»: currentView — как перерисовать текущий экран, navStack —
 // история экранов, с которых мы уходили глубже. Раньше «Назад» всегда вела домой;
@@ -279,11 +289,16 @@ function normalizeAppState(state) {
 }
 
 async function refreshStorageCache() {
-  const [profile, progress, appState] = await Promise.all([
-    storageApi().getProfile(),
-    storageApi().getAllProgress(),
-    storageApi().getAppState(),
-  ]);
+  const [profile, progress, appState] = await withTimeoutFallback(
+    Promise.all([
+      storageApi().getProfile(),
+      storageApi().getAllProgress(),
+      storageApi().getAppState(),
+    ]),
+    MIGRATION_TIMEOUT_MS,
+    [profileCache, progressCache, appStateCache],
+    "storage refresh",
+  );
   profileCache = normalizeProfile(profile);
   progressCache = normalizeProgress(progress);
   appStateCache = normalizeAppState(appState);
@@ -684,9 +699,18 @@ function iconSvg(name, className = "ui-icon") {
   return `<svg class="${className}" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${icons[name] || icons.book}</svg>`;
 }
 
+function buttonIconGlyph(name = "arrow") {
+  return {
+    arrow: "→",
+    back: "←",
+    review: "↺",
+    check: "✓",
+  }[name] || "→";
+}
+
 function setButtonContent(button, label, iconName = "arrow") {
   button.textContent = label;
-  button.innerHTML = `${iconSvg(iconName, "btn-icon")}<span>${escapeHtml(label)}</span>`;
+  button.innerHTML = `<span class="btn-icon btn-glyph" data-glyph="${escapeHtmlAttribute(buttonIconGlyph(iconName))}" aria-hidden="true"></span><span>${escapeHtml(label)}</span>`;
 }
 
 function safetyNoteHtml() {
@@ -1343,6 +1367,7 @@ function homeProtocolHtml(action) {
 /* ---------- экран: Today ---------- */
 
 async function showHome() {
+  const renderVersion = beginScreenRender();
   resetReadingProgress();
   cleanupHomeEffects();
   setScreenMode("home");
@@ -1355,6 +1380,7 @@ async function showHome() {
   $profile.classList.remove("active");
   $tabs.classList.add("hidden");
   await refreshStorageCache();
+  if (!isCurrentScreenRender(renderVersion)) return;
   $screen.innerHTML = "";
 
   if (!modules.length) {
@@ -1376,18 +1402,15 @@ async function showHome() {
   intro.className = "intro-card today-screen";
   intro.innerHTML =
     `<section class="home-learning-lead">` +
-      `<p class="home-product-label">маршрут · сегодня</p>` +
-      `<h2>Сегодня</h2>` +
-      `<p>${escapeHtml(todayAction.reason)}</p>` +
+      `<p class="home-product-label">сегодня · ${escapeHtml(stationCode)}</p>` +
+      `<h2>${escapeHtml(stationTitle)}</h2>` +
+      `<p class="home-current-reason">${escapeHtml(todayAction.reason)}</p>` +
     `</section>` +
     `<section class="next next-step-card today-card">` +
-      `<p class="home-station-code">${escapeHtml(stationCode)}</p>` +
-      `<h3>${escapeHtml(stationTitle)}</h3>` +
-      `<p class="meta">${escapeHtml(todayAction.description)}</p>` +
+      `<p class="home-station-code">текущий шаг</p>` +
       homeProtocolHtml(todayAction) +
       todayWeakListHtml(todayAction) +
       `<div class="home-action-slot"></div>` +
-      (todayAction.afterAction ? `<p class="next-step-why">${escapeHtml(todayAction.afterAction)}</p>` : "") +
     `</section>` +
     `<nav class="home-atlas-foot" aria-label="Карта курса">` +
       `<button type="button" class="atlas-link home-atlas-link">Карта курса · ${stationCompleted}/${stationTotal} учебных станций</button>` +
@@ -1415,6 +1438,7 @@ async function showHome() {
 }
 
 async function showAtlas() {
+  const renderVersion = beginScreenRender();
   resetReadingProgress();
   cleanupHomeEffects();
   setScreenMode("atlas");
@@ -1425,8 +1449,9 @@ async function showAtlas() {
   $profile.classList.remove("hidden");
   $profile.classList.remove("active");
   $tabs.classList.add("hidden");
-  await refreshStorageCache();
   $screen.innerHTML = "";
+  await refreshStorageCache();
+  if (!isCurrentScreenRender(renderVersion)) return;
 
   const summary = getProgressSummary();
   const nextModule = findNextModule();
@@ -1435,24 +1460,30 @@ async function showAtlas() {
   const stationPercent = stationTotal ? Math.round((stationCompleted / stationTotal) * 100) : 0;
   updateProfileButton(summary);
   const atlasNodes = buildAtlasNodes(nextModule);
+  const repeatDueCount = atlasNodes.filter((node) => node.type === "station" && node.status === "repeat_today").length;
 
   const head = document.createElement("section");
   head.className = "intro-card atlas-screen";
   head.innerHTML =
-    `<section class="home-learning-lead rise">` +
+    `<section class="home-learning-lead atlas-lead rise">` +
       `<p class="home-product-label">ATLAS</p>` +
       `<h2>Карта курса</h2>` +
-      `<p>Ориентация по маршруту. Следующее действие всё равно выбирает экран «Сегодня».</p>` +
+      `<p>Маршрут станций и состояние памяти. Следующее действие выбирается на экране «Сегодня».</p>` +
     `</section>` +
-    `<section class="matrix-block home-progress-compact rise" aria-label="Карта курса">` +
+    `<section class="atlas-summary-grid" aria-label="Сводка курса">` +
+      `<div class="atlas-stat"><span>станции</span><strong>${stationCompleted}/${stationTotal}</strong></div>` +
+      `<div class="atlas-stat"><span>повторить</span><strong>${repeatDueCount}</strong></div>` +
+      `<div class="atlas-stat"><span>в памяти</span><strong>${summary.weakSpotTotal}</strong></div>` +
+    `</section>` +
+    `<section class="matrix-block home-progress-compact atlas-map-panel rise" aria-label="Карта курса">` +
       `<div class="course-map instrument-matrix" aria-label="Карта прогресса по станциям: клик открывает станцию">${courseMapSegments(nextModule, true)}</div>` +
       `<div class="matrix-foot">` +
         `<span class="map-legend"><i class="legend-complete"></i>завершён <i class="legend-active"></i>в работе <i class="legend-review"></i>повторить <i class="legend-idle"></i>не начат</span>` +
       `</div>` +
-      `<div class="home-progress-text${stationPercent ? "" : " is-empty"}"><strong>${stationPercent}%</strong><span>${stationCompleted}/${stationTotal} учебных станций завершено</span></div>` +
+      `<div class="atlas-progress-text${stationPercent ? "" : " is-empty"}"><strong>${stationPercent}%</strong><span>${stationCompleted}/${stationTotal} учебных станций завершено</span></div>` +
       `<div class="course-progress" aria-label="Прогресс курса по завершённым станциям"><span style="width: ${stationPercent}%"></span></div>` +
     `</section>` +
-    `<p class="atlas-meta">${atlasNodes.filter((node) => node.type === "station" && node.status === "repeat_today").length} станций требуют повторения сегодня · ${summary.weakSpotTotal} материалов в памяти</p>`;
+    `<p class="atlas-meta">${repeatDueCount} станций требуют повторения сегодня · ${summary.weakSpotTotal} материалов в памяти</p>`;
   $screen.appendChild(head);
   bindCourseMap(head);
 
@@ -1491,6 +1522,7 @@ function moduleCard(mod, nextModule = null) {
   else if (rawWeakCount && isQuizInProgress(pr)) parts.push(`${rawWeakCount} отметка неуверенности сохранена`);
 
   const card = document.createElement("button");
+  const stationMark = String(mod.id || "").replace(/\D/g, "").padStart(2, "0") || "00";
   const stateClass = weakCount
     ? "module-card-review"
     : completion === 100
@@ -1505,7 +1537,7 @@ function moduleCard(mod, nextModule = null) {
   card.classList.add(`module-theme-${theme.tone}`);
   card.innerHTML =
     `<div class="module-card-head">` +
-    `<span class="module-visual module-visual-${theme.tone}">${iconSvg(theme.icon, "module-visual-icon")}</span>` +
+    `<span class="module-visual module-station-marker module-visual-${theme.tone}" aria-hidden="true">${escapeHtml(stationMark)}</span>` +
     `<div class="module-title-block">` +
     `<div class="module-card-top">` +
     `<span class="mod-id">${mod.id}</span>` +
@@ -1555,6 +1587,7 @@ function approxMinutes(count) {
 }
 
 async function showProfile(options = {}) {
+  const renderVersion = beginScreenRender();
   resetReadingProgress();
   cleanupHomeEffects();
   setScreenMode("profile");
@@ -1566,6 +1599,7 @@ async function showProfile(options = {}) {
   $profile.classList.add("active");
   $tabs.classList.add("hidden");
   await refreshStorageCache();
+  if (!isCurrentScreenRender(renderVersion)) return;
   $screen.innerHTML = "";
 
   const profile = loadProfile();
@@ -1951,6 +1985,7 @@ async function resetProgress() {
 /* ---------- экран: учебная станция ---------- */
 
 async function showModule(mod) {
+  const renderVersion = beginScreenRender();
   resetReadingProgress();
   cleanupHomeEffects();
   setScreenMode("module");
@@ -1963,6 +1998,7 @@ async function showModule(mod) {
   $profile.classList.remove("active");
   $tabs.classList.remove("hidden");
   await refreshStorageCache();
+  if (!isCurrentScreenRender(renderVersion)) return;
   updateProfileButton();
   $tabs.innerHTML = "";
   $screen.innerHTML = `<div class="loading">Загрузка…</div>`;
@@ -1971,26 +2007,32 @@ async function showModule(mod) {
   await Promise.all(TABS.map(async (t) => {
     if (!(t.file in mod.files)) mod.files[t.file] = await fetchText(`content/${mod.id}/${t.file}`);
   }));
+  if (!isCurrentScreenRender(renderVersion)) return;
 
   const tabItems = availableModuleTabItems(mod);
   for (const tab of tabItems) appendTabButton(tab);
 
   queueTabsOverflowHint();
-  openTab(tabItems[0]?.file || "theory.md");
+  openTab(tabItems[0]?.file || "theory.md", mod);
 }
 
 async function openModuleReview(mod) {
   await showModule(mod);
-  if (getVisibleWeakSpotCount(mod.id)) openTab("__review__");
+  if (getVisibleWeakSpotCount(mod.id)) openTab("__review__", mod);
 }
 
-function openTab(file) {
+function openTab(file, modOverride = current) {
   resetReadingProgress();
   syncActiveTab(file);
   window.scrollTo(0, 0);
-  if (file === "quiz.md") showQuizIntro(current);
-  else if (file === "__review__") showWeakSpots(current);
-  else showMarkdown(current, file);
+  const mod = modOverride || current;
+  if (!mod) {
+    $screen.innerHTML = `<div class="loading">Станция не найдена. Вернитесь на экран «Сегодня» и откройте материал снова.</div>`;
+    return;
+  }
+  if (file === "quiz.md") showQuizIntro(mod);
+  else if (file === "__review__") showWeakSpots(mod);
+  else showMarkdown(mod, file);
 }
 
 function appendTabButton(tab) {
@@ -2058,10 +2100,14 @@ function availableTabs(mod) {
   return TABS.filter((tab) => mod?.files?.[tab.file] !== null);
 }
 
-function availableModuleTabItems(mod) {
-  const tabs = MODULE_ROUTE_TABS
+function availableRouteTabs(mod) {
+  return MODULE_ROUTE_TABS
     .filter((tab) => tab.files.some((file) => mod?.files?.[file] !== null))
     .map((tab) => Object.assign({}, tab, { file: firstAvailableRouteFile(mod, tab) }));
+}
+
+function availableModuleTabItems(mod) {
+  const tabs = availableRouteTabs(mod);
   if (mod && getVisibleWeakSpotCount(mod.id)) return [...tabs, { file: "__review__", label: "Память", files: ["__review__"], icon: "review", tone: "review" }];
   return tabs;
 }
@@ -2140,23 +2186,22 @@ function learningStepShortLabel(step) {
   return step.label || "";
 }
 
-function lessonRouteContextHtml(mod, file, nextStep) {
+function lessonRouteContextHtml(mod, file) {
   const route = moduleRouteTabForFile(file);
   const block = contentTabByFile(file);
-  const tabs = availableTabs(mod);
-  const total = Math.max(1, tabs.length + (file === "__review__" ? 1 : 0));
-  const index = file === "__review__" ? total - 1 : Math.max(0, tabs.findIndex((tab) => tab.file === file));
+  const tabs = availableRouteTabs(mod);
+  const hasReview = Boolean(mod && getVisibleWeakSpotCount(mod.id));
+  const total = Math.max(1, tabs.length + (hasReview ? 1 : 0));
+  const index = file === "__review__" ? total - 1 : Math.max(0, tabs.findIndex((tab) => tab.files.includes(file)));
   const current = file === "__review__"
     ? "Память"
     : isMaterialFile(file)
       ? `${route.label} · ${block.label}`
       : route.label || block.label;
-  const next = learningStepShortLabel(nextStep) || "Завершение";
   return `<div class="lesson-route">` +
     `<span class="lesson-route-kicker">Маршрут станции</span>` +
     `<strong>${escapeHtml(current)}</strong>` +
     `<span>${escapeHtml(mod.id)} · шаг ${index + 1} из ${total}</span>` +
-    `<em>Дальше: ${escapeHtml(next)}</em>` +
   `</div>`;
 }
 
@@ -2169,10 +2214,10 @@ function tabTargetLabel(file) {
   }[file] || contentTabByFile(file).label.toLowerCase();
 }
 
-function createLearningStepButton(step, className, prefix) {
+function createLearningStepButton(step, className, prefix, iconName = null) {
   const button = document.createElement("button");
   button.className = className;
-  setButtonContent(button, stepButtonText(prefix, step), step.kind === "review" ? "review" : "arrow");
+  setButtonContent(button, stepButtonText(prefix, step), iconName || (step.kind === "review" ? "review" : "arrow"));
   button.onclick = runAsync(() => goToLearningStep(step));
   return button;
 }
@@ -2189,12 +2234,13 @@ function appendModuleNavigation(mod, file, options = {}) {
 
   const nav = document.createElement("section");
   nav.className = "lesson-nav";
-  nav.innerHTML = lessonRouteContextHtml(mod, file, next || review || mobilePrimary);
+  if (file === "quiz.md") nav.classList.add("lesson-nav-quiz");
+  nav.innerHTML = lessonRouteContextHtml(mod, file);
 
   const actions = document.createElement("div");
   actions.className = "lesson-nav-actions";
 
-  if (prev) actions.appendChild(createLearningStepButton(prev, "btn secondary compact lesson-nav-prev", "Назад"));
+  if (prev) actions.appendChild(createLearningStepButton(prev, "btn secondary compact lesson-nav-prev", "Назад", "back"));
   if (review) actions.appendChild(createLearningStepButton(review, "btn secondary compact", "Открыть"));
   if (next) actions.appendChild(createLearningStepButton(next, "btn compact lesson-nav-next", next.kind === "module" ? "Следующая станция" : "Дальше"));
   if (Array.isArray(options.extraActions)) {
@@ -2324,6 +2370,10 @@ function decorateLessonCards(cards, mod) {
       continue;
     }
 
+    if (/классы\s+нутриентов/i.test(heading?.textContent || "")) {
+      enhanceNutrientClassSection(card);
+    }
+
     if (shouldShowSectionMeta(visual, i)) {
       const meta = document.createElement("div");
       meta.className = "section-meta";
@@ -2345,6 +2395,17 @@ function decorateLessonCards(cards, mod) {
         ? TypicalMistakeBlock(takeaway)
         : RememberBlock(takeaway);
     card.appendChild(note);
+  }
+}
+
+function enhanceNutrientClassSection(card) {
+  card.classList.add("nutrient-class-section");
+  const list = card.querySelector("ul, ol");
+  if (!list) return;
+  list.classList.add("nutrient-class-list");
+  for (const [index, item] of Array.from(list.children).entries()) {
+    item.classList.add("nutrient-class-item");
+    if (index < 2) item.classList.add("is-primary");
   }
 }
 
