@@ -40,11 +40,6 @@ export function getPreviousBlock(blockId: string, course: CourseModule[]): Cours
   return index > 0 ? course[index - 1] : null;
 }
 
-export function getNextBlock(blockId: string, course: CourseModule[]): CourseModule | null {
-  const index = blockIndex(blockId, course);
-  return index >= 0 ? course[index + 1] || null : null;
-}
-
 export function getBlockAccess(blockId: string, course: CourseModule[], progress: ProgressMap): BlockAccess {
   const currentState = getBlockState(progress[blockId]);
   const previous = getPreviousBlock(blockId, course);

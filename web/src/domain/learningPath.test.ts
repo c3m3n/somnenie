@@ -6,7 +6,6 @@ import {
   getBlockAccessReason,
   getCourseBlockViewModels,
   getNextLearningAction,
-  getNextBlock,
   getPreviousBlock,
 } from "./learningPath";
 import type { AppState, CourseModule, ModuleProgress } from "./types";
@@ -47,7 +46,6 @@ describe("block checkpoint access", () => {
 
   it("exposes sequential neighbors", () => {
     expect(getPreviousBlock("M02", modules)?.id).toBe("M01");
-    expect(getNextBlock("M02", modules)?.id).toBe("M03");
   });
 
   it("builds course map view models from access state", () => {

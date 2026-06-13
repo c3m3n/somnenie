@@ -12,11 +12,6 @@ export function moduleById(bundle: CourseBundle, moduleId: string): CourseModule
   return bundle.modules.find((module) => module.id === moduleId) || null;
 }
 
-export function nextModuleId(bundle: CourseBundle, moduleId: string): string | null {
-  const index = bundle.modules.findIndex((module) => module.id === moduleId);
-  return index >= 0 ? bundle.modules[index + 1]?.id || null : null;
-}
-
 async function loadModule(id: string, title: string, course: CourseMap): Promise<CourseModule> {
   const files = Object.fromEntries(await Promise.all(MODULE_FILES.map(async (file) => [file, await fetchText(`/content/${id}/${file}`)]))) as Record<ModuleFileName, string>;
   const phase = course.phases.find((item) => item.modules.includes(id));

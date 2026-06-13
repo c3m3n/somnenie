@@ -1,9 +1,8 @@
 import { addDaysISO, toISODate } from "./date";
-import { COURSE_ID, REVIEW_SCHEMA_VERSION, type ReviewItem, type ReviewState, type SessionsState, type WeakSpot } from "./types";
+import { COURSE_ID, REVIEW_SCHEMA_VERSION, type ReviewItem, type ReviewState, type SessionsState } from "./types";
 
 export const REVIEW_INTERVALS = [1, 3, 7, 14, 30, 60] as const;
 export const DAILY_REVIEW_LIMIT = 10;
-export const TODAY_REVIEW_LIMIT = 5;
 
 export function defaultReviewState(): ReviewState {
   return { schemaVersion: REVIEW_SCHEMA_VERSION, courseId: COURSE_ID, items: [] };
@@ -55,30 +54,6 @@ export function upsertWrongQuestion(review: ReviewState, payload: {
   const previous = state.items.find((item) => item.id === id);
   const next = buildWrongQuestionItem(payload, previous, today);
   return replaceReviewItem(state, next);
-}
-
-export function itemFromWeakSpot(moduleId: string, spot: WeakSpot, now = new Date()): ReviewItem {
-  const today = toISODate(now);
-  const number = spot.number ?? spot.questionNumber ?? "x";
-  return normalizeReviewItem({
-    id: questionReviewId(moduleId, number),
-    courseId: COURSE_ID,
-    moduleId,
-    kind: "question",
-    questionNumber: Number(number) || undefined,
-    text: spot.text,
-    diagnosticType: spot.diagnosticType,
-    userLabel: spot.userLabel,
-    shortExplanation: spot.shortExplanation,
-    reviewStrategy: spot.reviewStrategy,
-    interval: 1,
-    due: today,
-    errors: spot.misses || 1,
-    streak: 0,
-    createdAt: spot.updatedAt || new Date().toISOString(),
-    updatedAt: spot.updatedAt || new Date().toISOString(),
-    retired: false,
-  }) as ReviewItem;
 }
 
 export function applyReviewAnswer(item: ReviewItem, isRight: boolean, now = new Date()): ReviewItem {

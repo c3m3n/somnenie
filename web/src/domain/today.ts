@@ -1,20 +1,7 @@
-import {
-  completedCount,
-  getNextLearningAction,
-  isCheckpointPassed,
-  type LearningAction,
-} from "./learningPath";
+import { completedCount, getNextLearningAction, type LearningAction } from "./learningPath";
 import type { AppState, CourseModule, ProgressMap, TodayAction } from "./types";
 
 export { completedCount };
-
-export function nextModule(modules: CourseModule[], progress: ProgressMap): CourseModule | null {
-  return modules.find((module) => !isModuleComplete(progress[module.id])) || null;
-}
-
-export function isModuleComplete(progress?: ProgressMap[string]): boolean {
-  return isCheckpointPassed(progress);
-}
 
 export function quizScoreLabel(progress?: ProgressMap[string]): string {
   if (!progress?.quizTotal) return "нет результата";
