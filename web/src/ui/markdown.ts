@@ -8,7 +8,7 @@ marked.use({
 });
 
 export function renderMarkdown(text: string): string {
-  return String(DOMPurify.sanitize(marked.parse(String(text || ""), { async: false }), sanitizerConfig()));
+  return enhanceTables(String(DOMPurify.sanitize(marked.parse(String(text || ""), { async: false }), sanitizerConfig())));
 }
 
 export function renderInlineMarkdown(text: string): string {
@@ -25,4 +25,21 @@ function sanitizerConfig(): Config {
     ALLOWED_ATTR: ["href", "title"],
     ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[^a-z]|[a-z+.-]+(?:[^a-z+.-:]|$))/i,
   };
+}
+
+function enhanceTables(html: string): string {
+  if (typeof document === "undefined") return html;
+  const template = document.createElement("template");
+  template.innerHTML = html;
+  for (const table of Array.from(template.content.querySelectorAll("table"))) {
+    const headers = Array.from(table.querySelectorAll("thead th")).map((cell) => cell.textContent?.trim() || "");
+    if (!headers.length) continue;
+    table.classList.add("responsive-table");
+    for (const row of Array.from(table.querySelectorAll("tbody tr"))) {
+      Array.from(row.querySelectorAll("td")).forEach((cell, index) => {
+        cell.setAttribute("data-label", headers[index] || "");
+      });
+    }
+  }
+  return template.innerHTML;
 }

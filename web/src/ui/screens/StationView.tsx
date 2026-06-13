@@ -40,7 +40,7 @@ function StationHead({ module, step }: { module: CourseModule; step: StationStep
 }
 
 function StationTabs({ moduleId, active }: { moduleId: string; active: StationStepKey }) {
-  return <nav className="station-tabs" aria-label="Маршрут станции">{steps().map((step) => <button className={active === step.key ? "active" : ""} type="button" key={step.key} onClick={() => navigate({ screen: "station", moduleId, step: step.key })}>{step.icon}<span>{step.label}</span></button>)}</nav>;
+  return <nav className="station-tabs" aria-label="Маршрут станции">{steps().map((step) => <button aria-label={step.label} className={active === step.key ? "active" : ""} type="button" key={step.key} onClick={() => navigate({ screen: "station", moduleId, step: step.key })}>{step.icon}<span className="step-full">{step.label}</span><span className="step-short">{step.shortLabel}</span></button>)}</nav>;
 }
 
 function LearningStep(props: StationProps) {
@@ -169,7 +169,12 @@ async function markAndMove(moduleId: string, step: StationStepKey, next: Station
 }
 
 function steps() {
-  return [{ key: "understand" as const, label: "Понять", icon: <BookOpen size={16} /> }, { key: "apply" as const, label: "Применить", icon: <ClipboardCheck size={16} /> }, { key: "check" as const, label: "Проверить", icon: <CheckCircle2 size={16} /> }, { key: "anchor" as const, label: "Закрепить", icon: <NotebookPen size={16} /> }];
+  return [
+    { key: "understand" as const, label: "Понять", shortLabel: "Чтение", icon: <BookOpen size={16} /> },
+    { key: "apply" as const, label: "Применить", shortLabel: "Задача", icon: <ClipboardCheck size={16} /> },
+    { key: "check" as const, label: "Проверить", shortLabel: "Квиз", icon: <CheckCircle2 size={16} /> },
+    { key: "anchor" as const, label: "Закрепить", shortLabel: "Вывод", icon: <NotebookPen size={16} /> },
+  ];
 }
 
 function filesForStep(step: StationStepKey) {

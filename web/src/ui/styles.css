@@ -361,6 +361,10 @@ progress {
   font-weight: 700;
 }
 
+.step-short {
+  display: none;
+}
+
 .station-product {
   min-width: 0;
 }
@@ -435,9 +439,8 @@ progress {
 }
 
 .markdown-block table {
-  display: block;
+  width: 100%;
   max-width: 100%;
-  overflow-x: auto;
   border-collapse: collapse;
   font-size: 0.92rem;
 }
@@ -446,6 +449,13 @@ progress {
 .markdown-block td {
   border: 1px solid var(--rule);
   padding: 8px;
+  vertical-align: top;
+}
+
+.markdown-block th {
+  background: rgba(17, 18, 16, 0.035);
+  font-family: "IBM Plex Mono", Consolas, monospace;
+  font-size: 0.82rem;
 }
 
 .next-inline {
@@ -615,24 +625,36 @@ progress {
   }
 
   .station-tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   .station-tabs button {
+    gap: 4px;
     min-width: 0;
+    min-height: 32px;
     padding-inline: 6px;
-    border-bottom: 1px solid var(--rule-dark);
+    border-right: 1px solid var(--rule-dark);
+    font-size: 0.72rem;
   }
 
-  .station-tabs button:nth-child(2n) {
+  .station-tabs button:last-child {
     border-right: 0;
   }
 
-  .station-tabs button:nth-last-child(-n + 2) {
-    border-bottom: 0;
+  .station-tabs svg {
+    width: 14px;
+    height: 14px;
   }
 
-  .station-tabs button span,
+  .step-full {
+    display: none;
+  }
+
+  .step-short {
+    display: inline;
+  }
+
+  .station-tabs button .step-short,
   .topnav button {
     min-width: 0;
     overflow-wrap: anywhere;
@@ -645,6 +667,59 @@ progress {
 
   .markdown-block h2 {
     font-size: 1.35rem;
+  }
+
+  .markdown-block table.responsive-table,
+  .markdown-block table.responsive-table thead,
+  .markdown-block table.responsive-table tbody,
+  .markdown-block table.responsive-table tr,
+  .markdown-block table.responsive-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .markdown-block table.responsive-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.92rem;
+  }
+
+  .markdown-block table.responsive-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+  }
+
+  .markdown-block table.responsive-table tr {
+    margin: 0 0 10px;
+    border: 1px solid var(--rule-dark);
+    background: var(--sheet);
+  }
+
+  .markdown-block table.responsive-table td {
+    display: grid;
+    grid-template-columns: minmax(84px, 34%) minmax(0, 1fr);
+    gap: 10px;
+    border: 0;
+    border-bottom: 1px solid var(--rule);
+    padding: 9px 10px;
+    overflow-wrap: anywhere;
+  }
+
+  .markdown-block table.responsive-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .markdown-block table.responsive-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-family: "IBM Plex Mono", Consolas, monospace;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.3;
+    text-transform: uppercase;
   }
 
   .quiz-question {

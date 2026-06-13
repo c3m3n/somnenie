@@ -265,8 +265,11 @@ function mobileScript() {
       document.querySelector(".module-tile").click();
       await delay(500);
       const readingVisible = document.body.textContent.includes("Нутрициология — это наука");
+      const tableEnhanced = Boolean(document.querySelector("td[data-label]"));
+      document.querySelector("table")?.scrollIntoView({ block: "center" });
+      await delay(100);
       const noOverflow = document.documentElement.scrollWidth <= window.innerWidth + 1;
-      return { ok: readingVisible && noOverflow, readingVisible, noOverflow };
+      return { ok: readingVisible && tableEnhanced && noOverflow, readingVisible, tableEnhanced, noOverflow };
     } catch (error) {
       return { ok: false, error: String(error && (error.stack || error.message || error)), body: document.body.innerText.slice(0, 700) };
     }
