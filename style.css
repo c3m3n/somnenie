@@ -6812,7 +6812,9 @@ body.mode-module #screen {
   margin-top: var(--s5);
   padding: var(--s4);
   border: 1px solid var(--hairline) !important;
+  border-radius: 0 !important;
   background: transparent !important;
+  box-shadow: none !important;
 }
 
 .mode-profile .progress-active-module span,
@@ -6839,6 +6841,7 @@ body.mode-module #screen {
   display: grid;
   place-items: center;
   border: 1px solid var(--hairline);
+  border-radius: 0 !important;
   color: var(--faint);
   font: 500 12px/1.2 var(--font-display);
 }
@@ -6870,8 +6873,17 @@ body.mode-module #screen {
   width: 100%;
   min-height: 46px;
   border: 0 !important;
+  border-radius: 0 !important;
   background: var(--ink) !important;
   color: var(--btn-text) !important;
+}
+
+.mode-profile .metric-card,
+.mode-profile .profile-card,
+.mode-profile .dashboard-card:not(.dashboard-primary) {
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 /* ---------- Instrument component: inline PWA notice ---------- */

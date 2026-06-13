@@ -419,7 +419,8 @@ assert(appState.review.courseId === "nutrition", "Review state should carry the 
 assert(appState.sessions.courseId === "nutrition", "Session state should carry the nutrition course id");
 assert(screen.children[0].innerHTML.includes("учебных станций"), "Home should explain progress as completed stations");
 assert(!screen.children[0].innerHTML.includes("map-legend"), "Home should not carry the course-map legend (Atlas owns the map)");
-assert(screen.children[0].innerHTML.includes("SOMNENIE"), "Home statusbar should carry the platform brand, not the course");
+assert(screen.children[0].innerHTML.includes("маршрут · сегодня"), "Home should carry the instrument route locator");
+assert(screen.children[0].innerHTML.includes("home-protocol"), "Home should expose the protocol scale");
 assert(!screen.children[0].innerHTML.includes("NUTRIO"), "Old NUTRIO brand should not remain on home");
 assert(!screen.children[0].innerHTML.includes("home-metrics"), "Home should not lead with dashboard-style KPI cards");
 assert(!screen.children[0].innerHTML.includes("Экспорт прогресса"), "Home should not expose export action");
