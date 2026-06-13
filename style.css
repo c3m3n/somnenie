@@ -5811,3 +5811,316 @@ body.quiet .glow-pool {
     animation: none;
   }
 }
+
+/* ---------- Instrument redesign: base surface + type ---------- */
+
+:root {
+  --void: var(--bg);
+  --field: var(--bg);
+  --bone: var(--ink);
+  --dim: var(--muted);
+  --dimmer: var(--faint);
+  --line: var(--hairline);
+  --signal: var(--accent);
+  --signal-glow: transparent;
+  --signal-dim: transparent;
+  --ember: var(--accent);
+  --ember-glow: transparent;
+  --ember-dim: transparent;
+  --ochre: var(--muted);
+  --ochre-soft: transparent;
+  --paper: var(--bg);
+  --paper-ink: var(--text);
+  --mono: var(--font-mono);
+  --sans: var(--font-body);
+  --pixel: var(--font-mono);
+  --card: transparent;
+  --surface-soft: transparent;
+  --surface-warm: transparent;
+  --surface-ink: var(--ink);
+  --action: var(--accent);
+  --action-strong: var(--ink);
+  --action-soft: transparent;
+  --tab-active: var(--ink);
+  --tab-active-soft: transparent;
+  --next: var(--accent);
+  --next-strong: var(--ink);
+  --next-soft: transparent;
+  --success: var(--correct);
+  --success-soft: transparent;
+  --info: var(--muted);
+  --info-soft: transparent;
+  --amber: var(--muted);
+  --amber-soft: transparent;
+  --review: var(--muted);
+  --review-soft: transparent;
+  --warning: var(--muted);
+  --warning-soft: transparent;
+  --danger: var(--error);
+  --danger-soft: transparent;
+  --accent-strong: var(--ink);
+  --accent-soft: transparent;
+  --blue: var(--muted);
+  --blue-soft: transparent;
+  --wrong: var(--error);
+  --wrong-soft: transparent;
+  --border: var(--hairline);
+  --shadow: none;
+  --shadow-soft: none;
+  --shadow-deep: none;
+}
+
+html,
+body {
+  background: var(--bg);
+}
+
+body {
+  min-height: 100vh;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: var(--t-body);
+  font-weight: 400;
+  line-height: 1.65;
+  text-shadow: none;
+}
+
+body::before,
+body::after,
+.glow-pool,
+.lamp,
+.sweep {
+  display: none !important;
+}
+
+body *,
+body *::before,
+body *::after {
+  text-shadow: none !important;
+  letter-spacing: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.intro-card h2,
+.next-step-card h3,
+.lesson-title-card h1,
+.lesson-title-card h2,
+.lesson-section-card h2,
+.lesson-section-card h3,
+.quiz-q h2,
+.quiz-intro h2,
+.dashboard-card h2,
+.profile-card h2 {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+p,
+li,
+.md p,
+.md li,
+.quiz-q,
+.quiz-intro,
+.quiz-result,
+.profile-card,
+.dashboard-card {
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 400;
+}
+
+a {
+  color: var(--ink);
+  text-decoration-color: var(--hairline);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+:where(
+  #topbar,
+  #tabs,
+  .intro-card,
+  .next-step-card,
+  .study-card,
+  .review-card,
+  .profile-card,
+  .dashboard-card,
+  .quiz-intro,
+  .quiz-q,
+  .quiz-result,
+  .lesson-nav,
+  .lesson-title-card,
+  .lesson-section-card,
+  .module-card,
+  .phase-card,
+  .matrix-block,
+  .console,
+  .organism-wrap,
+  .pwa-card,
+  .btn,
+  .opt,
+  .material-subtab,
+  #tabs button
+) {
+  border-radius: var(--radius) !important;
+  box-shadow: none !important;
+}
+
+:where(
+  #topbar,
+  #tabs,
+  .intro-card,
+  .next-step-card,
+  .study-card,
+  .review-card,
+  .profile-card,
+  .dashboard-card,
+  .quiz-intro,
+  .quiz-q,
+  .quiz-result,
+  .lesson-nav,
+  .module-card,
+  .phase-card,
+  .matrix-block,
+  .console,
+  .organism-wrap,
+  .pwa-card
+) {
+  background: transparent !important;
+  color: var(--text) !important;
+}
+
+:where(
+  .intro-card,
+  .next-step-card,
+  .study-card,
+  .review-card,
+  .profile-card,
+  .dashboard-card,
+  .quiz-intro,
+  .quiz-q,
+  .quiz-result,
+  .lesson-nav,
+  .module-card,
+  .phase-card,
+  .matrix-block,
+  .pwa-card
+) {
+  border: 1px solid var(--hairline) !important;
+}
+
+#topbar {
+  background: var(--bg) !important;
+  border-bottom: 1px solid var(--hairline) !important;
+  color: var(--ink) !important;
+}
+
+#tabs {
+  background: var(--bg) !important;
+  border-bottom: 1px solid var(--hairline) !important;
+}
+
+#back-btn,
+#profile-btn,
+#tabs button,
+.material-subtab,
+.btn,
+.opt {
+  background: transparent !important;
+  border: 1px solid var(--hairline) !important;
+  color: var(--ink) !important;
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+.btn:not(.secondary),
+.today-primary-action,
+.quiz-intro-start,
+.home-actions .btn,
+.quiz-next,
+.side-next,
+.module-next-sticky,
+.lesson-nav-actions .lesson-nav-next,
+.dashboard-actions .btn:not(.secondary),
+.pwa-actions .btn:not(.secondary) {
+  background: var(--btn-bg) !important;
+  border-color: var(--btn-bg) !important;
+  color: var(--btn-text) !important;
+}
+
+body.mode-home .next-step-card .home-actions .today-primary-action {
+  background: var(--btn-bg) !important;
+  border-color: var(--btn-bg) !important;
+  color: var(--btn-text) !important;
+}
+
+.btn.secondary,
+.lesson-nav .btn.secondary,
+.dashboard-actions .btn.secondary {
+  background: transparent !important;
+  color: var(--muted) !important;
+}
+
+.mode-module .module-main .md,
+.mode-module .md {
+  background: transparent !important;
+  border: 0 !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+
+.mode-module .md h1,
+.mode-module .md h2,
+.mode-module .md h3,
+.mode-module .md p,
+.mode-module .md li,
+.mode-module .md th,
+.mode-module .md td {
+  color: var(--text) !important;
+}
+
+.mode-module .md h1,
+.mode-module .md h2,
+.mode-module .md h3 {
+  color: var(--ink) !important;
+}
+
+.reading-progress,
+.mode-module .reading-progress {
+  background: var(--bg) !important;
+  border-bottom: 1px solid var(--hairline) !important;
+  box-shadow: none !important;
+}
+
+.reading-progress-track,
+.mode-module .reading-progress-track,
+.quiz-progress-segments i,
+.course-map-segment,
+.station-cell {
+  background: var(--hairline) !important;
+}
+
+.reading-progress-track span,
+.mode-module .reading-progress-track span,
+.quiz-progress-segments i.current,
+.course-map-segment.active {
+  background: var(--accent) !important;
+}
+
+.opt.correct,
+.opt.correct .opt-state,
+.quiz-diagnosis.is-right {
+  color: var(--ink) !important;
+}
+
+.opt.wrong,
+.opt.wrong .opt-state,
+.quiz-diagnosis.is-wrong {
+  color: var(--error) !important;
+}
