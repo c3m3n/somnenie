@@ -463,11 +463,12 @@ body::after {
   height: 15px;
 }
 
-/* Станция как stepper: узел-точка перед шагом, пройденные — с галкой,
-   текущий — акцентная точка, будущие — приглушены (но кликабельны). */
+/* Станция как stepper: пронумерованный узел перед шагом (1–4), пройденные —
+   с галкой, текущий — акцентная заливка, будущие — приглушены (но кликабельны).
+   Соединительная линия между шагами показывает их как единый маршрут. */
 .tab-step-dot {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -475,10 +476,19 @@ body::after {
   border: 1px solid var(--border);
   border-radius: 999px;
   background: transparent;
+  position: relative;
+}
+
+.tab-step-num {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--dim);
 }
 
 #tabs button.is-future {
-  opacity: 0.5;
+  opacity: 0.55;
 }
 
 #tabs button.is-done {
@@ -487,20 +497,50 @@ body::after {
 }
 
 #tabs button.is-done .tab-step-dot {
-  border-color: transparent;
+  border-color: var(--signal);
+  background: var(--signal);
+}
+
+#tabs button.is-done .tab-step-num {
+  display: none;
 }
 
 #tabs button.is-done .tab-step-dot::before {
   content: "✓";
-  font-size: 9px;
+  font-size: 10px;
+  font-weight: 700;
   line-height: 1;
-  color: var(--bone);
+  color: #06140c;
 }
 
 #tabs button.active .tab-step-dot {
   border-color: var(--bone);
   background: var(--bone);
   box-shadow: 0 0 0 3px rgba(207, 201, 184, 0.18);
+}
+
+#tabs button.active .tab-step-num {
+  color: #0b0b0b;
+}
+
+/* Соединительная линия между шагами (горизонтальный ряд на десктопе). */
+#tabs button[data-step] {
+  position: relative;
+}
+
+#tabs button[data-step]:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  width: 6px;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--border);
+}
+
+#tabs button[data-step].is-done:not(:last-child)::after {
+  background: var(--signal);
 }
 
 #screen {
@@ -2665,6 +2705,8 @@ body::after {
     white-space: nowrap;
   }
   #tabs button .tab-icon { display: none; }
+  /* На мобильном #tabs — сетка с переносом, горизонтальная линия не имеет смысла. */
+  #tabs button[data-step]::after { display: none; }
   .md, .quiz-q, .quiz-result, .intro-card, .study-card, .review-card, .profile-card, .dashboard-card, .quiz-intro { padding-left: 14px; padding-right: 14px; }
   .intro-card {
     padding: 14px;

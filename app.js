@@ -51,6 +51,33 @@ let deferredInstallPrompt = null;
 let pwaStatusTimer = null;
 let serviceWorkerReloadPending = false;
 
+// Навигация «Назад»: currentView — как перерисовать текущий экран, navStack —
+// история экранов, с которых мы уходили глубже. Раньше «Назад» всегда вела домой;
+// теперь она снимает верх стека и возвращает на реально предыдущий экран.
+let currentView = null;
+let navStack = [];
+
+// Вызывается в начале каждого экрана: «вот так меня перерисовать».
+function setView(restorer) {
+  currentView = typeof restorer === "function" ? restorer : null;
+}
+
+// Вызывается ПЕРЕД уходом на более глубокий экран: запомнить, куда вернуться.
+function navForward() {
+  if (!currentView) return;
+  if (navStack[navStack.length - 1] === currentView) return;
+  navStack.push(currentView);
+  if (navStack.length > 24) navStack.shift();
+}
+
+async function goBack() {
+  const restore = navStack.pop();
+  if (restore) {
+    try { return await restore(); } catch (error) { console.warn("Nutrio back failed", error); }
+  }
+  return showHome();
+}
+
 function setScreenMode(mode) {
   if (!document.body?.classList) return;
   for (const className of ["mode-home", "mode-module", "mode-profile", "mode-session", "mode-atlas"]) {
@@ -1427,6 +1454,7 @@ function buildTodayAction(summary = getProgressSummary(), nextModule = findNextM
 }
 
 async function runTodayAction(action) {
+  navForward();
   if (action?.type === "repeat") {
     return startLearningSession({ reviewOnly: true, items: action.reviews || [] });
   }
@@ -1494,6 +1522,8 @@ async function showHome() {
   resetReadingProgress();
   cleanupHomeEffects();
   setScreenMode("home");
+  navStack = [];
+  setView(showHome);
   current = null;
   $title.textContent = "Сегодня";
   $back.classList.add("hidden");
@@ -1571,7 +1601,7 @@ async function showHome() {
   else intro.appendChild(actions);
 
   const atlasLink = intro.querySelector?.(".atlas-link");
-  if (atlasLink) atlasLink.onclick = runAsync(showAtlas);
+  if (atlasLink) atlasLink.onclick = runAsync(() => { navForward(); return showAtlas(); });
 
   $screen.appendChild(intro);
   startHomeEffects(intro, summary, nextModule, sessionPlan);
@@ -1582,6 +1612,7 @@ async function showAtlas() {
   resetReadingProgress();
   cleanupHomeEffects();
   setScreenMode("atlas");
+  setView(showAtlas);
   current = null;
   $title.textContent = "Карта курса";
   $back.classList.remove("hidden");
@@ -1685,7 +1716,7 @@ function moduleCard(mod, nextModule = null) {
     `</div>` +
     (parts.length ? `<div class="mod-progress">${parts.join(" · ")}</div>` : "") +
     `<div class="module-progressbar" aria-hidden="true"><span style="width: ${completion}%"></span></div>`;
-  card.onclick = runAsync(() => showModule(mod));
+  card.onclick = runAsync(() => { navForward(); return showModule(mod); });
   return card;
 }
 
@@ -1721,6 +1752,7 @@ async function showProfile(options = {}) {
   resetReadingProgress();
   cleanupHomeEffects();
   setScreenMode("profile");
+  setView(() => showProfile(options));
   current = null;
   $title.textContent = "Прогресс обучения";
   $back.classList.remove("hidden");
@@ -2116,6 +2148,7 @@ async function showModule(mod) {
   resetReadingProgress();
   cleanupHomeEffects();
   setScreenMode("module");
+  setView(() => showModule(mod));
   current = mod;
   $title.textContent = mod.id;
   if (typeof $title.setAttribute === "function") $title.setAttribute("title", mod.title);
@@ -2159,7 +2192,12 @@ function appendTabButton(tab) {
   const button = document.createElement("button");
   button.textContent = tab.label;
   button.className = `tab-button tab-${visual.tone}`;
-  const dot = tab.step ? `<i class="tab-step-dot" aria-hidden="true"></i>` : "";
+  // Номер шага в узле степпера (1–4 по порядку маршрута станции). Пройденный шаг
+  // покажет галочку вместо номера, текущий — акцентную заливку.
+  const stepIndex = tab.step ? MODULE_ROUTE_TABS.findIndex((r) => r.step === tab.step) + 1 : 0;
+  const dot = tab.step
+    ? `<i class="tab-step-dot" aria-hidden="true"><span class="tab-step-num">${stepIndex || ""}</span></i>`
+    : "";
   button.innerHTML = `${dot}${tabIconHtml(visual)}<span>${escapeHtml(tab.label)}</span>`;
   button.onclick = () => openTab(tab.file);
   button.dataset.file = tab.file;
@@ -3284,8 +3322,8 @@ async function registerServiceWorker() {
   });
 }
 
-$back.onclick = runAsync(showHome);
-$profile.onclick = runAsync(showProfile);
+$back.onclick = runAsync(goBack);
+$profile.onclick = runAsync(() => { navForward(); return showProfile(); });
 if (window.addEventListener) {
   window.addEventListener("resize", updateTabsOverflowHint);
   window.addEventListener("beforeinstallprompt", (event) => {

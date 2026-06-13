@@ -108,6 +108,7 @@ async function startLearningSession(options = {}) {
 
 async function showReviewSession(plan) {
   setScreenMode("session");
+  setView(() => showReviewSession(plan));
   current = null;
   $title.textContent = "Сеанс";
   $back.classList.remove("hidden");

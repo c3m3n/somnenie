@@ -381,7 +381,7 @@ function showWeakSpots(mod) {
     const start = document.createElement("button");
     start.className = "btn btn-with-icon";
     setButtonContent(start, `Начать короткую сессию памяти (${due.length})`, "arrow");
-    start.onclick = runAsync(() => startLearningSession({ reviewOnly: true, items: due }));
+    start.onclick = runAsync(() => { navForward(); return startLearningSession({ reviewOnly: true, items: due }); });
     card.appendChild(start);
   }
 

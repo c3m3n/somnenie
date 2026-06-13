@@ -514,6 +514,8 @@ assert(tabButtons.map((child) => child.textContent).join("|") === "Понять|
 assert(tabButtons.every((child) => child.dataset.step), "Each station route step should carry a step key for the stepper");
 assert(tabButtons.filter((child) => child.classList.contains("active")).length === 1, "Stepper should mark exactly one current step");
 assert(tabButtons.filter((child) => child.classList.contains("is-future")).length === 3, "Unstarted station should show the three later steps as quiet/future");
+const stepNumbers = tabButtons.map((child) => (String(child.innerHTML).match(/tab-step-num">(\d+)</) || [])[1] || "");
+assert(stepNumbers.join("") === "1234", `Stepper nodes should be numbered 1-4 in route order, got [${stepNumbers.join(",")}]`);
 assert(!tabButtons.some((child) => child.classList.contains("is-done")), "A fresh station should have no completed steps yet");
 assert(!screen.children.some((child) => child.className === "study-card"), "Theory should not close station progress on the first block");
 assert(screen.children.some((child) => child.className === "material-subnav"), "Material blocks should render local navigation");
@@ -773,6 +775,20 @@ const completedActions = completedIntro.children.find((child) => child.className
 assert(completedActions.children.length === 1, "Completed course should still show one recommended action");
 assert(completedActions.children[0].textContent === "Открыть журнал", "Completed course should route to a supporting mode, not a stale learning CTA");
 assert(!completedIntro.innerHTML.includes("%%"), "Average score should not render a double percent sign");
+
+// Кнопка «Назад» (стек навигации): Atlas -> модуль -> назад возвращает в Atlas,
+// затем -> назад из Atlas ведёт домой. Раньше «Назад» всегда уводила на главную.
+await context.showHome();
+await context.showAtlas();
+assert(title.textContent === "Карта курса", "Atlas should open");
+const navModuleCard = screen.children.find((child) => child.className === "module-card");
+assert(navModuleCard, "Atlas should expose module cards to open");
+await navModuleCard.onclick();
+assert(title.textContent !== "Карта курса", "A module should open from the Atlas card");
+await elementsById.get("back-btn").onclick();
+assert(title.textContent === "Карта курса", "Back from a module opened via Atlas should return to Atlas, not Home");
+await elementsById.get("back-btn").onclick();
+assert(title.textContent === "Сегодня", "Back from Atlas should return Home");
 
 const maliciousMarkdown = `<script>alert(1)</script><img src=x onerror=alert(1)>[bad](javascript:alert(1))<span onclick=alert(1)>x</span>`;
 const renderedMalicious = context.renderMarkdown(maliciousMarkdown);
