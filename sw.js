@@ -2,7 +2,7 @@
 
 importScripts("./core/constants.js");
 
-const VERSION = "nutrio-v17";
+const VERSION = "nutrio-v18";
 const SHELL_CACHE = `${VERSION}-shell`;
 const CONTENT_CACHE = `${VERSION}-content`;
 const MODULE_FILES = self.NutrioConst?.MODULE_FILES || ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"];
@@ -25,8 +25,6 @@ const APP_SHELL = [
   "./fonts/IBMPlexMono-Bold.woff2",
   "./fonts/IBMPlexSans-Regular.woff2",
   "./fonts/IBMPlexSans-Bold.woff2",
-  "./fonts/PressStart2P-cyrillic.woff2",
-  "./fonts/PressStart2P-latin.woff2",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-maskable-512.png",
@@ -48,10 +46,6 @@ const APP_SHELL = [
   "./assets/generated/icon-product.png",
   "./assets/generated/icon-diet.png",
   "./assets/generated/icon-evidence.png",
-  "./assets/generated/organism-calm.png",
-  "./assets/generated/organism-focus.png",
-  "./assets/generated/organism-review.png",
-  "./assets/generated/organism-complete.png",
   "./screenshots/home-narrow.png",
   "./screenshots/progress-wide.png",
 ];

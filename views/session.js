@@ -2,7 +2,7 @@
  *
  * Вынесено из app.js по той же схеме, что и views/quiz.js: функции остаются
  * глобальными (классический <script>), продолжают видеть общие хелперы app.js
- * (instrumentOrganism, buildCurrentSessionPlan, showModule, showHome, reviewApi и т.д.)
+ * (buildCurrentSessionPlan, showModule, showHome, reviewApi и т.д.)
  * и вызываться из views/quiz.js (showWeakSpots) и app.js (runTodayAction).
  * Грузится после app.js — все используемые глобали уже определены к моменту вызова. */
 
@@ -32,13 +32,11 @@ function sessionProgressCells(total, index, results) {
 }
 
 function sessionHeader(plan, index, total, results) {
-  const organismState = index >= total ? "complete" : "review";
+  const state = index >= total ? "complete" : "review";
+  const label = String(Math.min(index + 1, Math.max(total, 1))).padStart(2, "0");
   return (
     `<header class="session-head">` +
-      `<span class="mini-organism-frame" data-organism-state="${organismState}">` +
-        organismImageHtml(organismState, "mini-organism-image") +
-        `<pre class="mini-organism" aria-hidden="true"></pre>` +
-      `</span>` +
+      `<span class="session-station-marker" data-session-state="${state}" aria-hidden="true">${label}</span>` +
       `<div>` +
         `<div class="section-kicker">Сеанс памяти</div>` +
         `<h2>${index < total ? `повторение ${index + 1}/${total}` : "повторение завершено"}</h2>` +
@@ -62,17 +60,6 @@ function memoryLearningCardHtml(item, options = {}) {
       `<strong>${escapeHtml(memory.reviewStrategy)}</strong>` +
     `</div>` +
   `</div>`;
-}
-
-function startSessionOrganism(root, mood = "focus") {
-  cleanupHomeEffects();
-  const mini = root.querySelector?.(".mini-organism");
-  if (!mini) return;
-  const stop = startAsciiOrganism(mini, effectsReduced());
-  mini.dataset.mood = mood;
-  homeEffectsCleanup = () => {
-    if (stop) stop();
-  };
 }
 
 async function startLearningSession(options = {}) {
@@ -132,7 +119,6 @@ async function showReviewSession(plan) {
     wrap.className = "review-session";
     wrap.innerHTML = sessionHeader(plan, index, items.length, results);
     $screen.appendChild(wrap);
-    startSessionOrganism(wrap, "focus");
 
     if (question) renderQuestionItem(wrap, item, mod, question);
     else renderConceptItem(wrap, item, mod);
@@ -159,8 +145,6 @@ async function showReviewSession(plan) {
     await saveReviewState(nextReview);
     await recordLearningActivity({ reviews: 1 });
     results[index] = { isRight, item: updated };
-    if (isRight) instrumentOrganism.pulse();
-    else instrumentOrganism.mood("dim", 1500);
     return updated;
   }
 
@@ -311,8 +295,6 @@ async function showReviewSession(plan) {
         `<p>Повторили ${items.length} ${pluralizeRepeats(items.length)}. ${tomorrow} ${tomorrow === 1 ? "материал вернётся" : "материалов вернутся"} завтра.</p>` +
       `</div>`;
     $screen.appendChild(wrap);
-    startSessionOrganism(wrap, "glad");
-    instrumentOrganism.mood("glad", 3000);
 
     const result = wrap.querySelector(".quiz-result");
     if (plan.moduleStep) {

@@ -119,17 +119,8 @@ function prefersReducedMotion() {
   return Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
 }
 
-function effectsReduced() {
-  return prefersReducedMotion() || Boolean(profileCache?.quietMode);
-}
-
 function applyQuietMode() {
   if (document.body?.classList) document.body.classList.toggle("quiet", Boolean(profileCache?.quietMode));
-}
-
-function liveClockText() {
-  const now = new Date();
-  return `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
 }
 
 function todayISO() {
@@ -176,76 +167,6 @@ async function fetchWithTimeout(path, timeoutMs = CONTENT_FETCH_TIMEOUT_MS) {
   }
 }
 
-function startHomeEffects(root, summary, nextModule, sessionPlan) {
-  cleanupHomeEffects();
-  const cleanups = [];
-  const reduced = effectsReduced();
-
-  const clock = root.querySelector?.("[data-instrument-clock]");
-  if (clock) {
-    const tick = () => { clock.textContent = liveClockText(); };
-    tick();
-    if (typeof setInterval === "function") {
-      const timer = setInterval(tick, 1000);
-      cleanups.push(() => clearInterval(timer));
-    }
-  }
-
-  const consoleHost = root.querySelector?.("[data-console-lines]");
-  if (consoleHost) {
-    const lines = machineSpeechLines(summary, nextModule, sessionPlan);
-    typeConsoleLines(consoleHost, lines, reduced);
-  }
-
-  const organism = root.querySelector?.("#organism");
-  if (organism) {
-    const stop = startAsciiOrganism(organism, reduced);
-    if (stop) cleanups.push(stop);
-  }
-
-  homeEffectsCleanup = () => {
-    for (const cleanup of cleanups) cleanup();
-  };
-}
-
-function typeConsoleLines(host, lines, reduced) {
-  host.innerHTML = "";
-  const cursor = document.createElement("span");
-  cursor.className = "cursor";
-
-  const addLine = (index) => {
-    if (index >= lines.length) {
-      cursor.remove?.();
-      return;
-    }
-
-    const p = document.createElement("p");
-    if (index === lines.length - 1) p.className = "accent";
-    const textNode = document.createElement("span");
-    p.appendChild(textNode);
-    p.appendChild(cursor);
-    host.appendChild(p);
-
-    const text = lines[index];
-    if (reduced) {
-      textNode.textContent = text;
-      addLine(index + 1);
-      return;
-    }
-
-    let cursorIndex = 0;
-    const step = () => {
-      textNode.textContent = text.slice(0, cursorIndex);
-      cursorIndex += 1;
-      if (cursorIndex <= text.length) setTimeout(step, 34 + Math.random() * 28);
-      else setTimeout(() => addLine(index + 1), 320);
-    };
-    step();
-  };
-
-  addLine(0);
-}
-
 function markdownApi() {
   return window.marked || globalThis.marked;
 }
@@ -283,84 +204,6 @@ function renderMarkdown(text) {
 function renderMarkdownInline(text) {
   return sanitizeHtml(markdownApi().parseInline(String(text || "")));
 }
-
-function startAsciiOrganism(pre, reduced) {
-  const width = window.innerWidth && window.innerWidth <= 520 ? 24 : 46;
-  const height = window.innerWidth && window.innerWidth <= 520 ? 10 : 15;
-  const chars = " ··::;+oxX%#@";
-  let t = 0;
-
-  const frame = () => {
-    const mood = pre.dataset.mood || "calm";
-    const pulseUntil = Number(pre.dataset.pulseUntil || 0);
-    const pulse = Math.max(0, Math.min(1, (pulseUntil - Date.now()) / 1800));
-    const moodSpeed = mood === "focus" ? 0.034 : mood === "glad" ? 0.068 : 0.055;
-    const moodAmp = mood === "focus" ? 0.62 : mood === "dim" ? 0.48 : mood === "glad" ? 1.16 : 1;
-    const density = mood === "glad" ? 18 : mood === "dim" ? 13 : 16;
-    t += moodSpeed;
-    let out = "";
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
-        const dx = ((x - width / 2) / (width / 2)) * 1.9;
-        const dy = (y - height / 2) / (height / 2);
-        const r = Math.sqrt(dx * dx + dy * dy);
-        const a = Math.atan2(dy, dx);
-        const wobble = moodAmp * (
-          0.16 * Math.sin(3 * a + 1.25 * t) +
-          0.11 * Math.sin(5 * a - 0.8 * t) +
-          0.05 * Math.sin(8 * a + 0.5 * t)
-        );
-        const breathBase = mood === "focus" ? 0.70 : mood === "glad" ? 0.82 : mood === "dim" ? 0.64 : 0.74;
-        const breath = breathBase + (0.10 + pulse * 0.12) * Math.sin(0.6 * t);
-        const value = breath + wobble - r;
-        const index = Math.max(0, Math.min(chars.length - 1, Math.floor(value * (density + pulse * 5))));
-        out += chars[index];
-      }
-      out += "\n";
-    }
-    pre.textContent = out;
-  };
-
-  frame();
-  if (reduced || typeof setInterval !== "function") return null;
-
-  let timer = setInterval(frame, 90);
-  const onVisibility = () => {
-    if (document.hidden) {
-      if (timer) clearInterval(timer);
-      timer = null;
-    } else if (!timer) {
-      timer = setInterval(frame, 90);
-    }
-  };
-
-  if (document.addEventListener) document.addEventListener("visibilitychange", onVisibility);
-  return () => {
-    if (timer) clearInterval(timer);
-    if (document.removeEventListener) document.removeEventListener("visibilitychange", onVisibility);
-  };
-}
-
-const instrumentOrganism = {
-  mood(name = "calm", duration = 0) {
-    const targets = document.querySelectorAll?.("#organism, .mini-organism");
-    if (!targets) return;
-    for (const target of targets) target.dataset.mood = name;
-    if (duration > 0) {
-      setTimeout(() => {
-        for (const target of document.querySelectorAll?.("#organism, .mini-organism") || []) {
-          if (target.dataset.mood === name) target.dataset.mood = "calm";
-        }
-      }, duration);
-    }
-  },
-  pulse() {
-    const until = String(Date.now() + 1800);
-    for (const target of document.querySelectorAll?.("#organism, .mini-organism") || []) {
-      target.dataset.pulseUntil = until;
-    }
-  },
-};
 
 function pluralizeSignals(count) {
   const mod10 = count % 10;
@@ -812,29 +655,10 @@ const GENERATED_ICON_ASSETS = Object.freeze({
   offline: "assets/generated/icon-offline.png",
 });
 
-const ORGANISM_ASSETS = Object.freeze({
-  calm: "assets/generated/organism-calm.png",
-  focus: "assets/generated/organism-focus.png",
-  review: "assets/generated/organism-review.png",
-  complete: "assets/generated/organism-complete.png",
-});
-
 function generatedIconHtml(name, className = "ui-icon") {
   const src = GENERATED_ICON_ASSETS[name];
   if (!src) return "";
   return `<img class="${escapeHtmlAttribute(className)} generated-icon" src="${src}" alt="" aria-hidden="true" loading="lazy" decoding="async">`;
-}
-
-function organismAssetStateForAction(action) {
-  if (action?.type === "repeat") return "review";
-  if (action?.type === "course_complete") return "complete";
-  if (action?.type === "continue_station" || action?.type === "start_station") return "focus";
-  return "calm";
-}
-
-function organismImageHtml(state = "calm", className = "organism-image") {
-  const src = ORGANISM_ASSETS[state] || ORGANISM_ASSETS.calm;
-  return `<img class="${escapeHtmlAttribute(className)}" src="${src}" alt="" aria-hidden="true" loading="lazy" decoding="async">`;
 }
 
 function iconSvg(name, className = "ui-icon") {
@@ -1220,53 +1044,6 @@ function moduleTheme(mod) {
     { icon: "summary", tone: "success" },
   ];
   return themes[index % themes.length];
-}
-
-function signalCounterText(count) {
-  return `${String(count).padStart(2, "0")}/${String(modules.length || 0).padStart(2, "0")}`;
-}
-
-function machineSpeechLines(summary, nextModule, sessionPlan) {
-  const sessions = loadSessionState();
-  const daysSinceLast = sessions.lastDate ? reviewApi().daysBetweenISO(sessions.lastDate, todayISO()) : 0;
-  const stationCount = `${summary.completedStations}/${summary.totalStations}`;
-  const lines = [`> маршрут: ${stationCount} станций закрыто${nextModule ? `, следующий ${nextModule.id}` : ""}.`];
-
-  if (!nextModule && !summary.weakSpotTotal) {
-    lines.push("> памяти в маршруте пока нет, курс можно поддерживать короткими повторами.");
-  } else if (daysSinceLast > 7) {
-    lines.push(`> пауза: ${daysSinceLast} дней. начнём с короткого шага без долга.`);
-  } else if (sessionPlan?.reviews?.length) {
-    lines.push(`> память: ${sessionPlan.reviews.length} ${pluralizeSignals(sessionPlan.reviews.length)} на сегодня, не больше короткой сессии.`);
-  } else {
-    lines.push("> память: на сегодня чисто.");
-  }
-
-  if (sessions.streakDays > 1) {
-    lines.push(`> ритм: ${sessions.streakDays}-й день подряд. следующий шаг уже выбран.`);
-  } else if (nextModule) {
-    lines.push(`> фокус: ${stationIdForModule(nextModule)} — понять, проверить, сохранить вывод.`);
-  } else {
-    lines.push("> фокус: вернуться к журналу или поддерживающему повторению.");
-  }
-  return lines.slice(0, 3);
-}
-
-function homeRouteStatusHtml(summary, nextModule, sessionPlan) {
-  const completed = signalCounterText(summary.completedStations || 0);
-  const memory = summary.dueReviewTotal
-    ? `${summary.dueReviewTotal} ${pluralizeWeakSpots(summary.dueReviewTotal)} сегодня`
-    : "память чиста";
-  const next = sessionPlan?.reviews?.length
-    ? `короткая сессия памяти · до ${TODAY_REVIEW_LIMIT} сигналов`
-    : nextModule
-      ? `${stationIdForModule(nextModule)} · ${nextModule.title}`
-      : "курс закрыт · поддерживать ритм";
-  return `<div class="organism-caption">` +
-    `<span>контур маршрута</span>` +
-    `<strong>${escapeHtml(completed)} · ${escapeHtml(memory)}</strong>` +
-    `<small>${escapeHtml(next)}</small>` +
-  `</div>`;
 }
 
 function buildCurrentSessionPlan(nextModule = findNextModule(), reviewOnly = false) {

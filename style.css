@@ -121,20 +121,6 @@ body {
   font-display: swap;
 }
 
-@font-face {
-  font-family: "Press Start 2P";
-  src: url("fonts/PressStart2P-cyrillic.woff2") format("woff2");
-  unicode-range: U+0400-045F;
-  font-display: swap;
-}
-
-@font-face {
-  font-family: "Press Start 2P";
-  src: url("fonts/PressStart2P-latin.woff2") format("woff2");
-  unicode-range: U+0000-00FF;
-  font-display: swap;
-}
-
 :root {
   --void: #070707;
   --field: #0c0c0a;
@@ -155,7 +141,7 @@ body {
   --mono: "IBM Plex Mono", Consolas, monospace;
   --sans: "IBM Plex Sans", "Segoe UI", sans-serif;
   --serif: Georgia, "Times New Roman", serif;
-  --pixel: "Press Start 2P", monospace;
+  --pixel: var(--mono);
   --ease: cubic-bezier(0.22, 0.9, 0.3, 1);
 
   --bg: var(--void);
@@ -6948,4 +6934,86 @@ body.mode-module #screen {
   border-color: var(--ink) !important;
   background: var(--ink) !important;
   color: var(--bg) !important;
+}
+
+/* ---------- Instrument component: review session marker ---------- */
+
+.mode-session #screen {
+  max-width: min(100%, 390px);
+  padding: var(--s6) var(--s5) max(28px, env(safe-area-inset-bottom));
+}
+
+.mode-session .review-session {
+  width: 100%;
+  margin: 0 0 var(--s6);
+}
+
+.mode-session .session-head {
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: var(--s4);
+  align-items: start;
+  margin: 0 0 var(--s5);
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.mode-session .session-station-marker {
+  aspect-ratio: 1;
+  width: 54px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--hairline);
+  background: var(--accent);
+  color: var(--ink);
+  font: 500 var(--t-meta)/1 var(--font-mono);
+}
+
+.mode-session .session-station-marker[data-session-state="complete"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--bg);
+}
+
+.mode-session .session-head .section-kicker {
+  margin: 0 0 var(--s2);
+  color: var(--faint) !important;
+  font: 400 var(--t-label)/1.2 var(--font-mono) !important;
+  letter-spacing: 1px !important;
+  text-transform: none !important;
+}
+
+.mode-session .session-head h2 {
+  margin: 0;
+  color: var(--ink);
+  font: 500 var(--t-h)/1.25 var(--font-display);
+}
+
+.mode-session .session-head p {
+  margin: var(--s2) 0 var(--s3);
+  color: var(--muted) !important;
+  font: 400 var(--t-meta)/1.35 var(--font-mono);
+}
+
+.mode-session .session-cells {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 3px;
+  max-width: none;
+}
+
+.mode-session .session-cells i {
+  height: 6px;
+  border-color: var(--hairline);
+  background: transparent;
+}
+
+.mode-session .session-cells i.now {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+
+.mode-session .session-cells i.done {
+  border-color: var(--ink);
+  background: var(--ink);
 }
