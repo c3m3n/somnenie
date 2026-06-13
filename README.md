@@ -1,64 +1,68 @@
 # Somnenie
 
-Личное статическое PWA-приложение для курса «Нутрициология без мифов». Работает без сборки: HTML, CSS, JS, локальный Markdown-контент и IndexedDB для прогресса.
+Личное PWA-приложение для курса «Нутрициология без мифов». Каноническая реализация находится в `web/src` и собирается через React 19, TypeScript и Vite.
 
 Курс нужен для обучения и самопроверки. Он не заменяет врача, диагностику, лечение или индивидуальные рекомендации по питанию.
-
-## Назначение и аудитория
-
-Somnenie — личное статическое PWA для курса «Нутрициология без мифов». Внутренний codename в документации и задачах: Nutrio.
-
-Базовая аудитория: здоровый взрослый новичок, который хочет учиться, проходить самопроверку, сохранять выводы и возвращаться к слабым местам.
-
-Курс не заменяет врача, диагностику, лечение или индивидуальные рекомендации. Он не предназначен для самостоятельного ведения беременности/лактации, диабета, хронической болезни почек, пищевой аллергии, РПП, детского/подросткового питания или необъяснимой потери веса.
-
-Учебная петля: прочитать материал -> пройти проверку -> сохранить главный вывод -> повторить слабые места.
 
 ## Запуск
 
 ```powershell
-git clone https://github.com/c3m3n/somnenie.git
-cd somnenie
-python -m http.server 8766 --bind 127.0.0.1
+npm install
+npm run dev
 ```
 
-Открыть:
+Открыть локальный адрес, который напечатает Vite. По умолчанию это:
 
 ```text
-http://127.0.0.1:8766/
+http://127.0.0.1:5173/
 ```
 
-На Windows можно запустить `start.bat`.
+Для проверки production-сборки:
+
+```powershell
+npm run build
+npm run preview
+```
 
 ## Проверки
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\check-all.ps1
+npm run typecheck
+npm run lint
+npm run test
+npm run quality
 ```
 
-Browser E2E:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\tools\check-all.ps1 -E2E
-```
+`npm run quality` выполняет typecheck, ESLint, Vitest, production build, проверку контента, PWA-контракт и dist smoke.
 
 ## Структура
 
 ```text
-index.html                  оболочка приложения
-app.js                      экран курса, чтение, тесты, прогресс
-style.css                   стили
-sw.js                       PWA-кэш и офлайн-режим
-manifest.webmanifest        PWA manifest
-core/storage.js             IndexedDB и миграция старого localStorage
-core/review.js              очередь повторения слабых мест
-lib/marked.min.js           локальный Markdown-рендерер
-content/manifest.json       источник истины для списка модулей и обязательных файлов
-content/course.json         источник истины для фаз курса
-content/claims.json         контракт источников для чувствительных утверждений
-content/MXX/                теория, термины, тест, практика, схемы, итог
-tools/                      валидатор, smoke, review test, browser E2E
-fonts/, icons/              локальные ассеты PWA
+web/index.html              Vite entry HTML
+web/src/main.tsx            React entry point
+web/src/domain/             чистая доменная логика: путь, quiz, review, today
+web/src/ui/                 экраны приложения и стили
+web/src/storage/            IndexedDB и миграция старого localStorage
+web/src/pwa/                registration и source service worker
+content/                    Markdown-контент курса и контракты
+manifest.webmanifest        PWA manifest, копируется в dist
+assets/, fonts/, icons/     статические ассеты, копируются в dist
+tools/                      build/postbuild, content, PWA и smoke проверки
+dist/                       результат `npm run build`
 ```
 
-Markdown-контент не должен содержать raw HTML. Валидатор и smoke test проверяют базовые XSS-ограничения, структуру курса, PWA-кэш и security headers.
+Правило прохождения курса: следующий блок открывается только после сдачи контрольной предыдущего блока. Источник истины для доступа к блокам находится в `web/src/domain/learningPath.ts`.
+
+## Деплой
+
+Vercel запускает:
+
+```powershell
+npm run build
+```
+
+и отдаёт каталог:
+
+```text
+dist
+```
