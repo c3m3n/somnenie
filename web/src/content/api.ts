@@ -24,7 +24,7 @@ export function moduleById(bundle: CourseBundle, moduleId: string): CourseModule
 
 export function moduleFilesLoaded(module: CourseModule, neededFiles: readonly ModuleFileName[] = MODULE_FILES): boolean {
   const loaded = loadedModuleFiles.get(module.id);
-  return neededFiles.every((file) => loaded?.has(file));
+  return neededFiles.every((file) => loaded?.has(file) || Boolean(module.files[file]?.trim()));
 }
 
 export async function ensureModuleFiles(bundle: CourseBundle, moduleId: string, requestedFiles: readonly ModuleFileName[]): Promise<CourseModule | null> {
