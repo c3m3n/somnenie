@@ -1,15 +1,20 @@
 import { describe, expect, it } from "vitest";
 import { buildTodayAction, completedCount } from "./today";
 import { defaultReviewState, normalizeReviewState } from "./review";
-import { type AppState, type CourseModule, type ProgressMap } from "./types";
+import { type AppState, type CourseModule, type ModuleProgress, type ProgressMap } from "./types";
 
 const modules = ["M01", "M02"].map((id) => ({ id, title: id, phaseId: "p", phaseTitle: "P", files: {} })) as CourseModule[];
 
 describe("today priority", () => {
-  it("prioritizes due memory over new material", () => {
+  it("prioritizes due memory when no checkpoint blocker exists", () => {
     const appState = stateWithReview("2026-06-13");
-    const action = buildTodayAction(modules, {}, appState, new Date("2026-06-13"));
+    const action = buildTodayAction(modules, { M01: checkpointPassed() }, appState, new Date("2026-06-13"));
     expect(action.kind).toBe("review");
+  });
+
+  it("prioritizes failed checkpoint blocker above due review", () => {
+    const action = buildTodayAction(modules, { M01: failedLegacy() }, stateWithReview("2026-06-13"), new Date("2026-06-13"));
+    expect(action).toMatchObject({ kind: "remediation", moduleId: "M01" });
   });
 
   it("continues station and then falls back to journal after completion", () => {
@@ -34,4 +39,8 @@ function completeProgress(): ProgressMap {
 
 function checkpointPassed() {
   return { quizAttemptStatus: "complete" as const, quizCompletedAt: "2026-06-13T00:00:00.000Z", quizBest: 7, quizTotal: 10 };
+}
+
+function failedLegacy(): ModuleProgress {
+  return { quizAttemptStatus: "complete" as const, quizCompletedAt: "2026-06-13T00:00:00.000Z", quizBest: 6, quizTotal: 10 };
 }

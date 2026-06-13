@@ -1,5 +1,18 @@
 import { dueReviewItems } from "./review";
-import type { AppState, CourseModule, ModuleProgress, ProgressMap, ReviewItem, StationStepKey } from "./types";
+import type {
+  AppState,
+  CheckpointAttempt,
+  CheckpointStatus,
+  CourseModule,
+  FailedCheckpointAnswer,
+  ModuleProgress,
+  ProgressMap,
+  RemediationAction,
+  RemediationPlan,
+  ReviewItem,
+  ReviewState,
+  StationStepKey,
+} from "./types";
 
 const PASS_RATIO = 0.7;
 
@@ -24,6 +37,19 @@ export interface CourseBlockViewModel {
   requiredBlockId: string | null;
 }
 
+export interface CheckpointOutcome {
+  blockId: string;
+  status: CheckpointStatus;
+  score: {
+    correct: number;
+    total: number;
+    ratio: number | null;
+  };
+  failedQuestionIds: string[];
+  isBlocking: boolean;
+  failureDate: string | null;
+}
+
 export type LearningActionType = "fix_failed_checkpoint" | "review" | "take_checkpoint" | "continue_block" | "start_block" | "course_complete";
 
 export interface LearningAction {
@@ -38,6 +64,63 @@ export interface LearningAction {
 export function getPreviousBlock(blockId: string, course: CourseModule[]): CourseModule | null {
   const index = blockIndex(blockId, course);
   return index > 0 ? course[index - 1] : null;
+}
+
+export function getCheckpointStatus(blockId: string, progress: ProgressMap): CheckpointStatus {
+  return deriveCheckpointStatusFromProgress(progress[blockId]);
+}
+
+export function getCheckpointOutcome(blockId: string, progress: ProgressMap, now = new Date()): CheckpointOutcome {
+  const blockProgress = progress[blockId];
+  const attempt = latestCheckpointAttempt(blockProgress);
+  const status = deriveCheckpointStatusFromProgress(blockProgress);
+  const score = checkpointScore(blockProgress, attempt);
+  return {
+    blockId,
+    status,
+    score,
+    failedQuestionIds: failedQuestionIdsForOutcome(blockProgress, attempt),
+    isBlocking: status === "failed",
+    failureDate: outcomeFailureDate(blockProgress, attempt, now),
+  };
+}
+
+export function getBlockingCheckpoint(course: CourseModule[], progress: ProgressMap): CourseModule | null {
+  return course.find((block) => getCheckpointOutcome(block.id, progress).status === "failed") || null;
+}
+
+export function canRetakeCheckpoint(blockId: string, progress: ProgressMap, _reviewState?: ReviewState): boolean {
+  return getCheckpointOutcome(blockId, progress).status === "failed";
+}
+
+export function getRemediationPlan(blockId: string, progress: ProgressMap, reviewState?: ReviewState): RemediationPlan | null {
+  const outcome = getCheckpointOutcome(blockId, progress);
+  if (outcome.status !== "failed") return null;
+  const blockProgress = progress[blockId];
+  const attempt = latestCheckpointAttempt(blockProgress);
+  const failedAnswers = collectFailedAnswers(blockId, blockProgress?.weakSpots, attempt, outcome.failedQuestionIds);
+  const actions = buildRemediationActions(blockId, reviewState, failedAnswers.length > 0);
+  return {
+    blockId,
+    failedAt: outcome.failureDate,
+    score: outcome.score,
+    failedAnswers,
+    actions,
+    canRetake: canRetakeCheckpoint(blockId, progress, reviewState),
+  };
+}
+
+function buildRemediationActions(blockId: string, reviewState: ReviewState | undefined, hasWeakSpots: boolean): RemediationAction[] {
+  const actions: RemediationAction[] = [];
+  actions.push("review_failed_questions");
+  if (hasWeakSpots && hasRelatedReview(blockId, reviewState)) actions.push("read_related_fragments");
+  actions.push("retake_checkpoint");
+  return actions;
+}
+
+function hasRelatedReview(blockId: string, reviewState?: ReviewState): boolean {
+  if (!reviewState?.items) return false;
+  return reviewState.items.some((item) => item.moduleId === blockId);
 }
 
 export function getBlockAccess(blockId: string, course: CourseModule[], progress: ProgressMap): BlockAccess {
@@ -60,20 +143,20 @@ export function getCourseBlockViewModels(course: CourseModule[], progress: Progr
 }
 
 export function getBlockState(progress?: ModuleProgress): BlockState {
-  if (isCheckpointPassed(progress)) return "checkpoint_passed";
-  if (isCheckpointFailed(progress)) return "checkpoint_failed";
-  if (isCheckpointReady(progress)) return "checkpoint_ready";
-  if (isBlockStarted(progress)) return "in_progress";
+  const status = deriveCheckpointStatusFromProgress(progress);
+  if (status === "passed") return "checkpoint_passed";
+  if (status === "failed") return "checkpoint_failed";
+  if (status === "ready") return "checkpoint_ready";
+  if (status === "in_progress") return "in_progress";
   return "available";
 }
 
 export function isCheckpointPassed(progress?: ModuleProgress): boolean {
-  if (!hasCheckpointResult(progress) || !progress?.quizTotal) return false;
-  return (progress.quizBest || 0) / progress.quizTotal >= PASS_RATIO;
+  return deriveCheckpointStatusFromProgress(progress) === "passed";
 }
 
 export function isCheckpointFailed(progress?: ModuleProgress): boolean {
-  return hasCheckpointResult(progress) && !isCheckpointPassed(progress);
+  return deriveCheckpointStatusFromProgress(progress) === "failed";
 }
 
 export function completedCount(course: CourseModule[], progress: ProgressMap): number {
@@ -81,19 +164,22 @@ export function completedCount(course: CourseModule[], progress: ProgressMap): n
 }
 
 export function getNextLearningAction(course: CourseModule[], progress: ProgressMap, appState: AppState, now = new Date()): LearningAction {
-  const failed = firstOpenBlockWithState(course, progress, "checkpoint_failed");
+  const failed = getBlockingCheckpoint(course, progress);
   if (failed) return blockAction({ type: "fix_failed_checkpoint", blockId: failed.id, label: "Разобрать ошибки", reason: "Контрольная блока не сдана. Дальше пока закрыто.", step: "check" });
+
+  const unfinished = firstOpenBlockWithCheckpointStatuses(course, progress, ["not_started", "in_progress"]);
+  if (unfinished) return blockAction({ type: blockActionType(progress[unfinished.id]), blockId: unfinished.id, label: "Продолжить", reason: "Сначала нужно закрыть текущий блок.", step: "understand" });
+
+  const checkpoint = firstOpenBlockWithStatus(course, progress, "ready");
+  if (checkpoint) return blockAction({ type: "take_checkpoint", blockId: checkpoint.id, label: "Начать контрольную", reason: "Доступен к выполнению. Можно пройти контрольную сейчас.", step: "check" });
 
   const due = dueReviewItems(appState.review, now, 5);
   if (due.length) return reviewAction(due);
 
-  const checkpoint = firstOpenBlockWithState(course, progress, "checkpoint_ready");
-  if (checkpoint) return blockAction({ type: "take_checkpoint", blockId: checkpoint.id, label: "Пройти контрольную", reason: "Материалы блока прочитаны. Нужно подтвердить понимание.", step: "check" });
+  const next = firstOpenReadableBlock(course, progress);
+  if (next) return blockAction({ type: blockActionType(progress[next.id]), blockId: next.id, label: "Продолжить", reason: "Следующий доступный блок обучения. Пройдите его и откройте проверку.", step: "understand" });
 
-  const current = firstOpenReadableBlock(course, progress);
-  if (current) return blockAction({ type: blockActionType(progress[current.id]), blockId: current.id, label: labelForBlock(progress[current.id]), reason: "Следующий лучший шаг - один короткий учебный блок.", step: "understand" });
-
-  return { type: "course_complete", label: "Открыть журнал", reason: "Курс пройден. Сейчас полезнее перечитать свои выводы." };
+  return { type: "course_complete", label: "Смотреть итоги", reason: "Курс закрыт. Сохранились результаты по всем блокам." };
 }
 
 function blockIndex(blockId: string, course: CourseModule[]): number {
@@ -114,16 +200,52 @@ function blockViewModel(block: CourseModule, access: BlockAccess): CourseBlockVi
 }
 
 function progressLabel(access: BlockAccess): string {
-  if (access.state === "locked") return `Откроется после контрольной ${access.requiredBlockId}`;
+  if (access.state === "locked") return `Блок закрыт из-за блока ${access.requiredBlockId}`;
   if (access.state === "checkpoint_passed") return "Контрольная сдана";
   if (access.state === "checkpoint_failed") return "Контрольная не сдана";
-  if (access.state === "checkpoint_ready") return "Нужна контрольная";
-  if (access.state === "in_progress") return "В работе";
-  return "Можно начать";
+  if (access.state === "checkpoint_ready") return "Готово к сдаче";
+  if (access.state === "in_progress") return "В процессе";
+  return "Доступен";
 }
 
-function hasCheckpointResult(progress?: ModuleProgress): boolean {
-  return Boolean(progress?.quizAttemptStatus === "complete" || progress?.quizCompletedAt);
+function deriveCheckpointStatusFromProgress(progress?: ModuleProgress): CheckpointStatus {
+  if (!progress) return "not_started";
+
+  const attempt = latestCheckpointAttempt(progress);
+  if (attempt) return attempt.passed ? "passed" : "failed";
+
+  const legacyScore = legacyScoredStatus(progress);
+  if (legacyScore) return legacyScore.passed ? "passed" : "failed";
+
+  const legacyStatus = normalizeLegacyStatus(progress.checkpointStatus);
+  if (legacyStatus) return legacyStatus;
+
+  if (progress.quizAttemptStatus === "in-progress" || (progress.quizAnswered || 0) > 0 || isBlockStarted(progress)) return "in_progress";
+  if (isCheckpointReady(progress)) return "ready";
+  return "not_started";
+}
+
+function legacyScoredStatus(progress: ModuleProgress): { passed: boolean } | null {
+  if (typeof progress.quizBest !== "number" || typeof progress.quizTotal !== "number" || progress.quizTotal <= 0) return null;
+  if (progress.quizAttemptStatus === "in-progress") return null;
+  return { passed: progress.quizBest / progress.quizTotal >= PASS_RATIO };
+}
+
+function latestCheckpointAttempt(progress?: ModuleProgress): CheckpointAttempt | null {
+  const attempts = (progress?.checkpointAttempts || []).filter(isScoredAttempt);
+  if (!attempts.length) return null;
+  return attempts.sort((left, right) => attemptEndedAt(right) - attemptEndedAt(left))[0] || null;
+}
+
+function isScoredAttempt(attempt: CheckpointAttempt): boolean {
+  return Number.isFinite(attempt.correct) && Number.isFinite(attempt.total);
+}
+
+function attemptEndedAt(attempt: CheckpointAttempt): number {
+  const completed = Date.parse(attempt.completedAt || "");
+  if (!Number.isNaN(completed)) return completed;
+  const started = Date.parse(attempt.startedAt || "");
+  return Number.isNaN(started) ? 0 : started;
 }
 
 function isCheckpointReady(progress?: ModuleProgress): boolean {
@@ -134,8 +256,110 @@ function isBlockStarted(progress?: ModuleProgress): boolean {
   return Boolean(progress?.takeawayDraft || progress?.takeaway || progress?.quizAnswered);
 }
 
-function firstOpenBlockWithState(course: CourseModule[], progress: ProgressMap, state: BlockState): CourseModule | null {
-  return course.find((block) => canOpenBlock(block.id, course, progress) && getBlockState(progress[block.id]) === state) || null;
+function checkpointScore(progress?: ModuleProgress, attempt?: CheckpointAttempt | null): CheckpointOutcome["score"] {
+  if (attempt) {
+    return {
+      correct: attempt.correct,
+      total: attempt.total,
+      ratio: attempt.total > 0 ? attempt.correct / attempt.total : null,
+    };
+  }
+  if (!progress || typeof progress.quizBest !== "number" || typeof progress.quizTotal !== "number" || progress.quizTotal <= 0) {
+    return { correct: 0, total: 0, ratio: null };
+  }
+  return { correct: progress.quizBest, total: progress.quizTotal, ratio: progress.quizBest / progress.quizTotal };
+}
+
+function failedQuestionIds(progress?: ModuleProgress): string[] {
+  if (!progress?.weakSpots) return [];
+  return Object.keys(progress.weakSpots).sort((left, right) => Number(left) - Number(right));
+}
+
+function failedQuestionIdsForOutcome(progress: ModuleProgress | undefined, attempt: CheckpointAttempt | null): string[] {
+  if (attempt?.failedQuestionIds?.length) return [...attempt.failedQuestionIds];
+  return failedQuestionIds(progress);
+}
+
+function outcomeFailureDate(progress?: ModuleProgress, attempt?: CheckpointAttempt | null, now = new Date()): string | null {
+  if (!progress) return null;
+  if (attempt && attempt.failedQuestionIds.length > 0) return attempt.completedAt || progress.checkpointFailedAt || progress.quizCompletedAt || now.toISOString();
+  return progress.checkpointFailedAt || progress.quizCompletedAt || null;
+}
+
+function collectFailedAnswers(
+  blockId: string,
+  weakSpots: ModuleProgress["weakSpots"],
+  attempt: CheckpointAttempt | null,
+  fallbackFailedQuestionIds: string[] = [],
+): FailedCheckpointAnswer[] {
+  const ids = deriveFailedQuestionIds(weakSpots, attempt, fallbackFailedQuestionIds);
+  if (!ids.length) return [];
+  return ids
+    .map((id, index) => buildFailedAnswerFromId(blockId, id, weakSpots, index))
+    .sort((left, right) => left.questionNumber - right.questionNumber);
+}
+
+function deriveFailedQuestionIds(
+  weakSpots: ModuleProgress["weakSpots"],
+  attempt: CheckpointAttempt | null,
+  fallback: string[],
+): string[] {
+  if (attempt?.failedQuestionIds?.length) return [...attempt.failedQuestionIds];
+  if (fallback.length) return [...fallback];
+  return weakSpots ? Object.keys(weakSpots).sort((left, right) => Number(left) - Number(right)) : [];
+}
+
+function buildFailedAnswerFromId(
+  blockId: string,
+  id: string,
+  weakSpots: ModuleProgress["weakSpots"],
+  orderIndex: number,
+): FailedCheckpointAnswer {
+  const key = normalizeFailedQuestionId(id);
+  const spot = weakSpots?.[key];
+  if (!spot) {
+    const fallbackNumber = Number.isFinite(Number(key)) ? Number(key) : orderIndex + 1;
+    return {
+      questionId: `${blockId}-${key}`,
+      questionNumber: fallbackNumber,
+      questionText: "������",
+      chosenOptionKey: null,
+      chosenOptionText: "�",
+      correctOptionKey: null,
+      correctOptionText: "�",
+      explanation: "��� ������ �� �������, �������� �������� � ��������� ������������ ��������.",
+      sourceBlock: null,
+      sourceLesson: blockId,
+      sourceFragment: "check",
+    };
+  }
+  const numberFromKeys = Number(spot.questionNumber) || Number(spot.number) || Number(key);
+  const questionNumber = Number.isFinite(numberFromKeys) ? numberFromKeys : orderIndex + 1;
+  return {
+    questionId: `${blockId}-q${questionNumber}`,
+    questionNumber,
+    questionText: spot.questionText || spot.text || "������",
+    chosenOptionKey: spot.chosenOptionKey ?? null,
+    chosenOptionText: spot.chosenOptionText ?? null,
+    correctOptionKey: spot.correctOptionKey ?? null,
+    correctOptionText: spot.correctOptionText ?? null,
+    explanation: spot.shortExplanation || "��� ���������� �� ���� ������.",
+    sourceBlock: spot.sourceBlock || null,
+    sourceLesson: spot.sourceLesson || null,
+    sourceFragment: spot.sourceFragment || null,
+  };
+}
+
+function normalizeFailedQuestionId(value: string): string {
+  const match = String(value).match(/^\s*q?(\d+)/i);
+  return match ? match[1] : String(value);
+}
+function firstOpenBlockWithCheckpointStatuses(course: CourseModule[], progress: ProgressMap, statuses: CheckpointStatus[]): CourseModule | null {
+  return course.find((block) => canOpenBlock(block.id, course, progress) && statuses.includes(getCheckpointStatus(block.id, progress))) || null;
+}
+
+function firstOpenBlockWithStatus(course: CourseModule[], progress: ProgressMap, status: CheckpointStatus): CourseModule | null {
+  return course.find((block) => canOpenBlock(block.id, course, progress) && getCheckpointStatus(block.id, progress) === status) || null;
 }
 
 function firstOpenReadableBlock(course: CourseModule[], progress: ProgressMap): CourseModule | null {
@@ -143,11 +367,16 @@ function firstOpenReadableBlock(course: CourseModule[], progress: ProgressMap): 
 }
 
 function labelForBlock(progress?: ModuleProgress): string {
-  return isBlockStarted(progress) ? "Продолжить блок" : "Начать";
+  return isBlockStarted(progress) ? "Продолжить блок" : "Открыть";
 }
 
 function reviewAction(items: ReviewItem[]): LearningAction {
-  return { type: "review", label: "Начать повторение", reason: `${items.length} ${pluralize(items.length, "сигнал", "сигнала", "сигналов")} памяти готовы к короткой сессии.`, reviewItems: items };
+  return {
+    type: "review",
+    label: "Сделать повторы",
+    reason: `${items.length} ${pluralize(items.length, "опрос", "опроса", "опросов")} на повторение. Проверить снова и закрепить.`,
+    reviewItems: items,
+  };
 }
 
 function blockAction(action: LearningAction): LearningAction {
@@ -158,6 +387,11 @@ function blockActionType(progress?: ModuleProgress): LearningActionType {
   return isBlockStarted(progress) ? "continue_block" : "start_block";
 }
 
+function normalizeLegacyStatus(status?: CheckpointStatus): CheckpointStatus | null {
+  if (status === "not_started" || status === "ready" || status === "in_progress" || status === "failed" || status === "passed") return status;
+  return null;
+}
+
 function pluralize(count: number, one: string, few: string, many: string): string {
   const mod10 = count % 10;
   const mod100 = count % 100;
@@ -165,3 +399,9 @@ function pluralize(count: number, one: string, few: string, many: string): strin
   if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
   return many;
 }
+
+
+
+
+
+

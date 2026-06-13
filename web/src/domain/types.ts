@@ -6,6 +6,8 @@ export const MODULE_FILES = ["theory.md", "terms.md", "quiz.md", "practice.md", 
 
 export type ModuleFileName = (typeof MODULE_FILES)[number];
 export type StationStepKey = "understand" | "apply" | "check" | "anchor";
+export type CheckpointStatus = "not_started" | "ready" | "in_progress" | "failed" | "passed";
+export type RemediationAction = "review_failed_questions" | "read_related_fragments" | "retake_checkpoint";
 
 export interface ContentManifestModule {
   id: string;
@@ -89,6 +91,7 @@ export interface WeakSpot {
   number?: number;
   questionNumber?: number;
   text: string;
+  questionText?: string;
   level?: string;
   levelKey?: string;
   mistakeType?: string;
@@ -98,6 +101,50 @@ export interface WeakSpot {
   reviewStrategy?: string;
   misses?: number;
   updatedAt?: string;
+  sourceBlock?: string | null;
+  sourceLesson?: string | null;
+  sourceFragment?: string | null;
+  chosenOptionKey?: string | null;
+  chosenOptionText?: string | null;
+  correctOptionKey?: string | null;
+  correctOptionText?: string | null;
+}
+
+export interface FailedCheckpointAnswer {
+  questionId: string;
+  questionNumber: number;
+  questionText: string;
+  chosenOptionKey: string | null;
+  chosenOptionText: string | null;
+  correctOptionKey: string | null;
+  correctOptionText: string | null;
+  explanation: string;
+  sourceBlock: string | null;
+  sourceLesson: string | null;
+  sourceFragment: string | null;
+}
+
+export interface CheckpointAttempt {
+  blockId: string;
+  startedAt: string;
+  completedAt: string | null;
+  correct: number;
+  total: number;
+  passed: boolean;
+  failedQuestionIds: string[];
+}
+
+export interface RemediationPlan {
+  blockId: string;
+  failedAt: string | null;
+  score: {
+    correct: number;
+    total: number;
+    ratio: number | null;
+  };
+  failedAnswers: FailedCheckpointAnswer[];
+  actions: RemediationAction[];
+  canRetake: boolean;
 }
 
 export interface ModuleProgress {
@@ -117,6 +164,10 @@ export interface ModuleProgress {
   quizOpenTotal?: number;
   quizVersion?: number;
   weakSpots?: Record<string, WeakSpot>;
+  checkpointAttempts?: CheckpointAttempt[];
+  checkpointStatus?: CheckpointStatus;
+  checkpointPassedAt?: string;
+  checkpointFailedAt?: string;
 }
 
 export type ProgressMap = Record<string, ModuleProgress>;
@@ -190,7 +241,7 @@ export interface QuizQuestion {
 }
 
 export interface TodayAction {
-  kind: "review" | "station" | "journal";
+  kind: "review" | "station" | "journal" | "remediation";
   label: string;
   reason: string;
   moduleId?: string;

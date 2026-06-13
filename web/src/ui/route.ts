@@ -5,7 +5,8 @@ export type Route =
   | { screen: "atlas" }
   | { screen: "memory" }
   | { screen: "journal" }
-  | { screen: "station"; moduleId: string; step: StationStepKey };
+  | { screen: "station"; moduleId: string; step: StationStepKey }
+  | { screen: "remediation"; moduleId: string };
 
 const STEP_KEYS = new Set(["understand", "apply", "check", "anchor"]);
 
@@ -15,6 +16,8 @@ export function parseRoute(hash = window.location.hash): Route {
   if (screen === "atlas") return { screen: "atlas" };
   if (screen === "memory") return { screen: "memory" };
   if (screen === "journal" || screen === "profile") return { screen: "journal" };
+  if (screen === "remediation" && moduleId) return { screen: "remediation", moduleId };
+  if (screen === "block" && moduleId) return { screen: "station", moduleId, step: "check" };
   if (screen === "station" && moduleId) return { screen: "station", moduleId, step: normalizeStep(step) };
   return { screen: "today" };
 }
@@ -22,6 +25,7 @@ export function parseRoute(hash = window.location.hash): Route {
 export function routeHash(route: Route): string {
   if (route.screen === "today") return "#today";
   if (route.screen === "station") return `#station/${route.moduleId}/${route.step}`;
+  if (route.screen === "remediation") return `#remediation/${route.moduleId}`;
   return `#${route.screen}`;
 }
 

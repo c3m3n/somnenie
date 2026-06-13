@@ -1455,4 +1455,8 @@ Rules:
 ```text
 No primary learning actions here.
 Do not put it in the main learning nav.
+
+### 23. Debt note for MVP recovery flow
+
+Later: checkpoint retake should use equivalent questions, not identical answers.
 ```

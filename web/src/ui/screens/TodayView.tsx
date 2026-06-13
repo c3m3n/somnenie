@@ -25,11 +25,13 @@ export function TodayView({ bundle, progress, action }: { bundle: CourseBundle; 
 function runAction(action: TodayAction): void {
   if (action.kind === "review") navigate({ screen: "memory" });
   else if (action.kind === "journal") navigate({ screen: "journal" });
+  else if (action.kind === "remediation" && action.moduleId) navigate({ screen: "remediation", moduleId: action.moduleId });
   else navigate({ screen: "station", moduleId: action.moduleId || "M01", step: action.step || "understand" });
 }
 
 function iconFor(kind: TodayAction["kind"]) {
   if (kind === "review") return <Brain size={20} />;
   if (kind === "journal") return <ScrollText size={20} />;
+  if (kind === "remediation") return <ScrollText size={20} />;
   return <Play size={20} />;
 }
