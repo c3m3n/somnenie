@@ -3188,32 +3188,6 @@ async function triggerPwaInstall() {
   await prompt.userChoice?.catch?.(() => null);
 }
 
-function showPwaInstallPrompt() {
-  if (!deferredInstallPrompt || isStandalonePwa() || pwaBannerExists("pwa-install-banner")) return;
-
-  const banner = document.createElement("div");
-  banner.className = "app-update-banner pwa-install-banner";
-  setElementAttr(banner, "role", "status");
-  setElementAttr(banner, "aria-live", "polite");
-
-  const text = document.createElement("span");
-  text.textContent = "Можно установить Somnenie: курс и повторения будут открываться как приложение.";
-
-  const install = document.createElement("button");
-  install.type = "button";
-  install.textContent = "Установить";
-  install.onclick = runAsync(triggerPwaInstall);
-
-  const later = document.createElement("button");
-  later.type = "button";
-  later.className = "ghost";
-  later.textContent = "Позже";
-  later.onclick = () => banner.remove();
-
-  banner.append(text, install, later);
-  document.body.appendChild(banner);
-}
-
 function showPwaStatus(message, tone = "info", timeout = 3600) {
   removePwaBanner("pwa-status-banner");
   const banner = document.createElement("div");
@@ -3329,7 +3303,7 @@ if (window.addEventListener) {
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferredInstallPrompt = event;
-    showPwaInstallPrompt();
+    removePwaBanner("pwa-install-banner");
   });
   window.addEventListener("appinstalled", () => {
     deferredInstallPrompt = null;
@@ -3363,5 +3337,4 @@ if (window.addEventListener) {
 window.addEventListener("load", () => {
   registerServiceWorker().catch((error) => console.warn("SW register failed", error));
 });
-
 

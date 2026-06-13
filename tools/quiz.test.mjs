@@ -24,10 +24,13 @@ test("parses the M01 quiz contract", async () => {
   assert.equal(questions[0].options.length, 4);
   assert.ok(questions[0].answer);
   assert.ok(questions[0].explain.length > 20);
+  assert.equal(questions[0].sourceBlock, "theory");
+  assert.ok(!questions[0].text.includes("sourceBlock"));
 });
 
 test("parses supported quiz block types", () => {
   const md = `## Q1 (MCQ)
+**sourceBlock:** theory
 На каком уровне задан вопрос?
 
 A. Уровень нутриента
@@ -49,6 +52,7 @@ D. Уровень энергии
 ---
 
 ## Q3 (Применение)
+**sourceBlock:** practice
 Объясните разницу между продуктом и рационом.
 
 **Ответ и разбор:**
@@ -59,7 +63,11 @@ D. Уровень энергии
   assert.equal(questions.length, 3);
   assert.deepEqual(questions.map((q) => q.kind), ["auto", "auto", "application"]);
   assert.equal(questions[0].answer, "B");
+  assert.equal(questions[0].sourceBlock, "theory");
+  assert.ok(!questions[0].text.includes("sourceBlock"));
   assert.equal(questions[1].answer, false);
   assert.equal(questions[2].type, "Применение");
+  assert.equal(questions[2].sourceBlock, "practice");
+  assert.ok(!questions[2].text.includes("sourceBlock"));
   assert.match(questions[2].explain, /рацион/);
 });

@@ -25,11 +25,17 @@
   }
 
   function extractMetadataLine(line) {
-    const match = String(line || "").trim().match(/^\*\*([^*:]+?)\s*:\s*([^*]*)\*\*$/);
+    const source = String(line || "").trim();
+    const match = source.match(/^\*\*([^*:]+?)\s*:\s*([^*]*)\*\*$/)
+      || source.match(/^\*\*([^*:]+?)\s*:\s*\*\*\s*(.*)$/);
     if (!match) return null;
     const key = String(match[1] || "").trim().toLowerCase();
     const value = String(match[2] || "").trim();
     return { key, value };
+  }
+
+  function isSourceMetadata(marker) {
+    return marker?.key === "sourceblock" || marker?.key === "источник";
   }
 
   function parseMetadata(body) {
@@ -43,9 +49,18 @@
     return { lines, markers };
   }
 
+  function visibleQuestionText(lines, markers, endLineIndex = lines.length) {
+    const sourceLineIndexes = new Set(markers.filter(isSourceMetadata).map((marker) => marker.index));
+    return lines
+      .slice(0, endLineIndex)
+      .filter((_, index) => !sourceLineIndexes.has(index))
+      .join("\n")
+      .trim();
+  }
+
   function parseSourceBlock(body, fallback = "theory") {
     const { markers } = parseMetadata(body);
-    const sourceMeta = markers.find((marker) => marker.key === "sourceblock" || marker.key === "источник");
+    const sourceMeta = markers.find(isSourceMetadata);
     if (!sourceMeta) return fallback;
     return normalizeSourceBlock(sourceMeta.value, fallback);
   }
@@ -97,17 +112,17 @@
     const metadata = data.markers;
     const lines = data.lines;
     const answerIndex = metadata.findIndex((marker, markerIndex) => {
-      if (marker.key === "sourceblock" || marker.key === "источник") return false;
+      if (isSourceMetadata(marker)) return false;
       return marker.key.includes("ответ") || marker.key.includes("answer") || marker.key.includes("правильный");
     });
     const explanationIndex = metadata.findIndex((marker, markerIndex) => {
       if (markerIndex === answerIndex) return false;
-      if (marker.key === "sourceblock" || marker.key === "источник") return false;
+      if (isSourceMetadata(marker)) return false;
       return marker.key.includes("объясн") || marker.key.includes("explain") || marker.key.includes("разбор");
     });
 
-    const answerLineIndex = answerIndex >= 0 ? answerIndex : 0;
-    const beforeAnswer = lines.slice(0, metadata[answerLineIndex]?.index || lines.length).join("\n").trim();
+    const answerLineIndex = answerIndex >= 0 ? metadata[answerIndex].index : lines.length;
+    const beforeAnswer = visibleQuestionText(lines, metadata, answerLineIndex);
     const answerRaw = answerIndex >= 0 ? parseAnswerText(metadata, answerIndex, lines) : "";
 
     if (!beforeAnswer) return null;
@@ -162,9 +177,10 @@
     const data = parseMetadata(body);
     const metadata = data.markers;
     const lines = data.lines;
-    const answerIndex = metadata.findIndex((marker) => marker.key !== "sourceblock" && marker.key !== "источник");
-    const text = lines.slice(0, metadata[answerIndex]?.index || lines.length).join("\n").trim();
-    const explain = parseAnswerText(metadata, Math.max(answerIndex, 0), lines);
+    const answerIndex = metadata.findIndex((marker) => !isSourceMetadata(marker));
+    const answerLineIndex = answerIndex >= 0 ? metadata[answerIndex].index : lines.length;
+    const text = visibleQuestionText(lines, metadata, answerLineIndex);
+    const explain = answerIndex >= 0 ? parseAnswerText(metadata, answerIndex, lines) : "";
 
     if (!text) return null;
 

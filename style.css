@@ -800,11 +800,6 @@ body::after {
   cursor: pointer;
 }
 
-.app-update-banner button.ghost {
-  background: transparent;
-  color: var(--bone);
-}
-
 .pwa-status-banner {
   position: fixed;
   left: 50%;
