@@ -1877,7 +1877,7 @@ async function showProfile(options = {}) {
   ];
   if (summary.quizCompleted) dashboardMetrics.push(metricHtml("success", "target", summary.averageScore, "средний лучший балл"));
   dashboard.innerHTML =
-    `<div class="section-kicker">Где я</div>` +
+    `<div class="section-kicker">где я · ${summary.completedStations} / ${summary.totalStations} станций</div>` +
     `<h2>Прогресс обучения</h2>` +
     `<div class="course-map instrument-matrix profile-matrix" aria-label="Матрица прогресса по станциям: клик открывает станцию">${courseMapSegments(nextModule)}</div>` +
     `<p class="matrix-explain">Каждая клетка — учебная станция. Станция закрыта после маршрута: понять, применить, проверить, закрепить.</p>` +

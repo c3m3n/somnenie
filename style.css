@@ -6730,3 +6730,160 @@ body.mode-module #screen {
   background: transparent !important;
   color: var(--muted) !important;
 }
+
+/* ---------- Instrument component: progress ---------- */
+
+.mode-profile #screen {
+  max-width: min(100%, 390px);
+  padding: var(--s6) var(--s5) max(28px, env(safe-area-inset-bottom));
+}
+
+.mode-profile .dashboard-card {
+  margin: 0 0 var(--s6);
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.mode-profile .dashboard-primary {
+  display: block;
+}
+
+.mode-profile .section-kicker {
+  margin: 0 0 var(--s4);
+  color: var(--faint) !important;
+  font: 400 var(--t-label)/1.2 var(--font-mono) !important;
+  letter-spacing: 1px !important;
+  text-transform: none !important;
+}
+
+.mode-profile .dashboard-card h2 {
+  margin: 0 0 var(--s5);
+  color: var(--ink);
+  font: 500 var(--t-title)/1.18 var(--font-display);
+}
+
+.mode-profile .course-map,
+.mode-profile .profile-matrix {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0 0 var(--s3);
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.mode-profile .course-map-segment {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--hairline) !important;
+  background: transparent !important;
+  color: var(--locked) !important;
+  font: 500 var(--t-meta)/1 var(--font-mono);
+}
+
+.mode-profile .course-map-segment::after {
+  display: none !important;
+}
+
+.mode-profile .course-map-segment.next,
+.mode-profile .course-map-segment.active {
+  border-color: var(--accent) !important;
+  background: var(--accent) !important;
+  color: var(--ink) !important;
+}
+
+.mode-profile .course-map-segment.complete {
+  border-color: var(--ink) !important;
+  background: var(--ink) !important;
+  color: var(--bg) !important;
+}
+
+.mode-profile .course-map-segment.review {
+  border-color: var(--error) !important;
+  color: var(--error) !important;
+}
+
+.mode-profile .segment-num {
+  color: inherit !important;
+  font: inherit;
+}
+
+.mode-profile .matrix-explain {
+  margin: var(--s3) 0 var(--s5);
+  color: var(--faint) !important;
+  font: 400 var(--t-label)/1.4 var(--font-mono);
+}
+
+.mode-profile .progress-active-module {
+  margin-top: var(--s5);
+  padding: var(--s4);
+  border: 1px solid var(--hairline) !important;
+  background: transparent !important;
+}
+
+.mode-profile .progress-active-module span,
+.mode-profile .progress-active-module p {
+  color: var(--muted) !important;
+}
+
+.mode-profile .progress-active-module strong {
+  display: block;
+  margin-top: var(--s2);
+  color: var(--ink) !important;
+  font: 500 var(--t-h)/1.25 var(--font-display);
+}
+
+.mode-profile .progress-active-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: var(--s4);
+}
+
+.mode-profile .progress-active-steps span {
+  min-height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--hairline);
+  color: var(--faint);
+  font: 500 12px/1.2 var(--font-display);
+}
+
+.mode-profile .progress-active-steps span.done {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.mode-profile .progress-active-steps span.active {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--ink);
+}
+
+.mode-profile .metric-grid,
+.mode-profile .dashboard-card:not(.dashboard-primary),
+.mode-profile .profile-card {
+  margin-top: var(--s6);
+  opacity: 0.42;
+}
+
+.mode-profile .dashboard-actions {
+  margin-top: var(--s5);
+}
+
+.mode-profile .dashboard-actions .btn {
+  width: 100%;
+  min-height: 46px;
+  border: 0 !important;
+  background: var(--ink) !important;
+  color: var(--btn-text) !important;
+}
