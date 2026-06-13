@@ -89,6 +89,7 @@ if (isDistRoot) {
     "./core/storage.js",
     "./core/review.js",
     "./core/quiz.js",
+    "./core/learningPath.js",
     "./app.js",
     "./views/session.js",
     "./views/quiz.js",

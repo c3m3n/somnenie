@@ -23,6 +23,7 @@ const NUTRIO_CONST = (window.NutrioConst || globalThis.NutrioConst) || {};
 const QUIZ_PROGRESS_VERSION = NUTRIO_CONST.QUIZ_PROGRESS_VERSION ?? 2;
 const REVIEW_SCHEMA_VERSION = NUTRIO_CONST.REVIEW_SCHEMA_VERSION ?? 2;
 const COURSE_ID = NUTRIO_CONST.COURSE_ID ?? "nutrition";
+const LEARNING_PATH = (window.NutrioLearningPath || globalThis.NutrioLearningPath) || {};
 const MIGRATION_TIMEOUT_MS = 4000;
 const CONTENT_FETCH_TIMEOUT_MS = 4000;
 // Источник истины — core/review.js (review.js загружается раньше app.js).
@@ -426,6 +427,27 @@ function isQuizCompletedProgress(pr) {
   return pr?.quizBest != null && pr.quizVersion === QUIZ_PROGRESS_VERSION;
 }
 
+function isBlockCheckpointPassed(pr) {
+  if (typeof LEARNING_PATH.isCheckpointPassed === "function") return LEARNING_PATH.isCheckpointPassed(pr);
+  if (!pr || pr.quizBest == null || pr.quizTotal == null) return false;
+  return Number(pr.quizBest) / Number(pr.quizTotal) >= 0.7;
+}
+
+function isBlockCheckpointFailed(pr) {
+  if (typeof LEARNING_PATH.isCheckpointFailed === "function") return LEARNING_PATH.isCheckpointFailed(pr);
+  return Boolean(pr && pr.quizBest != null && pr.quizTotal != null && !isBlockCheckpointPassed(pr));
+}
+
+function getBlockState(mod) {
+  if (typeof LEARNING_PATH.getBlockState === "function") return LEARNING_PATH.getBlockState(mod, loadProgress(), loadReviewState());
+  const pr = modProgress(mod.id);
+  if (isBlockCheckpointPassed(pr)) return "checkpoint_passed";
+  if (isBlockCheckpointFailed(pr)) return "checkpoint_failed";
+  if (pr.theoryRead) return "checkpoint_ready";
+  if (pr.takeawayDraft || isQuizInProgress(pr)) return "in_progress";
+  return "available";
+}
+
 function isQuizInProgress(pr) {
   return pr?.quizAttemptStatus === "in-progress";
 }
@@ -587,7 +609,7 @@ function phaseProgressLabel(mods) {
     const score = moduleCompletionScore(m);
     const pr = modProgress(m.id);
     if (score > 0 || isQuizInProgress(pr)) startedStations++;
-    if (score === 3) completedStations++;
+    if (isBlockCheckpointPassed(pr)) completedStations++;
     if (isQuizCompletedProgress(pr) && pr.quizTotal) {
       quizzes++;
       ratioSum += pr.quizBest / pr.quizTotal;
@@ -604,7 +626,7 @@ function moduleCompletionScore(mod) {
   let done = 0;
   if (pr.theoryRead) done++;
   if (pr.takeaway) done++;
-  if (isQuizCompletedProgress(pr)) done++;
+  if (isBlockCheckpointPassed(pr)) done++;
   return done;
 }
 
@@ -623,21 +645,22 @@ function phaseCompletionPercent(mods) {
 }
 
 function findNextModule() {
-  return modules.find((mod) => {
-    const pr = modProgress(mod.id);
-    return !pr.theoryRead ||
-      !pr.takeaway ||
-      !isQuizCompletedProgress(pr);
-  }) || null;
+  if (typeof LEARNING_PATH.findCurrentBlock === "function") {
+    const block = LEARNING_PATH.findCurrentBlock(modules, loadProgress());
+    if (block?.id) return modules.find((mod) => mod.id === block.id) || null;
+  }
+  return modules.find((mod) => !isBlockCheckpointPassed(modProgress(mod.id))) || null;
 }
 
 function moduleStateLabel(mod) {
   const pr = modProgress(mod.id);
   const weakCount = getDueReviewCount(mod.id);
   if (weakCount) return `Закрепить ${weakCount}`;
-  if (moduleCompletionScore(mod) === 3) return "Закреплено";
+  if (isBlockCheckpointPassed(pr)) return "Контрольная сдана";
+  if (isBlockCheckpointFailed(pr)) return "Контрольная не сдана";
   if (isQuizInProgress(pr)) return "Проверка";
-  if (pr.theoryRead || pr.takeaway || isQuizCompletedProgress(pr)) return "В работе";
+  if (pr.theoryRead) return "Нужна контрольная";
+  if (pr.takeaway || isQuizCompletedProgress(pr)) return "В работе";
   return "Не начат";
 }
 
@@ -863,9 +886,9 @@ function progressActiveModuleHtml(mod, sessionPlan = null) {
   const pr = modProgress(mod.id);
   const steps = [
     { label: "Понять", done: Boolean(pr.theoryRead), active: !pr.theoryRead },
-    { label: "Применить", done: Boolean(pr.theoryRead), active: pr.theoryRead && !isQuizCompletedProgress(pr) },
-    { label: "Проверить", done: isQuizCompletedProgress(pr), active: pr.theoryRead && !isQuizCompletedProgress(pr) },
-    { label: "Закрепить", done: Boolean(pr.takeaway), active: isQuizCompletedProgress(pr) && !pr.takeaway },
+    { label: "Применить", done: Boolean(pr.theoryRead), active: pr.theoryRead && !isBlockCheckpointPassed(pr) },
+    { label: "Проверить", done: isBlockCheckpointPassed(pr), active: pr.theoryRead && !isBlockCheckpointPassed(pr) },
+    { label: "Закрепить", done: Boolean(pr.takeaway), active: isBlockCheckpointPassed(pr) && !pr.takeaway },
   ];
   const state = moduleCompletionScore(mod) > 0 || isQuizInProgress(pr) ? "в работе" : "следующий";
   const planText = sessionPlan ? sessionMetaText(sessionPlan, mod) : continueLabel(mod);
@@ -1027,9 +1050,9 @@ function ReviewAddedLine() {
 
 function courseMapSegments(nextModule = null, interactive = true) {
   return modules.map((mod, index) => {
-    const score = moduleCompletionScore(mod);
+    const pr = modProgress(mod.id);
     const weakCount = getDueReviewCount(mod.id);
-    const state = weakCount ? "review" : score === 3 ? "complete" : score > 0 ? "active" : "idle";
+    const state = weakCount ? "review" : isBlockCheckpointPassed(pr) ? "complete" : moduleCompletionScore(mod) > 0 ? "active" : "idle";
     const isNext = nextModule?.id === mod.id && state === "idle";
     const hint = `${mod.id} · ${mod.title} · ${isNext ? "Следующий" : moduleStateLabel(mod)}`;
     const attrs = `class="course-map-segment ${state}${isNext ? " next" : ""}" data-module-id="${escapeHtml(mod.id)}" style="--segment-delay: ${index * 10}ms" title="${escapeHtml(hint)}" aria-label="${escapeHtml(hint)}"`;
@@ -1110,7 +1133,8 @@ function stationForModule(mod) {
 function stationStepForModule(mod) {
   const pr = modProgress(mod.id);
   if (!pr.theoryRead) return { key: "understand", label: "Понять", detail: "прочитать короткий учебный блок" };
-  if (!isQuizCompletedProgress(pr)) return { key: "check", label: "Проверить", detail: "ответить на вопросы проверки" };
+  if (isBlockCheckpointFailed(pr)) return { key: "check", label: "Разобрать ошибки", detail: "контрольная не сдана, следующий блок закрыт" };
+  if (!isBlockCheckpointPassed(pr)) return { key: "check", label: "Проверить", detail: "ответить на вопросы проверки" };
   if (!pr.takeaway) return { key: "anchor", label: "Закрепить", detail: "сформулировать итог станции" };
   return { key: "completed", label: "Завершено", detail: "станция закрыта" };
 }
@@ -1119,13 +1143,13 @@ function stationProgressForModule(mod) {
   const pr = modProgress(mod.id);
   const completedSteps = [];
   if (pr.theoryRead) completedSteps.push("understand", "apply");
-  if (isQuizCompletedProgress(pr)) completedSteps.push("check");
+  if (isBlockCheckpointPassed(pr)) completedSteps.push("check");
   if (pr.takeaway) completedSteps.push("anchor");
   return {
     stationId: stationIdForModule(mod),
     currentStep: stationStepForModule(mod).key,
     completedSteps,
-    checkCompleted: isQuizCompletedProgress(pr),
+    checkCompleted: isBlockCheckpointPassed(pr),
     takeawaySaved: Boolean(pr.takeaway),
     weakSpotIds: Object.keys(pr.weakSpots || {}),
     completedAt: pr.takeawayUpdatedAt || null,
@@ -1138,7 +1162,7 @@ function stationIsStarted(mod) {
 }
 
 function stationIsCompleted(mod) {
-  return moduleCompletionScore(mod) === 3;
+  return isBlockCheckpointPassed(modProgress(mod.id));
 }
 
 function completedStationCount() {
@@ -1213,6 +1237,28 @@ function buildAtlasNodes(nextModule = findNextModule()) {
 
 function buildTodayAction(summary = getProgressSummary(), nextModule = findNextModule()) {
   const dueReviews = reviewApi().dueReviewItems(loadReviewState(), new Date(), TODAY_REVIEW_LIMIT);
+  const pathAction = typeof LEARNING_PATH.getNextLearningAction === "function"
+    ? LEARNING_PATH.getNextLearningAction(modules, loadProgress(), loadReviewState())
+    : null;
+  const pathModule = pathAction?.blockId ? modules.find((mod) => mod.id === pathAction.blockId) : nextModule;
+
+  if (pathAction?.type === "fix_failed_checkpoint" && pathModule) {
+    const station = stationForModule(pathModule);
+    const pr = modProgress(pathModule.id);
+    return {
+      type: "fix_failed_checkpoint",
+      title: `${pathAction.title}: ${station.id} · ${station.title}`,
+      description: `Результат контрольной: ${pr.quizBest ?? 0}/${pr.quizTotal ?? "?"}.`,
+      estimatedTime: approxMinutes(4),
+      primaryCta: pathAction.cta,
+      reason: pathAction.reason,
+      module: pathModule,
+      station,
+      stationProgress: stationProgressForModule(pathModule),
+      targetRoute: "review",
+    };
+  }
+
   const nextStation = stationForModule(nextModule);
 
   if (dueReviews.length) {
@@ -1231,20 +1277,23 @@ function buildTodayAction(summary = getProgressSummary(), nextModule = findNextM
     };
   }
 
-  if (nextModule && nextStation) {
-    const started = stationIsStarted(nextModule);
-    const step = stationStepForModule(nextModule);
+  if (pathModule) {
+    const station = stationForModule(pathModule);
+    const step = stationStepForModule(pathModule);
+    const started = pathAction?.type === "continue_block" || stationIsStarted(pathModule);
+    const takeCheckpoint = pathAction?.type === "take_checkpoint";
+    const startBlock = pathAction?.type === "start_block";
     return {
-      type: started ? "continue_station" : "start_station",
-      title: `${started ? "Продолжить" : "Начать"} ${nextStation.id} · ${nextStation.title}`,
+      type: takeCheckpoint ? "take_checkpoint" : started ? "continue_station" : "start_station",
+      title: `${takeCheckpoint ? "Контрольная" : startBlock ? "Начать" : "Продолжить"} ${station.id} · ${station.title}`,
       description: `${step.label}: ${step.detail}.`,
-      estimatedTime: approxMinutes(nextStation.estimatedMinutes),
-      primaryCta: started ? "Продолжить" : "Начать",
-      reason: started ? "Есть незавершённая учебная станция." : "Повторов на сегодня нет, можно открыть следующий учебный шаг.",
-      module: nextModule,
-      station: nextStation,
-      stationProgress: stationProgressForModule(nextModule),
-      targetRoute: "station",
+      estimatedTime: approxMinutes(takeCheckpoint ? 5 : station.estimatedMinutes),
+      primaryCta: takeCheckpoint ? "Пройти контрольную" : started ? "Продолжить" : "Начать",
+      reason: pathAction?.reason || (started ? "Есть незавершённый блок." : "Повторов на сегодня нет, можно открыть следующий блок."),
+      module: pathModule,
+      station,
+      stationProgress: stationProgressForModule(pathModule),
+      targetRoute: takeCheckpoint ? "checkpoint" : "station",
     };
   }
 
@@ -1263,6 +1312,14 @@ function buildTodayAction(summary = getProgressSummary(), nextModule = findNextM
 
 async function runTodayAction(action) {
   navForward();
+  if (action?.type === "fix_failed_checkpoint" && action.module) {
+    return openModuleReview(action.module);
+  }
+  if (action?.type === "take_checkpoint" && action.module) {
+    await showModule(action.module);
+    openTab("quiz.md", action.module);
+    return;
+  }
   if (action?.type === "repeat") {
     return startLearningSession({ reviewOnly: true, items: action.reviews || [] });
   }
@@ -1487,7 +1544,7 @@ async function showAtlas() {
   for (const group of getModuleGroups()) {
     phaseNumber++;
     const phasePercent = phaseCompletionPercent(group.modules);
-    const doneModules = group.modules.filter((mod) => moduleCompletionScore(mod) === 3).length;
+    const doneModules = group.modules.filter((mod) => stationIsCompleted(mod)).length;
     const header = document.createElement("section");
     header.className = "phase-header";
     header.innerHTML =
@@ -1508,10 +1565,14 @@ function moduleCard(mod, nextModule = null) {
   const weakCount = getVisibleWeakSpotCount(mod.id);
   const rawWeakCount = getWeakSpotCount(mod.id);
   const completion = moduleCompletionPercent(mod);
+  const blockPassed = isBlockCheckpointPassed(pr);
+  const blockFailed = isBlockCheckpointFailed(pr);
   const theme = moduleTheme(mod);
   const isNext = nextModule?.id === mod.id;
   if (pr.theoryRead) parts.push("понять/применить ✓");
-  if (isQuizCompletedProgress(pr)) parts.push(`проверка ${pr.quizBest}/${pr.quizTotal}`);
+  if (blockPassed) parts.push(`контрольная сдана ${pr.quizBest}/${pr.quizTotal}`);
+  else if (blockFailed) parts.push(`контрольная не сдана ${pr.quizBest}/${pr.quizTotal}`);
+  else if (isQuizCompletedProgress(pr)) parts.push(`проверка ${pr.quizBest}/${pr.quizTotal}`);
   else if (isQuizInProgress(pr)) parts.push(`проверка ${pr.quizAnswered || 0}/${pr.quizTotalQuestions || "?"}`);
   if (pr.takeaway) parts.push("закрепить ✓");
   if (weakCount) parts.push(`закрепить ${weakCount}`);
@@ -1521,7 +1582,7 @@ function moduleCard(mod, nextModule = null) {
   const stationMark = String(mod.id || "").replace(/\D/g, "").padStart(2, "0") || "00";
   const stateClass = weakCount
     ? "module-card-review"
-    : completion === 100
+    : blockPassed
       ? "module-card-complete"
       : completion > 0
         ? "module-card-active"
@@ -1545,7 +1606,7 @@ function moduleCard(mod, nextModule = null) {
     `<div class="module-steps" aria-hidden="true">` +
     `<span class="${pr.theoryRead ? "done" : ""}">${iconSvg("book", "step-icon")}Понять</span>` +
     `<span class="${pr.theoryRead ? "done" : ""}">${iconSvg("practice", "step-icon")}Применить</span>` +
-    `<span class="${isQuizCompletedProgress(pr) ? "done" : isQuizInProgress(pr) ? "active" : ""}">${iconSvg("quiz", "step-icon")}Проверить</span>` +
+    `<span class="${blockPassed ? "done" : isQuizInProgress(pr) || blockFailed ? "active" : ""}">${iconSvg("quiz", "step-icon")}Проверить</span>` +
     `<span class="${pr.takeaway ? "done" : ""}">${iconSvg("summary", "step-icon")}Закрепить</span>` +
     `</div>` +
     (parts.length ? `<div class="mod-progress">${parts.join(" · ")}</div>` : "") +
@@ -1882,7 +1943,7 @@ function getProgressSummary() {
     const pr = progress[mod.id] || {};
     const completionScore = moduleCompletionScore(mod);
     summary.completedSteps += completionScore;
-    if (completionScore === 3) summary.completedStations++;
+    if (isBlockCheckpointPassed(pr)) summary.completedStations++;
     if (pr.theoryRead) summary.theoryRead++;
     if (isQuizCompletedProgress(pr) && pr.quizTotal) {
       summary.quizCompleted++;

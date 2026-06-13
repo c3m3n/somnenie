@@ -28,9 +28,11 @@ Invoke-CheckedCommand node --check core\util.js
 Invoke-CheckedCommand node --check core\storage.js
 Invoke-CheckedCommand node --check core\review.js
 Invoke-CheckedCommand node --check core\quiz.js
+Invoke-CheckedCommand node --check core\learningPath.js
 Invoke-CheckedCommand node --check views\session.js
 Invoke-CheckedCommand node --check views\quiz.js
 Invoke-CheckedCommand node --test .\tools\quiz.test.mjs
+Invoke-CheckedCommand node --test .\test\learningPath.test.js
 Invoke-CheckedCommand node .\tools\test-review.mjs
 Invoke-CheckedCommand node .\tools\smoke-test.mjs
 Invoke-CheckedCommand node .\tools\pwa-check.mjs

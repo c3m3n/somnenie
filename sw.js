@@ -2,7 +2,7 @@
 
 importScripts("./core/constants.js");
 
-const VERSION = "nutrio-v18";
+const VERSION = "nutrio-v19";
 const SHELL_CACHE = `${VERSION}-shell`;
 const CONTENT_CACHE = `${VERSION}-content`;
 const MODULE_FILES = self.NutrioConst?.MODULE_FILES || ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"];
@@ -16,6 +16,7 @@ const APP_SHELL = [
   "./core/storage.js",
   "./core/review.js",
   "./core/quiz.js",
+  "./core/learningPath.js",
   "./app.js",
   "./views/session.js",
   "./views/quiz.js",
@@ -156,6 +157,7 @@ self.addEventListener("fetch", (event) => {
     url.pathname.endsWith("/core/storage.js") ||
     url.pathname.endsWith("/core/review.js") ||
     url.pathname.endsWith("/core/quiz.js") ||
+    url.pathname.endsWith("/core/learningPath.js") ||
     url.pathname.endsWith("/style.css") ||
     url.pathname.endsWith("/manifest.webmanifest");
 

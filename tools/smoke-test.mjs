@@ -380,6 +380,9 @@ vm.runInContext(reviewJs, context, { filename: "core/review.js" });
 const quizJs = await fs.readFile(path.join(projectRoot, "core", "quiz.js"), "utf8");
 vm.runInContext(quizJs, context, { filename: "core/quiz.js" });
 
+const learningPathJs = await fs.readFile(path.join(projectRoot, "core", "learningPath.js"), "utf8");
+vm.runInContext(learningPathJs, context, { filename: "core/learningPath.js" });
+
 const appJs = await fs.readFile(path.join(projectRoot, "app.js"), "utf8");
 vm.runInContext(appJs, context, { filename: "app.js" });
 
@@ -802,6 +805,7 @@ const sw = await fs.readFile(path.join(projectRoot, "sw.js"), "utf8");
 assert(/const VERSION = "nutrio-v\d+";/.test(sw), "Service worker should declare a nutrio-vN cache version");
 assert(sw.includes('"./core/storage.js"'), "Service worker should cache the IndexedDB storage layer");
 assert(sw.includes('"./core/review.js"'), "Service worker should cache the SRS review layer");
+assert(sw.includes('"./core/learningPath.js"'), "Service worker should cache the block checkpoint learning path layer");
 assert(sw.includes('"./fonts/IBMPlexMono-Regular.woff2"'), "Service worker should cache local fonts");
 assert(sw.includes('contentCache.add("content/manifest.json")'), "Service worker should cache content/manifest.json");
 assert(sw.includes('fetchJson("content/manifest.json")'), "Service worker should use content manifest for precache");

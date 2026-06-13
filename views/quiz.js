@@ -283,6 +283,7 @@ async function showQuiz(mod) {
       pr.quizBest == null ||
       correct > pr.quizBest
     );
+    const completedAt = new Date().toISOString();
 
     const resultPatch = {
       quizAttemptStatus: "complete",
@@ -290,7 +291,7 @@ async function showQuiz(mod) {
       quizTotalQuestions: questions.length,
       quizCorrect: correct,
       quizMistakes: mistakes,
-      quizCompletedAt: new Date().toISOString(),
+      quizCompletedAt: completedAt,
     };
     if (shouldSaveBest) {
       Object.assign(resultPatch, {
@@ -307,6 +308,21 @@ async function showQuiz(mod) {
         quizVersion: QUIZ_PROGRESS_VERSION,
       });
     }
+    if (gradedTotal === 0) {
+      Object.assign(resultPatch, {
+        quizBest: correct,
+        quizTotal: gradedTotal,
+        quizOpenTotal: applicationTotal,
+        quizVersion: QUIZ_PROGRESS_VERSION,
+      });
+    }
+    const nextCheckpointFacts = Object.assign({}, pr, resultPatch);
+    const checkpointPassed = isBlockCheckpointPassed(nextCheckpointFacts);
+    Object.assign(resultPatch, {
+      checkpointStatus: checkpointPassed ? "passed" : "failed",
+      checkpointPassedAt: checkpointPassed ? (pr.checkpointPassedAt || completedAt) : pr.checkpointPassedAt || null,
+      checkpointFailedAt: checkpointPassed ? pr.checkpointFailedAt || null : completedAt,
+    });
     await setModProgress(mod.id, resultPatch);
     await recordLearningActivity({ moduleStep: true });
 
@@ -348,7 +364,7 @@ async function showQuiz(mod) {
     retry.onclick = runAsync(() => showQuiz(mod));
     div.appendChild(retry);
     $screen.appendChild(div);
-    appendModuleNavigation(mod, "quiz.md");
+    appendModuleNavigation(mod, "quiz.md", { includeNext: checkpointPassed });
   }
 
   renderQuestion();
