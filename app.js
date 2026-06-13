@@ -2738,6 +2738,33 @@ function trimLearningText(text, limit) {
   return `${byWord || slice.trim()}…`;
 }
 
+function markKeyTermDifference(root) {
+  if (!root || typeof document.createTreeWalker !== "function") return;
+  const pattern = /нутриент,\s*продукт\s+и\s+рацион/i;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node;
+
+  while ((node = walker.nextNode())) {
+    const text = node.textContent || "";
+    const match = text.match(pattern);
+    const parent = node.parentElement;
+    if (!match || !parent || parent.closest("a, code, pre, .term-mark")) continue;
+
+    const mark = document.createElement("span");
+    mark.className = "term-mark";
+    mark.textContent = match[0];
+
+    const before = text.slice(0, match.index);
+    const after = text.slice((match.index || 0) + match[0].length);
+    const fragment = document.createDocumentFragment();
+    if (before) fragment.appendChild(document.createTextNode(before));
+    fragment.appendChild(mark);
+    if (after) fragment.appendChild(document.createTextNode(after));
+    node.replaceWith(fragment);
+    return;
+  }
+}
+
 function isElementTag(node, tagName) {
   return node?.nodeType === 1 && node.tagName === tagName;
 }
@@ -2822,6 +2849,7 @@ function showMarkdown(mod, file, options = {}) {
   const div = document.createElement("div");
   div.className = "md";
   div.innerHTML = renderMarkdown(text);
+  markKeyTermDifference(div);
   const materialId = file ? `material-${file.replace(".md", "")}` : "material-theory";
   const blockAnchor = document.createElement("div");
   blockAnchor.id = materialId;
@@ -2866,7 +2894,7 @@ function MaterialSubnav(mod, activeFile) {
 
   const label = document.createElement("div");
   label.className = "material-subnav-label";
-  label.textContent = `${routeTab.label} · блок ${activeIndex + 1} из ${materialTabs.length}`;
+  label.textContent = `${activeIndex + 1} / ${materialTabs.length}`;
   nav.appendChild(label);
 
   for (const tab of materialTabs) {

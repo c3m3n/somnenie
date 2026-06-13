@@ -6441,3 +6441,136 @@ body.mode-module #screen {
   font-size: var(--t-label);
   line-height: 1.45;
 }
+
+/* ---------- Instrument component: reader ---------- */
+
+.term-mark {
+  background: var(--accent);
+  color: var(--on-accent);
+  padding: 0 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.mode-module .material-subnav {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s4);
+  margin: 0 0 var(--s5);
+  padding: 0 0 var(--s3);
+  border: 0;
+  border-bottom: 1px solid var(--hairline);
+  background: transparent;
+}
+
+.mode-module .material-subnav-label {
+  order: 10;
+  margin-left: auto;
+  color: var(--faint);
+  font: 400 var(--t-label)/1.2 var(--font-mono);
+  letter-spacing: 0 !important;
+  white-space: nowrap;
+}
+
+.mode-module .material-subtab {
+  min-height: 32px;
+  padding: 0 0 10px;
+  border: 0 !important;
+  border-bottom: 2px solid transparent !important;
+  background: transparent !important;
+  color: var(--faint) !important;
+  font: 500 13px/1.2 var(--font-display);
+}
+
+.mode-module .material-subtab .tab-glyph {
+  display: none !important;
+}
+
+.mode-module .material-subtab.active {
+  border-bottom-color: var(--ink) !important;
+  color: var(--ink) !important;
+}
+
+.mode-module .module-layout,
+.mode-module .module-main {
+  display: block;
+  max-width: 100%;
+}
+
+.mode-module .module-side-panel {
+  display: none !important;
+}
+
+.mode-module .module-main .md,
+.mode-module .md {
+  max-width: min(100%, 680px);
+  margin: 0 auto;
+  padding: 0 var(--s5) var(--s6);
+  background: transparent !important;
+  color: var(--text) !important;
+  font: 400 var(--t-body)/1.65 var(--font-body);
+}
+
+.mode-module .reading-progress {
+  display: none !important;
+}
+
+.mode-module .lesson-title-card,
+.mode-module .lesson-section-card {
+  padding: 0;
+  border: 0 !important;
+  background: transparent !important;
+  overflow: visible;
+}
+
+.mode-module .lesson-title-card {
+  margin-bottom: var(--s6);
+  padding-bottom: var(--s6);
+  border-bottom: 1px solid var(--hairline) !important;
+}
+
+.mode-module .lesson-section-card {
+  padding: var(--s6) 0 0;
+}
+
+.mode-module .lesson-section-card + .lesson-section-card {
+  margin-top: var(--s6);
+  border-top: 1px solid var(--hairline) !important;
+}
+
+.mode-module .section-meta {
+  display: none !important;
+}
+
+.mode-module .md h1 {
+  margin: 0;
+  color: var(--ink) !important;
+  font: 500 var(--t-title)/1.12 var(--font-display);
+}
+
+.mode-module .md h2 {
+  margin: 0 0 var(--s4);
+  padding: 0;
+  border: 0;
+  color: var(--ink) !important;
+  font: 500 var(--t-h)/1.25 var(--font-display);
+}
+
+.mode-module .md h3 {
+  color: var(--ink) !important;
+  font: 500 16px/1.3 var(--font-display);
+}
+
+.mode-module .md p,
+.mode-module .md li {
+  color: var(--text) !important;
+  font: 400 var(--t-body)/1.65 var(--font-body);
+}
+
+.mode-module .learning-note,
+.mode-module .section-memory,
+.mode-module .reader-concept-trail {
+  border-color: var(--hairline) !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+}
