@@ -27,7 +27,8 @@
   function extractMetadataLine(line) {
     const source = String(line || "").trim();
     const match = source.match(/^\*\*([^*:]+?)\s*:\s*([^*]*)\*\*$/)
-      || source.match(/^\*\*([^*:]+?)\s*:\s*\*\*\s*(.*)$/);
+      || source.match(/^\*\*([^*:]+?)\s*:\s*\*\*\s*(.*)$/)
+      || source.match(/^(sourceblock|source_block|source block)\s*:?\s*([a-z._-]+)\s*$/i);
     if (!match) return null;
     const key = String(match[1] || "").trim().toLowerCase();
     const value = String(match[2] || "").trim();
@@ -49,20 +50,28 @@
     return { lines, markers };
   }
 
+  function stripVisibleSourcePrefix(text) {
+    return String(text || "")
+      .replace(/^\s*(?:sourceblock|source_block|source block)\s*:?\s*(?:theory|terms|practice|diagrams|term|glossary)(?:\.md)?\s*/i, "")
+      .trim();
+  }
+
   function visibleQuestionText(lines, markers, endLineIndex = lines.length) {
     const sourceLineIndexes = new Set(markers.filter(isSourceMetadata).map((marker) => marker.index));
-    return lines
+    const text = lines
       .slice(0, endLineIndex)
       .filter((_, index) => !sourceLineIndexes.has(index))
       .join("\n")
       .trim();
+    return stripVisibleSourcePrefix(text);
   }
 
   function parseSourceBlock(body, fallback = "theory") {
-    const { markers } = parseMetadata(body);
+    const { markers, lines } = parseMetadata(body);
     const sourceMeta = markers.find(isSourceMetadata);
-    if (!sourceMeta) return fallback;
-    return normalizeSourceBlock(sourceMeta.value, fallback);
+    if (sourceMeta) return normalizeSourceBlock(sourceMeta.value, fallback);
+    const inlineSource = lines.join("\n").match(/^\s*(?:sourceblock|source_block|source block)\s*:?\s*([a-z._-]+)/i);
+    return inlineSource ? normalizeSourceBlock(inlineSource[1], fallback) : fallback;
   }
 
   function parseAnswerText(markers, answerIndex, lines) {

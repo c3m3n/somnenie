@@ -12,6 +12,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.dirname(__dirname);
 
+test("strips plain sourceBlock prefixes from visible quiz text", () => {
+  const md = `## Q1 (MCQ)
+sourceBlock: theory Which level is checked here?
+
+A. Nutrient
+B. Product
+C. Diet
+D. Energy
+
+**Answer: B**
+**Explanation:** The question compares analysis levels.`;
+
+  const questions = quiz.parseQuiz(md);
+
+  assert.equal(questions.length, 1);
+  assert.equal(questions[0].sourceBlock, "theory");
+  assert.equal(questions[0].text, "Which level is checked here?");
+  assert.ok(!questions[0].text.includes("sourceBlock"));
+});
+
 test("parses the M01 quiz contract", async () => {
   const md = await fs.readFile(path.join(projectRoot, "content", "M01", "quiz.md"), "utf8");
   const questions = quiz.parseQuiz(md);

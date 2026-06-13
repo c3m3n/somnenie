@@ -6887,3 +6887,65 @@ body.mode-module #screen {
   background: var(--ink) !important;
   color: var(--btn-text) !important;
 }
+
+/* ---------- Instrument component: inline PWA notice ---------- */
+
+#screen > .pwa-inline-notice {
+  position: static !important;
+  inset: auto !important;
+  transform: none !important;
+  z-index: auto !important;
+  width: 100%;
+  max-width: none !important;
+  min-height: 42px;
+  margin: var(--s6) 0 max(var(--s2), env(safe-area-inset-bottom));
+  padding: var(--s3) 0 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--s3);
+  border: 0 !important;
+  border-top: 1px solid var(--hairline) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--faint) !important;
+  font: 400 var(--t-label)/1.25 var(--font-mono) !important;
+  letter-spacing: 1px !important;
+  text-transform: none !important;
+}
+
+#screen > .pwa-inline-notice .pwa-inline-text {
+  min-width: 0;
+  color: inherit;
+}
+
+#screen > .pwa-inline-notice button {
+  min-width: 0;
+  min-height: 28px;
+  padding: 0 var(--s2);
+  border: 1px solid var(--hairline) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ink) !important;
+  font: 500 var(--t-label)/1 var(--font-mono) !important;
+  letter-spacing: 1px !important;
+  text-transform: none !important;
+  cursor: pointer;
+}
+
+#screen > .pwa-inline-notice .pwa-inline-close {
+  width: 28px;
+  padding: 0;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+}
+
+#screen > .pwa-inline-notice .pwa-inline-action:hover,
+#screen > .pwa-inline-notice .pwa-inline-action:focus-visible {
+  border-color: var(--ink) !important;
+  background: var(--ink) !important;
+  color: var(--bg) !important;
+}

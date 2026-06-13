@@ -3237,6 +3237,50 @@ function removePwaBanner(className) {
   document.querySelector(`.${className}`)?.remove?.();
 }
 
+function appendPwaNotice(banner) {
+  const host = $screen || document.querySelector?.("#screen") || document.body;
+  host?.appendChild?.(banner);
+}
+
+function showPwaInlineNotice({ className, text, tone = "info", actionLabel = "", onAction = null, timeout = 0 }) {
+  removePwaBanner(className);
+  const banner = document.createElement("div");
+  banner.className = `pwa-inline-notice ${className} pwa-status-${tone}`;
+  setElementAttr(banner, "role", "status");
+  setElementAttr(banner, "aria-live", "polite");
+
+  const label = document.createElement("span");
+  label.className = "pwa-inline-text";
+  label.textContent = text;
+  banner.append(label);
+
+  if (actionLabel && typeof onAction === "function") {
+    const action = document.createElement("button");
+    action.type = "button";
+    action.className = "pwa-inline-action";
+    action.textContent = actionLabel;
+    action.onclick = onAction;
+    banner.append(action);
+  }
+
+  const close = document.createElement("button");
+  close.type = "button";
+  close.className = "pwa-inline-close";
+  close.textContent = "×";
+  setElementAttr(close, "aria-label", "Скрыть уведомление");
+  close.onclick = () => banner.remove?.();
+  banner.append(close);
+
+  appendPwaNotice(banner);
+
+  if (pwaStatusTimer) clearTimeout(pwaStatusTimer);
+  if (timeout) {
+    pwaStatusTimer = setTimeout(() => banner.remove?.(), timeout);
+  }
+
+  return banner;
+}
+
 async function triggerPwaInstall() {
   if (!deferredInstallPrompt) return;
   const prompt = deferredInstallPrompt;
@@ -3247,18 +3291,23 @@ async function triggerPwaInstall() {
 }
 
 function showPwaStatus(message, tone = "info", timeout = 3600) {
-  removePwaBanner("pwa-status-banner");
-  const banner = document.createElement("div");
-  banner.className = `pwa-status-banner pwa-status-${tone}`;
-  setElementAttr(banner, "role", "status");
-  setElementAttr(banner, "aria-live", "polite");
-  banner.textContent = message;
-  document.body.appendChild(banner);
+  showPwaInlineNotice({
+    className: "pwa-status-banner",
+    text: message,
+    tone,
+    timeout,
+  });
+}
 
-  if (pwaStatusTimer) clearTimeout(pwaStatusTimer);
-  if (timeout) {
-    pwaStatusTimer = setTimeout(() => banner.remove?.(), timeout);
-  }
+function showPwaInstallPrompt() {
+  if (!deferredInstallPrompt) return;
+  showPwaInlineNotice({
+    className: "pwa-install-banner",
+    text: "установить приложение",
+    tone: "info",
+    actionLabel: "установить",
+    onAction: runAsync(triggerPwaInstall),
+  });
 }
 
 function syncOnlineStatus() {
@@ -3303,27 +3352,20 @@ async function applyLaunchRoute() {
 function showServiceWorkerUpdatePrompt(registration) {
   if (!registration?.waiting || pwaBannerExists("app-update-banner")) return;
 
-  const banner = document.createElement("div");
-  banner.className = "app-update-banner";
-  setElementAttr(banner, "role", "status");
-  setElementAttr(banner, "aria-live", "polite");
-
-  const text = document.createElement("span");
-  text.textContent = "Доступна новая версия курса.";
-
-  const reload = document.createElement("button");
-  reload.type = "button";
-  reload.textContent = "Обновить";
-  reload.onclick = () => {
-    reload.disabled = true;
-    if (registration.waiting) {
-      serviceWorkerReloadPending = true;
-      registration.waiting.postMessage({ type: "SKIP_WAITING" });
-    }
-  };
-
-  banner.append(text, reload);
-  document.body.appendChild(banner);
+  showPwaInlineNotice({
+    className: "app-update-banner",
+    text: "доступна новая версия курса",
+    tone: "online",
+    actionLabel: "обновить",
+    onAction: (event) => {
+      const button = event?.currentTarget;
+      if (button) button.disabled = true;
+      if (registration.waiting) {
+        serviceWorkerReloadPending = true;
+        registration.waiting.postMessage({ type: "SKIP_WAITING" });
+      }
+    },
+  });
 }
 
 async function registerServiceWorker() {
@@ -3362,6 +3404,7 @@ if (window.addEventListener) {
     event.preventDefault();
     deferredInstallPrompt = event;
     removePwaBanner("pwa-install-banner");
+    showPwaInstallPrompt();
   });
   window.addEventListener("appinstalled", () => {
     deferredInstallPrompt = null;
