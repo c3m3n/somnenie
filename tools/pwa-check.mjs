@@ -60,10 +60,13 @@ for (const screenshot of screenshots) await assertPngSize(assetPath(screenshot.s
 const sw = await readText("sw.js");
 for (const asset of [
   "./core/constants.js",
+  "./core/util.js",
   "./core/storage.js",
   "./core/review.js",
   "./core/quiz.js",
   "./app.js",
+  "./views/session.js",
+  "./views/quiz.js",
   "./style.css",
   "./manifest.webmanifest",
   "./icons/favicon-32.png",

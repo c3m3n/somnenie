@@ -12,10 +12,13 @@ const APP_SHELL = [
   "./index.html",
   "./style.css",
   "./core/constants.js",
+  "./core/util.js",
   "./core/storage.js",
   "./core/review.js",
   "./core/quiz.js",
   "./app.js",
+  "./views/session.js",
+  "./views/quiz.js",
   "./manifest.webmanifest",
   "./lib/marked.min.js",
   "./fonts/IBMPlexMono-Regular.woff2",
@@ -152,7 +155,10 @@ self.addEventListener("fetch", (event) => {
   const isContent = url.pathname.includes("/content/");
   const isMutableShell =
     url.pathname.endsWith("/app.js") ||
+    url.pathname.endsWith("/views/session.js") ||
+    url.pathname.endsWith("/views/quiz.js") ||
     url.pathname.endsWith("/core/constants.js") ||
+    url.pathname.endsWith("/core/util.js") ||
     url.pathname.endsWith("/core/storage.js") ||
     url.pathname.endsWith("/core/review.js") ||
     url.pathname.endsWith("/core/quiz.js") ||

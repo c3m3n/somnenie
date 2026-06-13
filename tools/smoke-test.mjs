@@ -368,6 +368,9 @@ vm.createContext(context);
 const constantsJs = await fs.readFile(path.join(projectRoot, "core", "constants.js"), "utf8");
 vm.runInContext(constantsJs, context, { filename: "core/constants.js" });
 
+const utilJs = await fs.readFile(path.join(projectRoot, "core", "util.js"), "utf8");
+vm.runInContext(utilJs, context, { filename: "core/util.js" });
+
 const storageJs = await fs.readFile(path.join(projectRoot, "core", "storage.js"), "utf8");
 vm.runInContext(storageJs, context, { filename: "core/storage.js" });
 
@@ -379,6 +382,12 @@ vm.runInContext(quizJs, context, { filename: "core/quiz.js" });
 
 const appJs = await fs.readFile(path.join(projectRoot, "app.js"), "utf8");
 vm.runInContext(appJs, context, { filename: "app.js" });
+
+const sessionViewJs = await fs.readFile(path.join(projectRoot, "views", "session.js"), "utf8");
+vm.runInContext(sessionViewJs, context, { filename: "views/session.js" });
+
+const quizViewJs = await fs.readFile(path.join(projectRoot, "views", "quiz.js"), "utf8");
+vm.runInContext(quizViewJs, context, { filename: "views/quiz.js" });
 
 const screen = elementsById.get("screen");
 const tabs = elementsById.get("tabs");
@@ -692,6 +701,30 @@ assert(memoryScreenText.includes("Память") && memoryScreenText.includes("�
 assert(memoryScreenText.includes("Как тренируем"), "Memory screen should explain the review strategy");
 assert(memoryScreenText.includes("Исходный пример"), "Memory card should surface the original example as visible source context");
 assert(memoryScreenText.includes("интервал"), "Memory card should materialize the spaced-repetition interval");
+
+// Сеанс повторения (views/session.js): прогоняем startLearningSession → showReviewSession
+// на реальной SRS-карточке M01-q1 (создана неверным ответом выше). Финальный экран
+// (renderFinal) опирается на парсинг innerHTML живого DOM, которого нет в этом mock,
+// поэтому доводим до ответа + записи в сторадж, но не кликаем «Завершить повторение».
+appState = await storage.getAppState();
+const sessionSeedItem = appState.review.items.find((item) => item.id === "M01-q1");
+assert(sessionSeedItem, "Expected the M01-q1 review item to drive a memory session");
+const reviewsBeforeSession = appState.sessions.todayDone.reviews || 0;
+await context.startLearningSession({ reviewOnly: true, items: [sessionSeedItem] });
+assert(title.textContent === "Сеанс", "Memory session should set the Сеанс title");
+const sessionScreen = screen.children.find((child) => (child.className || "").includes("review-session"));
+assert(sessionScreen, "Memory session did not render");
+assert(sessionScreen.innerHTML.includes("session-head"), "Session should render its progress header");
+const sessionCard = sessionScreen.children.find((child) => (child.className || "").includes("session-question"));
+assert(sessionCard, "Session question card did not render");
+const sessionOption = sessionCard.children.find((child) => child.className === "opt");
+assert(sessionOption, "Session question should render answer options");
+await sessionOption.onclick();
+const sessionNext = sessionCard.children.find((child) => child.className === "btn quiz-next");
+assert(sessionNext, "Answered session question should expose a next button");
+assert(sessionNext.textContent === "Завершить повторение", "Single-item session should offer to finish");
+appState = await storage.getAppState();
+assert((appState.sessions.todayDone.reviews || 0) > reviewsBeforeSession, "Session answer should record a review activity in storage");
 
 await context.exportProgress();
 assert(lastAppendedElement?.download?.startsWith("nutrio-data-"), "Export filename should start with nutrio-data-");

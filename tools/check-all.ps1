@@ -24,9 +24,12 @@ function Invoke-CheckedCommand {
 
 Invoke-CheckedCommand node --check app.js
 Invoke-CheckedCommand node --check core\constants.js
+Invoke-CheckedCommand node --check core\util.js
 Invoke-CheckedCommand node --check core\storage.js
 Invoke-CheckedCommand node --check core\review.js
 Invoke-CheckedCommand node --check core\quiz.js
+Invoke-CheckedCommand node --check views\session.js
+Invoke-CheckedCommand node --check views\quiz.js
 Invoke-CheckedCommand node --test .\tools\quiz.test.mjs
 Invoke-CheckedCommand node .\tools\test-review.mjs
 Invoke-CheckedCommand node .\tools\smoke-test.mjs
