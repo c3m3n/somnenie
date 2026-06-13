@@ -3166,6 +3166,40 @@ body::after {
   background: #18181e;
   cursor: pointer;
   appearance: none;
+  display: grid;
+  place-items: center;
+}
+
+/* Номер станции по умолчанию скрыт (мелкие «пилюли» остаются чистыми),
+   показывается только в крупной матрице Atlas поверх цветной заливки. */
+.course-map-segment .segment-num {
+  display: none;
+}
+
+.instrument-matrix .course-map-segment .segment-num {
+  display: block;
+  position: relative;
+  z-index: 2;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: clamp(8px, 1.7vw, 11px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #5d5d68;
+  transition: color 160ms var(--ease);
+}
+
+.instrument-matrix .course-map-segment.complete .segment-num {
+  color: #06140c;
+}
+
+.instrument-matrix .course-map-segment.active .segment-num,
+.instrument-matrix .course-map-segment.review .segment-num {
+  color: var(--bone);
+}
+
+.instrument-matrix .course-map-segment.next .segment-num {
+  color: var(--ember);
 }
 
 .instrument-matrix .course-map-segment:hover {

@@ -1151,9 +1151,13 @@ function courseMapSegments(nextModule = null, interactive = true) {
     const isNext = nextModule?.id === mod.id && state === "idle";
     const hint = `${mod.id} · ${mod.title} · ${isNext ? "Следующий" : moduleStateLabel(mod)}`;
     const attrs = `class="course-map-segment ${state}${isNext ? " next" : ""}" data-module-id="${escapeHtml(mod.id)}" style="--segment-delay: ${index * 10}ms" title="${escapeHtml(hint)}" aria-label="${escapeHtml(hint)}"`;
+    // Номер станции внутри клетки (виден только в крупной матрице Atlas). Сама подпись
+    // дублируется в aria-label, поэтому число прячем от скринридера.
+    const num = String(mod.id).replace(/^[^0-9]*/, "") || String(index + 1);
+    const label = `<span class="segment-num" aria-hidden="true">${escapeHtml(num)}</span>`;
     return interactive
-      ? `<button type="button" ${attrs}></button>`
-      : `<span ${attrs} role="img"></span>`;
+      ? `<button type="button" ${attrs}>${label}</button>`
+      : `<span ${attrs} role="img">${label}</span>`;
   }).join("");
 }
 
