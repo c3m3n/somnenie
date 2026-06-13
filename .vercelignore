@@ -1,5 +1,6 @@
 .vercel
-tools
+tools/*
+!tools/postbuild.mjs
 start.bat
 TODO.md
 .codex-shots
