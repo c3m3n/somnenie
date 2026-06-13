@@ -84,6 +84,17 @@ function setScreenMode(mode) {
     document.body.classList.remove(className);
   }
   if (mode) document.body.classList.add(`mode-${mode}`);
+  if (mode !== "module") removeElementAttr($title, "data-step-label");
+}
+
+function setAppBarStepLabel(file) {
+  if (!$title) return;
+  const routeTab = file ? MODULE_ROUTE_TABS.find((tab) => tab.files.includes(file)) : null;
+  if (current && routeTab?.label) {
+    setElementAttr($title, "data-step-label", `· ${routeTab.label.toLowerCase()}`);
+  } else {
+    removeElementAttr($title, "data-step-label");
+  }
 }
 
 // A11y: при смене экрана переводим фокус на его заголовок, иначе фокус остаётся
@@ -2207,6 +2218,7 @@ function appendTabButton(tab) {
 }
 
 function syncActiveTab(file) {
+  setAppBarStepLabel(file);
   for (const item of $tabs.children) {
     const tag = String(item.tagName || "").toLowerCase();
     if (tag === "select") {
@@ -3337,4 +3349,3 @@ if (window.addEventListener) {
 window.addEventListener("load", () => {
   registerServiceWorker().catch((error) => console.warn("SW register failed", error));
 });
-

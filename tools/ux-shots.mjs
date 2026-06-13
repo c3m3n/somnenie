@@ -97,7 +97,7 @@ async function main() {
     await shot("01-home");
 
     // reader: open M01 theory (module cards live on the Atlas screen, not Home)
-    await drive(`const atlas=document.querySelector('.home-atlas-link,.atlas-link');if(atlas){await click(atlas);await waitFor(()=>document.querySelectorAll('.module-card').length>=1);}const m01=[...document.querySelectorAll('.module-card')].find(c=>c.querySelector('.mod-id')?.textContent.trim()==='M01')||document.querySelector('.module-card');await click(m01);await waitFor(()=>document.querySelectorAll('.lesson-section-card').length>=3||document.querySelector('#tabs button[data-step]'));window.scrollTo(0,0);`);
+    await drive(`const atlas=document.querySelector('.home-atlas-link,.atlas-link');if(atlas){await click(atlas);await waitFor(()=>document.querySelectorAll('.module-card').length>=1);}const m01=[...document.querySelectorAll('.module-card')].find(c=>c.querySelector('.mod-id')?.textContent.trim()==='M01')||document.querySelector('.module-card');await click(m01);await waitFor(()=>document.querySelectorAll('.lesson-section-card').length>=3);window.scrollTo(0,0);`);
     await delay(400);
     await shot("02-reader-top");
     await evalJs(`window.scrollTo(0, 520)`); await delay(300);
