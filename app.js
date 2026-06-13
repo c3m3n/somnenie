@@ -125,10 +125,6 @@ function cleanupHomeEffects() {
   homeEffectsCleanup = null;
 }
 
-function prefersReducedMotion() {
-  return Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
-}
-
 function applyQuietMode() {
   if (document.body?.classList) document.body.classList.toggle("quiet", Boolean(profileCache?.quietMode));
 }
@@ -2175,15 +2171,6 @@ function stepButtonText(prefix, step) {
     return `Перейти к ${tabTargetLabel(step.file)}`;
   }
   return step.label || prefix;
-}
-
-function learningStepShortLabel(step) {
-  if (!step) return "";
-  if (step.kind === "tab") return contentTabByFile(step.file).label;
-  if (step.kind === "module") return `Станция ${step.mod?.id || step.label}`;
-  if (step.kind === "home") return "Сегодня";
-  if (step.kind === "review") return "Закрепление";
-  return step.label || "";
 }
 
 function lessonRouteContextHtml(mod, file) {

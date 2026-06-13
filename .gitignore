@@ -1,4 +1,7 @@
 .vercel
+node_modules
+dist
+coverage
 
 # Local/internal work artifacts. Keep these on the workstation, not in the public repo.
 20.txt
