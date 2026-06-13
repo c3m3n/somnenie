@@ -6574,3 +6574,159 @@ body.mode-module #screen {
   background: transparent !important;
   color: var(--muted) !important;
 }
+
+/* ---------- Instrument component: quiz ---------- */
+
+.mode-module .quiz-progress,
+.mode-session .quiz-progress {
+  margin: 0 var(--s5) var(--s5);
+  padding: 0 0 var(--s4);
+  border: 0 !important;
+  border-bottom: 1px solid var(--hairline) !important;
+  background: transparent !important;
+  color: var(--text) !important;
+}
+
+.quiz-progress-head {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 0 var(--s3);
+}
+
+.quiz-progress-head strong {
+  color: var(--ink) !important;
+  font: 500 var(--t-h)/1.25 var(--font-display);
+}
+
+.quiz-progress-segments {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--s2);
+  height: 14px;
+}
+
+.quiz-progress-segments i {
+  flex: 1 1 0;
+  height: 5px;
+  border-radius: 0;
+  background: var(--hairline) !important;
+  transform: skewX(-14deg);
+}
+
+.quiz-progress-segments i.current {
+  height: 12px;
+  background: var(--accent) !important;
+}
+
+.quiz-progress-segments i.done {
+  background: var(--ink) !important;
+}
+
+.quiz-progress-stats {
+  margin-top: var(--s3);
+  color: var(--faint) !important;
+  font: 400 var(--t-label)/1.35 var(--font-mono);
+}
+
+.mode-module .quiz-intro,
+.mode-module .quiz-q,
+.mode-module .quiz-result,
+.mode-session .quiz-q,
+.mode-session .quiz-result {
+  margin: 0 var(--s5) var(--s5);
+  padding: var(--s5);
+  border: 1px solid var(--hairline) !important;
+  background: transparent !important;
+  color: var(--text) !important;
+}
+
+.quiz-intro-head,
+.quiz-intro-metrics,
+.quiz-rules,
+.quiz-diagnosis,
+.quiz-diagnosis-more,
+.quiz-diagnosis-explain {
+  border-color: var(--hairline) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.q-kicker,
+.section-kicker,
+.quiz-progress-stats,
+.opt-state {
+  color: var(--faint) !important;
+  font-family: var(--font-mono) !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+  text-transform: lowercase !important;
+}
+
+.q-text,
+.quiz-q .q-text,
+.quiz-intro p,
+.quiz-result p {
+  color: var(--text) !important;
+  font: 400 var(--t-body)/1.65 var(--font-body);
+}
+
+.quiz-q .q-text {
+  margin: var(--s4) 0 var(--s5);
+}
+
+.quiz-q .opt {
+  width: 100%;
+  min-height: 0;
+  margin: 0 0 var(--s3);
+  padding: 13px 14px;
+  border: 1px solid var(--hairline) !important;
+  background: transparent !important;
+  color: var(--text) !important;
+  font: 400 var(--t-body)/1.35 var(--font-body);
+  text-align: left;
+}
+
+.quiz-q .opt:hover:not(:disabled),
+.quiz-q .opt:focus-visible {
+  border-color: var(--ink) !important;
+}
+
+.quiz-q .opt.correct {
+  border-color: var(--ink) !important;
+}
+
+.quiz-q .opt.correct .opt-body {
+  background: var(--correct);
+  color: var(--on-accent);
+  padding: 0 3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.quiz-q .opt.wrong {
+  border-color: var(--error) !important;
+  color: var(--error) !important;
+}
+
+.quiz-q .opt.wrong .opt-body,
+.quiz-q .opt.wrong .opt-state {
+  color: var(--error) !important;
+}
+
+.quiz-q .opt.dimmed {
+  color: var(--faint) !important;
+}
+
+.quiz-diagnosis-head strong,
+.quiz-result h2,
+.quiz-intro h2 {
+  color: var(--ink) !important;
+  font-family: var(--font-display);
+  font-weight: 500;
+}
+
+.review-added-line {
+  border-color: var(--hairline) !important;
+  background: transparent !important;
+  color: var(--muted) !important;
+}
