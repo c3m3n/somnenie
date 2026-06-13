@@ -1,5 +1,4 @@
-﻿/* eslint-disable complexity, @typescript-eslint/no-unused-vars */
-import { dueReviewItems } from "./review";
+﻿import { dueReviewItems } from "./review";
 import type {
   AppState,
   CheckpointAttempt,
@@ -211,6 +210,7 @@ function progressLabel(access: BlockAccess): string {
   return "Доступен";
 }
 
+// eslint-disable-next-line complexity -- linear status resolution with several legacy fallbacks
 function deriveCheckpointStatusFromProgress(progress?: ModuleProgress): CheckpointStatus {
   if (!progress) return "not_started";
 
@@ -322,6 +322,7 @@ function deriveFailedQuestionIds(
   return weakSpots ? Object.keys(weakSpots).sort((left, right) => Number(left) - Number(right)) : [];
 }
 
+// eslint-disable-next-line complexity -- builds answer from spot fields with explicit per-field fallbacks
 function buildFailedAnswerFromId(
   blockId: string,
   id: string,
@@ -335,12 +336,12 @@ function buildFailedAnswerFromId(
     return {
       questionId: `${blockId}-${key}`,
       questionNumber: fallbackNumber,
-      questionText: "������",
+      questionText: "Текст вопроса не сохранён",
       chosenOptionKey: null,
-      chosenOptionText: "�",
+      chosenOptionText: null,
       correctOptionKey: null,
-      correctOptionText: "�",
-      explanation: "��� ������ �� �������, �������� �������� � ��������� ������������ ��������.",
+      correctOptionText: null,
+      explanation: "Ответ по этому вопросу не найден. Откройте материал блока и повторите связанный фрагмент.",
       sourceBlock: null,
       sourceLesson: blockId,
       sourceFragment: "check",
@@ -351,12 +352,12 @@ function buildFailedAnswerFromId(
   return {
     questionId: `${blockId}-q${questionNumber}`,
     questionNumber,
-    questionText: spot.questionText || spot.text || "������",
+    questionText: spot.questionText || spot.text || "Текст вопроса не сохранён",
     chosenOptionKey: spot.chosenOptionKey ?? null,
     chosenOptionText: spot.chosenOptionText ?? null,
     correctOptionKey: spot.correctOptionKey ?? null,
     correctOptionText: spot.correctOptionText ?? null,
-    explanation: spot.shortExplanation || "��� ���������� �� ���� ������.",
+    explanation: spot.shortExplanation || "Пояснение по этой ошибке отсутствует.",
     sourceBlock: spot.sourceBlock || null,
     sourceLesson: spot.sourceLesson || null,
     sourceFragment: spot.sourceFragment || null,
@@ -377,10 +378,6 @@ function firstOpenBlockWithStatus(course: CourseModule[], progress: ProgressMap,
 
 function firstOpenReadableBlock(course: CourseModule[], progress: ProgressMap): CourseModule | null {
   return course.find((block) => canOpenBlock(block.id, course, progress) && getBlockState(progress[block.id]) !== "checkpoint_passed") || null;
-}
-
-function labelForBlock(progress?: ModuleProgress): string {
-  return isBlockStarted(progress) ? "Продолжить блок" : "Открыть";
 }
 
 function reviewAction(items: ReviewItem[]): LearningAction {
@@ -413,8 +410,8 @@ function pluralize(count: number, one: string, few: string, many: string): strin
   return many;
 }
 
-
-
+
+
 
 
 

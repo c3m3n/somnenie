@@ -36,7 +36,8 @@ export default tseslint.config(
       "max-statements-per-line": ["error", { "max": 1 }],
       "no-console": ["warn", { "allow": ["warn", "error"] }],
       "@typescript-eslint/consistent-type-imports": "error",
-      "@typescript-eslint/no-floating-promises": "error"
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }]
     },
   },
 );

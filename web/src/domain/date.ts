@@ -7,12 +7,16 @@ export function toISODate(input: Date | string = new Date()): string {
 }
 
 export function dateFromISO(iso: string): Date {
-  const cleaned = String(iso || "").trim();
-  const parsed = new Date(cleaned);
-  if (!Number.isFinite(parsed.getTime())) {
+  const match = String(iso || "").trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) {
     throw new Error(`Некорректная дата: ${iso}`);
   }
-  return parsed;
+  const [, year, month, day] = match;
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+  if (!Number.isFinite(date.getTime())) {
+    throw new Error(`Некорректная дата: ${iso}`);
+  }
+  return date;
 }
 
 export function addDaysISO(input: string, days: number): string {
