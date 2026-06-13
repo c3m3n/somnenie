@@ -29,5 +29,9 @@ function stateWithReview(due: string): AppState {
 }
 
 function completeProgress(): ProgressMap {
-  return { M01: { theoryRead: true, takeaway: "A", quizAttemptStatus: "complete" }, M02: { theoryRead: true, takeaway: "B", quizAttemptStatus: "complete" } };
+  return { M01: checkpointPassed(), M02: checkpointPassed() };
+}
+
+function checkpointPassed() {
+  return { quizAttemptStatus: "complete" as const, quizCompletedAt: "2026-06-13T00:00:00.000Z", quizBest: 7, quizTotal: 10 };
 }

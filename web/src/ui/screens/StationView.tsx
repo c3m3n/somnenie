@@ -30,6 +30,7 @@ interface AnswerContext {
   question: QuizQuestion;
   progress: ModuleProgress;
   isLast: boolean;
+  autoTotal: number;
   appState: AppState;
   saveProgress: StationProps["saveProgress"];
   saveState: StationProps["saveState"];
@@ -66,22 +67,23 @@ function QuizStep({ module, progress, appState, saveProgress, saveState }: Stati
 function QuizFlow({ module, progress, questions, appState, saveProgress, saveState }: { module: CourseModule; progress: ModuleProgress; questions: QuizQuestion[]; appState: AppState; saveProgress: StationProps["saveProgress"]; saveState: StationProps["saveState"] }) {
   const answered = progress.quizAnswered || 0;
   const current = questions[answered];
+  const autoTotal = questions.filter((question) => question.kind === "auto").length;
   if (!current) return <QuizResult module={module} progress={progress} questions={questions} saveProgress={saveProgress} />;
-  return <QuestionCard module={module} question={current} progress={progress} isLast={answered + 1 >= questions.length} appState={appState} saveProgress={saveProgress} saveState={saveState} />;
+  return <QuestionCard module={module} question={current} progress={progress} isLast={answered + 1 >= questions.length} autoTotal={autoTotal} appState={appState} saveProgress={saveProgress} saveState={saveState} />;
 }
 
-function QuestionCard({ module, question, progress, isLast, appState, saveProgress, saveState }: { module: CourseModule; question: QuizQuestion; progress: ModuleProgress; isLast: boolean; appState: AppState; saveProgress: StationProps["saveProgress"]; saveState: StationProps["saveState"] }) {
-  return <article className="quiz-card product-question"><div className="section-kicker">Вопрос {question.number}</div><div className="quiz-question" dangerouslySetInnerHTML={{ __html: renderMarkdown(question.text) }} />{question.kind === "application" ? <ApplicationQuestion module={module} question={question} progress={progress} isLast={isLast} saveProgress={saveProgress} /> : <AutoQuestion module={module} question={question} progress={progress} isLast={isLast} appState={appState} saveProgress={saveProgress} saveState={saveState} />}</article>;
+function QuestionCard({ module, question, progress, isLast, autoTotal, appState, saveProgress, saveState }: { module: CourseModule; question: QuizQuestion; progress: ModuleProgress; isLast: boolean; autoTotal: number; appState: AppState; saveProgress: StationProps["saveProgress"]; saveState: StationProps["saveState"] }) {
+  return <article className="quiz-card product-question"><div className="section-kicker">Вопрос {question.number}</div><div className="quiz-question" dangerouslySetInnerHTML={{ __html: renderMarkdown(question.text) }} />{question.kind === "application" ? <ApplicationQuestion module={module} question={question} progress={progress} isLast={isLast} saveProgress={saveProgress} /> : <AutoQuestion module={module} question={question} progress={progress} isLast={isLast} autoTotal={autoTotal} appState={appState} saveProgress={saveProgress} saveState={saveState} />}</article>;
 }
 
-function AutoQuestion({ module, question, progress, isLast, appState, saveProgress, saveState }: { module: CourseModule; question: QuizQuestion; progress: ModuleProgress; isLast: boolean; appState: AppState; saveProgress: StationProps["saveProgress"]; saveState: StationProps["saveState"] }) {
+function AutoQuestion({ module, question, progress, isLast, autoTotal, appState, saveProgress, saveState }: { module: CourseModule; question: QuizQuestion; progress: ModuleProgress; isLast: boolean; autoTotal: number; appState: AppState; saveProgress: StationProps["saveProgress"]; saveState: StationProps["saveState"] }) {
   const [locked, setLocked] = useState(false);
   const lockedRef = useRef(false);
   const choose = (key: string) => {
     if (lockedRef.current) return;
     lockedRef.current = true;
     setLocked(true);
-    void answerAuto({ module, question, progress, isLast, appState, saveProgress, saveState }, key);
+    void answerAuto({ module, question, progress, isLast, autoTotal, appState, saveProgress, saveState }, key);
   };
   return <div className="answer-list">{question.options.map((option) => <button type="button" disabled={locked} key={option.key} onClick={() => void choose(option.key)}><span>{option.key}</span><span dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(option.text) }} /></button>)}</div>;
 }
@@ -131,7 +133,7 @@ function nextQuizProgress(context: AnswerContext, isRight: boolean): ModuleProgr
     quizCompletedAt: quizCompletedAt(context),
     quizTotalQuestions: answered,
     quizBest: Math.max(context.progress.quizBest || 0, correct),
-    quizTotal: Math.max(context.progress.quizTotal || 0, context.question.number),
+    quizTotal: context.autoTotal,
     quizVersion: QUIZ_PROGRESS_VERSION,
     weakSpots: nextWeakSpotState(context, isRight),
   };

@@ -194,5 +194,6 @@ export interface TodayAction {
   label: string;
   reason: string;
   moduleId?: string;
+  step?: StationStepKey;
   reviewItems?: ReviewItem[];
 }

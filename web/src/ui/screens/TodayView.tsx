@@ -25,7 +25,7 @@ export function TodayView({ bundle, progress, action }: { bundle: CourseBundle; 
 function runAction(action: TodayAction): void {
   if (action.kind === "review") navigate({ screen: "memory" });
   else if (action.kind === "journal") navigate({ screen: "journal" });
-  else navigate({ screen: "station", moduleId: action.moduleId || "M01", step: "understand" });
+  else navigate({ screen: "station", moduleId: action.moduleId || "M01", step: action.step || "understand" });
 }
 
 function iconFor(kind: TodayAction["kind"]) {

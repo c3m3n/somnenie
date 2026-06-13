@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Brain, Gauge, LibraryBig, NotebookPen } from "lucide-react";
 import { moduleById } from "../content/api";
+import { getBlockAccess, getBlockState, type BlockAccess } from "../domain/learningPath";
 import { buildTodayAction } from "../domain/today";
-import type { StationStepKey } from "../domain/types";
+import type { CourseBundle, ProgressMap, StationStepKey } from "../domain/types";
 import { useAppData } from "./useAppData";
 import { navigate, parseRoute, type Route } from "./route";
 import { AtlasView } from "./screens/AtlasView";
@@ -61,8 +62,39 @@ function renderRoute(route: Route, data: NonNullable<ReturnType<typeof useAppDat
 
 function stationRoute(moduleId: string, step: StationStepKey, data: NonNullable<ReturnType<typeof useAppData>>): React.ReactNode {
   const module = moduleById(data.bundle!, moduleId);
+  const access = getBlockAccess(moduleId, data.bundle!.modules, data.progress);
+  if (!access.canOpen) return <LockedStationView access={access} bundle={data.bundle!} progress={data.progress} />;
   if (!module) return <div className="loading">Станция не найдена</div>;
   return <StationView module={module} step={step} progress={data.progress[moduleId] || {}} appState={data.appState!} saveProgress={data.saveProgress} saveState={data.saveState} />;
+}
+
+function LockedStationView({ access, bundle, progress }: { access: BlockAccess; bundle: CourseBundle; progress: ProgressMap }) {
+  const required = access.requiredBlockId ? moduleById(bundle, access.requiredBlockId) : null;
+  const step = requiredStep(access.requiredBlockId, progress);
+  return (
+    <section className="screen station-screen locked-station">
+      <header className="station-head">
+        <div className="section-kicker">блок закрыт · {access.blockId}</div>
+        <h2>Блок пока закрыт</h2>
+        <p>{reasonLabel(access.reason)}</p>
+      </header>
+      <article className="locked-panel">
+        <span className="section-kicker">требуется</span>
+        <strong>{required ? `${required.id}. ${required.title}` : access.requiredBlockId}</strong>
+        <p>Сначала нужно сдать контрольную предыдущего блока.</p>
+        {required ? <button className="primary-action" type="button" onClick={() => navigate({ screen: "station", moduleId: required.id, step })}>Открыть {required.id}</button> : null}
+      </article>
+    </section>
+  );
+}
+
+function requiredStep(moduleId: string | null, progress: ProgressMap): StationStepKey {
+  const state = moduleId ? getBlockState(progress[moduleId]) : "available";
+  return state === "checkpoint_failed" || state === "checkpoint_ready" ? "check" : "understand";
+}
+
+function reasonLabel(reason: BlockAccess["reason"]): string {
+  return reason === "previous_checkpoint_failed" ? "Предыдущая контрольная не сдана." : "Предыдущая контрольная ещё не сдана.";
 }
 
 function titleFor(route: Route): string {

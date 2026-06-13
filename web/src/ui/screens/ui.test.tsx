@@ -17,6 +17,7 @@ describe("React learner flow", () => {
   it("Atlas renders all phases and modules", () => {
     render(<AtlasView bundle={bundle()} progress={{}} />);
     expect(screen.getAllByRole("button")).toHaveLength(24);
+    expect(screen.getByText("Откроется после контрольной M01")).toBeInTheDocument();
     expect(screen.getByText("Фаза 1")).toBeInTheDocument();
   });
 

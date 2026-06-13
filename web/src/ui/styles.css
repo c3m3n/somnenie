@@ -381,7 +381,8 @@ progress {
 .takeaway-list article,
 .profile-form,
 .application-block,
-.quiz-result {
+.quiz-result,
+.locked-panel {
   border: 1px solid var(--rule-dark);
   border-radius: 2px;
   background: var(--sheet);
@@ -536,6 +537,12 @@ progress {
 .quiz-result {
   display: grid;
   justify-items: start;
+  gap: 10px;
+}
+
+.locked-panel {
+  display: grid;
+  max-width: 680px;
   gap: 10px;
 }
 
