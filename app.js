@@ -1527,6 +1527,42 @@ function pluralizeRepeats(count) {
   return "повторений";
 }
 
+const HOME_PROTOCOL_STEPS = [
+  { key: "understand", label: "Понять", meta: "чтение" },
+  { key: "apply", label: "Применить", meta: "практика" },
+  { key: "check", label: "Проверить", meta: "вопросы" },
+  { key: "anchor", label: "Закрепить", meta: "вывод" },
+];
+
+function homeProtocolState(action) {
+  if (action?.type === "repeat") {
+    return { index: 0, label: "Повторить", meta: `память · ${action.estimatedTime}` };
+  }
+
+  const currentStep = action?.stationProgress?.currentStep || (action?.module ? stationStepForModule(action.module).key : "understand");
+  const index = Math.max(0, HOME_PROTOCOL_STEPS.findIndex((step) => step.key === currentStep));
+  const step = HOME_PROTOCOL_STEPS[index] || HOME_PROTOCOL_STEPS[0];
+  return { index, label: step.label, meta: `${step.meta} · ${action?.estimatedTime || "≈ 6 мин"}` };
+}
+
+function homeProtocolHtml(action) {
+  const state = homeProtocolState(action);
+  const segments = HOME_PROTOCOL_STEPS
+    .map((_, index) => `<span class="${index === state.index ? "current" : ""}" aria-hidden="true"></span>`)
+    .join("");
+
+  return (
+    `<div class="home-protocol">` +
+      `<div class="home-protocol-head"><span>протокол</span><span>${state.index + 1} / ${HOME_PROTOCOL_STEPS.length}</span></div>` +
+      `<div class="home-protocol-scale">${segments}</div>` +
+      `<div class="home-protocol-current">` +
+        `<strong>${escapeHtml(state.label)}</strong>` +
+        `<span>${escapeHtml(state.meta)}</span>` +
+      `</div>` +
+    `</div>`
+  );
+}
+
 /* ---------- экран: Today ---------- */
 
 async function showHome() {
@@ -1551,44 +1587,32 @@ async function showHome() {
 
   const summary = getProgressSummary();
   const nextModule = findNextModule();
-  const sessionPlan = buildCurrentSessionPlan(nextModule);
   const todayAction = buildTodayAction(summary, nextModule);
-  const organismState = organismAssetStateForAction(todayAction);
   const stationTotal = modules.length;
   const stationCompleted = completedStationCount();
+  const station = todayAction.station || stationForModule(nextModule);
+  const stationCode = station?.id || nextModule?.id || "курс";
+  const stationTitle = station?.title || todayAction.title;
   updateProfileButton(summary);
 
   const intro = document.createElement("section");
   intro.className = "intro-card today-screen";
   intro.innerHTML =
-    `<section class="home-learning-lead rise">` +
-      `<p class="home-product-label">SOMNENIE · маршрут</p>` +
+    `<section class="home-learning-lead">` +
+      `<p class="home-product-label">маршрут · сегодня</p>` +
       `<h2>Сегодня</h2>` +
-      `<p>Следующий короткий шаг уже выбран: понять тему, проверить себя или закрепить память.</p>` +
+      `<p>${escapeHtml(todayAction.reason)}</p>` +
     `</section>` +
-    `<section class="next next-step-card today-card rise">` +
-      `<p class="ask">${escapeHtml(todayAction.reason)}</p>` +
-      `<h3>${escapeHtml(todayAction.title)}</h3>` +
+    `<section class="next next-step-card today-card">` +
+      `<p class="home-station-code">${escapeHtml(stationCode)}</p>` +
+      `<h3>${escapeHtml(stationTitle)}</h3>` +
       `<p class="meta">${escapeHtml(todayAction.description)}</p>` +
+      homeProtocolHtml(todayAction) +
       todayWeakListHtml(todayAction) +
-      `<p class="today-estimate">${escapeHtml(todayAction.estimatedTime)}</p>` +
+      `<div class="home-action-slot"></div>` +
       (todayAction.afterAction ? `<p class="next-step-why">${escapeHtml(todayAction.afterAction)}</p>` : "") +
     `</section>` +
-    `<header class="instrument-statusbar rise">` +
-      `<span class="led" aria-hidden="true"></span>` +
-      `<span class="instrument-brand">SOMNENIE</span>` +
-      `<span class="instrument-path">маршрут/сегодня/следующий-шаг</span>` +
-      `<span class="instrument-clock" data-instrument-clock>--:--:--</span>` +
-    `</header>` +
-    `<div class="organism-wrap rise" aria-label="Контур учебного маршрута">` +
-      `<div class="organism-visual" data-organism-state="${escapeHtmlAttribute(organismState)}">` +
-        organismImageHtml(organismState) +
-        `<pre id="organism" aria-hidden="true"></pre>` +
-      `</div>` +
-      homeRouteStatusHtml(summary, nextModule, sessionPlan) +
-    `</div>` +
-    `<section class="console rise" aria-live="polite" aria-label="Состояние прибора"><div data-console-lines></div></section>` +
-    `<nav class="home-atlas-foot rise" aria-label="Карта курса">` +
+    `<nav class="home-atlas-foot" aria-label="Карта курса">` +
       `<button type="button" class="atlas-link home-atlas-link">Карта курса · ${stationCompleted}/${stationTotal} учебных станций</button>` +
     `</nav>` +
     safetyNoteHtml();
@@ -1602,20 +1626,14 @@ async function showHome() {
   actionBtn.onclick = runAsync(() => runTodayAction(todayAction));
   actions.appendChild(actionBtn);
 
-  const nextStepCard = typeof intro.querySelector === "function"
-    ? intro.querySelector(".next-step-card")
-    : null;
-  if (nextStepCard) {
-    const secondary = nextStepCard.querySelector(".next-step-why");
-    nextStepCard.insertBefore(actions, secondary || null);
-  }
+  const actionSlot = intro.querySelector?.(".home-action-slot");
+  if (actionSlot) actionSlot.appendChild(actions);
   else intro.appendChild(actions);
 
   const atlasLink = intro.querySelector?.(".atlas-link");
   if (atlasLink) atlasLink.onclick = runAsync(() => { navForward(); return showAtlas(); });
 
   $screen.appendChild(intro);
-  startHomeEffects(intro, summary, nextModule, sessionPlan);
   focusScreenStart();
 }
 
