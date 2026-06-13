@@ -183,6 +183,29 @@ describe("block checkpoint access", () => {
     expect(plan?.canRetake).toBe(true);
   });
 
+  it("getRemediationPlan returns readable fallback text when weak spot is missing", () => {
+    const progress = {
+      M01: {
+        ...legacyCheckpoint({
+          checkpointAttempts: [
+            { ...baseAttempt("M01"), correct: 2, total: 5, passed: false, completedAt: "2026-01-02T00:00:00.000Z", failedQuestionIds: ["2"] },
+          ],
+        }),
+      },
+    };
+    const plan = getRemediationPlan("M01", progress, reviewState("2026-06-13"));
+    const answer = plan?.failedAnswers[0];
+    expect(plan?.canRetake).toBe(true);
+    expect(answer?.questionNumber).toBe(2);
+    expect(answer?.questionText).toBe("Текст вопроса не сохранён");
+    expect(answer?.chosenOptionText).toBeNull();
+    expect(answer?.correctOptionText).toBeNull();
+    expect(answer?.explanation).toContain("Откройте материал");
+    expect(answer?.sourceLesson).toBe("M01");
+    expect(answer?.sourceFragment).toBe("check");
+    expect(JSON.stringify(answer)).not.toContain(String.fromCharCode(0xfffd));
+  });
+
 });
 
 function moduleFixture(id: string): CourseModule {
