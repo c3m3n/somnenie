@@ -6,10 +6,10 @@ import { type AppState, type CourseModule, type ModuleProgress, type ProgressMap
 const modules = ["M01", "M02"].map((id) => ({ id, title: id, phaseId: "p", phaseTitle: "P", files: {} })) as CourseModule[];
 
 describe("today priority", () => {
-  it("prioritizes due memory when no checkpoint blocker exists", () => {
+  it("prioritizes unfinished current block before due memory", () => {
     const appState = stateWithReview("2026-06-13");
     const action = buildTodayAction(modules, { M01: checkpointPassed() }, appState, new Date("2026-06-13"));
-    expect(action.kind).toBe("review");
+    expect(action).toMatchObject({ kind: "station", moduleId: "M02" });
   });
 
   it("prioritizes failed checkpoint blocker above due review", () => {

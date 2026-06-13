@@ -106,7 +106,7 @@ describe("block checkpoint access", () => {
       },
     };
     expect(getCheckpointStatus("M01", progress)).toBe("passed");
-    expect(getRemediationPlan("M01", progress)?.canRetake).toBe(false);
+    expect(getRemediationPlan("M01", progress)).toBeNull();
     expect(getBlockAccess("M02", modules, progress)).toMatchObject({ canOpen: true, reason: null });
   });
 
