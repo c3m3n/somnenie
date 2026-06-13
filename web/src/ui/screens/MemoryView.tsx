@@ -13,7 +13,14 @@ export function MemoryView({ bundle, appState, saveState }: { bundle: CourseBund
 
 function MemoryCard({ item, bundle, appState, saveState }: { item: ReviewItem; bundle: CourseBundle; appState: AppState; saveState: (patch: Partial<AppState>) => Promise<void> }) {
   const question = questionForItem(bundle, item);
-  return <article className="memory-card"><Brain size={24} /><h3>{item.userLabel || "Слабое место"}</h3><p>{item.shortExplanation || item.text}</p>{question ? <div className="answer-list">{question.options.map((option) => <button type="button" key={option.key} onClick={() => void answer(item, option.key === question.answer, appState, saveState)}><span>{option.key}</span><span dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(option.text) }} /></button>)}</div> : <ConceptButtons item={item} appState={appState} saveState={saveState} />}</article>;
+  return (
+    <article className="memory-card">
+      <Brain size={24} />
+      <h3>{item.userLabel || "Слабое место"}</h3>
+      <p>{item.shortExplanation || item.text}</p>
+      {question ? <div className="answer-list">{question.options.map((option) => <button type="button" key={option.key} onClick={() => void answer(item, String(option.key) === String(question.answer), appState, saveState)}><span>{option.key}</span><span dangerouslySetInnerHTML={{ __html: renderInlineMarkdown(option.text) }} /></button>)}</div> : <ConceptButtons item={item} appState={appState} saveState={saveState} />}
+    </article>
+  );
 }
 
 function ConceptButtons({ item, appState, saveState }: { item: ReviewItem; appState: AppState; saveState: (patch: Partial<AppState>) => Promise<void> }) {

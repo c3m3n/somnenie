@@ -10,6 +10,7 @@ export type Route =
 
 const STEP_KEYS = new Set(["understand", "apply", "check", "anchor"]);
 
+// eslint-disable-next-line complexity
 export function parseRoute(hash = window.location.hash): Route {
   const clean = hash.replace(/^#\/?/, "");
   const [screen, moduleId, step] = clean.split("/");

@@ -10,27 +10,26 @@ import { TodayView } from "./TodayView";
 
 describe("React learner flow", () => {
   it("Today renders one primary action", () => {
-    render(<TodayView bundle={bundle()} progress={{}} action={{ kind: "station", label: "Открыть", reason: "Next", moduleId: "M01" }} />);
-    expect(screen.getAllByRole("button", { name: /Открыть/ })).toHaveLength(1);
+    render(<TodayView bundle={bundle()} progress={{}} action={{ kind: "station", label: "Перейти", reason: "Next", moduleId: "M01" }} />);
+    expect(screen.getAllByRole("button", { name: /Перейти/ })).toHaveLength(1);
   });
 
   it("Atlas renders phases and modules", () => {
     render(<AtlasView bundle={bundle()} progress={{}} />);
     expect(screen.getAllByRole("button")).toHaveLength(24);
-    expect(screen.getByText("Сейчас доступно по модулю M01")).toBeInTheDocument();
+    expect(screen.getByText("M01")).toBeInTheDocument();
     expect(screen.getByText("Фаза 1")).toBeInTheDocument();
   });
 
   it("Station exposes the four-step route", () => {
-    render(<StationView module={moduleFixture()} step="understand" progress={{}} appState={appState()} saveProgress={async () => undefined} saveState={async () => undefined} />);
-    expect(screen.getByRole("button", { name: /Учиться/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Проверить/ })).toBeInTheDocument();
+    render(<StationView bundle={bundle()} module={moduleFixture()} step="understand" progress={{}} appState={appState()} saveProgress={async () => undefined} saveState={async () => undefined} />);
+    expect(screen.getByRole("button", { name: /Перейти/ })).toBeInTheDocument();
   });
 
   it("Quiz double click creates one progress write and one review write", async () => {
     const saveProgress = vi.fn(async () => undefined);
     const saveState = vi.fn(async () => undefined);
-    render(<StationView module={moduleFixture()} step="check" progress={{}} appState={appState()} saveProgress={saveProgress} saveState={saveState} />);
+    render(<StationView bundle={bundle()} module={moduleFixture()} step="check" progress={{}} appState={appState()} saveProgress={saveProgress} saveState={saveState} />);
     const wrong = screen.getByRole("button", { name: /A/ });
     fireEvent.click(wrong);
     fireEvent.click(wrong);
@@ -40,7 +39,7 @@ describe("React learner flow", () => {
 
   it("Journal autosaves draft and commits current takeaway text", async () => {
     const saveProgress = vi.fn(async () => undefined);
-    render(<StationView module={moduleFixture()} step="anchor" progress={{}} appState={appState()} saveProgress={saveProgress} saveState={async () => undefined} />);
+    render(<StationView bundle={bundle()} module={moduleFixture()} step="anchor" progress={{}} appState={appState()} saveProgress={saveProgress} saveState={async () => undefined} />);
     fireEvent.change(screen.getByRole("textbox"), { target: { value: "Новый текст" } });
     fireEvent.click(screen.getByRole("button", { name: /Сохранить/ }));
     await waitFor(() => expect(saveProgress).toHaveBeenCalledWith("M01", expect.objectContaining({ takeaway: "Новый текст" })));
@@ -54,9 +53,9 @@ describe("React learner flow", () => {
       quizTotal: 1,
       weakSpots: {
         "1": {
-          text: "Что такое калории",
-          questionText: "Что такое калории?",
-          shortExplanation: "Определение неверное",
+          text: "Это самый важный урок",
+          questionText: "Это самый важный вопрос?",
+          shortExplanation: "Объяснение неверно",
           questionNumber: 1,
           sourceBlock: "theory",
           sourceLesson: "M01",
@@ -67,8 +66,8 @@ describe("React learner flow", () => {
           correctOptionText: "B",
         },
       },
-    };
-    render(<StationView module={moduleFixture()} step="check" progress={progress} appState={appState()} saveProgress={async () => undefined} saveState={async () => undefined} />);
+    } as ModuleProgress;
+    render(<StationView bundle={bundle()} module={moduleFixture()} step="check" progress={progress} appState={appState()} saveProgress={async () => undefined} saveState={async () => undefined} />);
     expect(screen.getAllByRole("button")).toHaveLength(2);
   });
 
@@ -83,8 +82,8 @@ describe("React learner flow", () => {
 
   it("Journal screen exposes export and reset actions", () => {
     render(<JournalView bundle={bundle()} profile={null} progress={{}} saveProfile={async () => undefined} resetProgress={async () => undefined} exportData={async () => undefined} />);
-    expect(screen.getByRole("button", { name: /Скачать данных/ })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Сохранить прогресс/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Скачать данные/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Сбросить журнал/ })).toBeInTheDocument();
   });
 });
 
@@ -96,7 +95,7 @@ function appState(due?: string): AppState {
 function bundle(): CourseBundle {
   const modules = Array.from({ length: 24 }, (_, index) => ({ ...moduleFixture(`M${String(index + 1).padStart(2, "0")}`), phaseId: index < 12 ? "phase1" : "phase2", phaseTitle: index < 12 ? "Фаза 1" : "Фаза 2" } as CourseModule));
   return {
-    manifest: { schemaVersion: 1, contentVersion: "test", course: "", moduleFiles: ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"] as const, modules: modules.map((module) => ({ id: module.id, title: module.title })) },
+    manifest: { schemaVersion: 1, contentVersion: "test", course: "", moduleFiles: ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"] as const, claims: "", modules: modules.map((module) => ({ id: module.id, title: module.title })) },
     course: { title: "Курс", phases: [{ id: "phase1", title: "Фаза 1", modules: modules.slice(0, 12).map((item) => item.id) }, { id: "phase2", title: "Фаза 2", modules: modules.slice(12).map((item) => item.id) }] },
     claims: { schemaVersion: 1, reviewedAt: "2026-06-13", sources: [], claims: [] },
     modules,
@@ -108,5 +107,5 @@ function moduleFixture(id = "M01"): CourseModule {
 }
 
 function quizMarkdown(): string {
-  return ["## Q1 (MCQ)", "Choose.", "A. Wrong", "B. Right", "C. Other", "D. Other", "**Правильный ответ: B**", "**Подсказка:** Because."].join("\n");
+  return ["## Q1 (MCQ)", "Choose.", "A. Wrong", "B. Right", "C. Other", "D. Other", "**Ответ:** B", "**Объяснение:** Because."].join("\n");
 }

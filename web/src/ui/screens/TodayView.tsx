@@ -26,7 +26,8 @@ function runAction(action: TodayAction): void {
   if (action.kind === "review") navigate({ screen: "memory" });
   else if (action.kind === "journal") navigate({ screen: "journal" });
   else if (action.kind === "remediation" && action.moduleId) navigate({ screen: "remediation", moduleId: action.moduleId });
-  else navigate({ screen: "station", moduleId: action.moduleId || "M01", step: action.step || "understand" });
+  else if (action.kind === "station" && action.moduleId) navigate({ screen: "station", moduleId: action.moduleId, step: action.step || "understand" });
+  else navigate({ screen: "today" });
 }
 
 function iconFor(kind: TodayAction["kind"]) {

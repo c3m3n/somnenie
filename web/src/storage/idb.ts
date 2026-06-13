@@ -2,7 +2,7 @@ import { COURSE_ID, SCHEMA_VERSION, type AppState, type ExportPayload, type Lear
 import { defaultReviewState, defaultSessionsState, normalizeReviewState, normalizeSessionsState } from "../domain/review";
 
 const DB_NAME = "nutrio-db";
-const DB_VERSION = 1;
+const DB_VERSION = SCHEMA_VERSION;
 const PROFILE_ID = "default";
 const APP_STATE_KEY = "appState";
 const PROFILE_KEY = "nutrio-profile";
@@ -203,7 +203,12 @@ function requestToPromise<T>(request: IDBRequest<T>): Promise<T> {
 }
 
 function readLocalStorageJson(key: string): { exists: boolean; invalid?: boolean; value?: unknown } {
-  const raw = localStorage.getItem(key);
+  let raw: string | null = null;
+  try {
+    raw = localStorage.getItem(key);
+  } catch {
+    return { exists: false, invalid: true };
+  }
   if (raw === null) return { exists: false };
   try {
     return { exists: true, value: JSON.parse(raw) };

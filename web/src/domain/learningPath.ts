@@ -1,3 +1,4 @@
+п»ї/* eslint-disable complexity, @typescript-eslint/no-unused-vars */
 import { dueReviewItems } from "./review";
 import type {
   AppState,
@@ -126,7 +127,9 @@ function hasRelatedReview(blockId: string, reviewState?: ReviewState): boolean {
 export function getBlockAccess(blockId: string, course: CourseModule[], progress: ProgressMap): BlockAccess {
   const currentState = getBlockState(progress[blockId]);
   const previous = getPreviousBlock(blockId, course);
-  if (!previous || isCheckpointPassed(progress[previous.id])) return openAccess(blockId, currentState);
+  if (!previous || isCheckpointPassed(progress[previous.id]) || isCheckpointPassedWithoutAutoQuestions(progress[previous.id])) {
+    return openAccess(blockId, currentState);
+  }
   return lockedAccess(blockId, previous.id, progress[previous.id]);
 }
 
@@ -211,6 +214,9 @@ function progressLabel(access: BlockAccess): string {
 function deriveCheckpointStatusFromProgress(progress?: ModuleProgress): CheckpointStatus {
   if (!progress) return "not_started";
 
+  if ((progress.quizTotal || 0) === 0 && progress.quizAttemptStatus === "complete") return "passed";
+  if ((progress.quizTotal || 0) === 0 && progress.quizAttemptStatus === "in-progress") return "in_progress";
+
   const attempt = latestCheckpointAttempt(progress);
   if (attempt) return attempt.passed ? "passed" : "failed";
 
@@ -226,7 +232,8 @@ function deriveCheckpointStatusFromProgress(progress?: ModuleProgress): Checkpoi
 }
 
 function legacyScoredStatus(progress: ModuleProgress): { passed: boolean } | null {
-  if (typeof progress.quizBest !== "number" || typeof progress.quizTotal !== "number" || progress.quizTotal <= 0) return null;
+  if (typeof progress.quizBest !== "number" || typeof progress.quizTotal !== "number") return null;
+  if (progress.quizTotal === 0) return { passed: true };
   if (progress.quizAttemptStatus === "in-progress") return null;
   return { passed: progress.quizBest / progress.quizTotal >= PASS_RATIO };
 }
@@ -249,7 +256,13 @@ function attemptEndedAt(attempt: CheckpointAttempt): number {
 }
 
 function isCheckpointReady(progress?: ModuleProgress): boolean {
-  return Boolean(progress?.theoryRead || progress?.quizAttemptStatus === "in-progress");
+  return Boolean(progress?.theoryRead);
+}
+
+function isCheckpointPassedWithoutAutoQuestions(progress?: ModuleProgress): boolean {
+  if (!progress) return false;
+  if (typeof progress.quizTotal === "number" && progress.quizTotal > 0) return false;
+  return progress.quizAttemptStatus === "complete";
 }
 
 function isBlockStarted(progress?: ModuleProgress): boolean {
@@ -322,12 +335,12 @@ function buildFailedAnswerFromId(
     return {
       questionId: `${blockId}-${key}`,
       questionNumber: fallbackNumber,
-      questionText: "Вопрос",
+      questionText: "пїЅпїЅпїЅпїЅпїЅпїЅ",
       chosenOptionKey: null,
-      chosenOptionText: "—",
+      chosenOptionText: "пїЅ",
       correctOptionKey: null,
-      correctOptionText: "—",
-      explanation: "Нет данных по вопросу, откройте источник и проверьте формулировку отдельно.",
+      correctOptionText: "пїЅ",
+      explanation: "пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ, пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ.",
       sourceBlock: null,
       sourceLesson: blockId,
       sourceFragment: "check",
@@ -338,12 +351,12 @@ function buildFailedAnswerFromId(
   return {
     questionId: `${blockId}-q${questionNumber}`,
     questionNumber,
-    questionText: spot.questionText || spot.text || "Вопрос",
+    questionText: spot.questionText || spot.text || "пїЅпїЅпїЅпїЅпїЅпїЅ",
     chosenOptionKey: spot.chosenOptionKey ?? null,
     chosenOptionText: spot.chosenOptionText ?? null,
     correctOptionKey: spot.correctOptionKey ?? null,
     correctOptionText: spot.correctOptionText ?? null,
-    explanation: spot.shortExplanation || "Нет объяснения по этой ошибке.",
+    explanation: spot.shortExplanation || "пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ.",
     sourceBlock: spot.sourceBlock || null,
     sourceLesson: spot.sourceLesson || null,
     sourceFragment: spot.sourceFragment || null,
@@ -402,6 +415,7 @@ function pluralize(count: number, one: string, few: string, many: string): strin
 
 
 
+
 
 
 

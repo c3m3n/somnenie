@@ -82,6 +82,7 @@ textarea:focus-visible {
 }
 
 .topbar {
+  --topbar-height: 64px;
   position: sticky;
   top: 0;
   z-index: 20;
@@ -92,7 +93,7 @@ textarea:focus-visible {
   padding: 9px clamp(14px, 3vw, 28px);
   border-bottom: 1px solid var(--rule);
   background: rgba(236, 239, 237, 0.96);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(3px);
 }
 
 .brand {
@@ -119,7 +120,8 @@ textarea:focus-visible {
 .module-tile span,
 .module-tile small,
 .station-head p,
-.topnav button {
+.topnav button,
+.topnav a {
   font-family: "IBM Plex Mono", Consolas, monospace;
 }
 
@@ -166,7 +168,28 @@ textarea:focus-visible {
   font-size: 0.82rem;
 }
 
+.topnav a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  border: 1px solid var(--rule-dark);
+  border-radius: 2px;
+  background: var(--sheet);
+  color: var(--ink);
+  text-decoration: none;
+  text-align: center;
+  font-size: 0.82rem;
+  padding: 0 10px;
+}
+
 .topnav button.active {
+  background: linear-gradient(transparent 58%, var(--marker) 58%);
+  border-color: var(--ink);
+}
+
+.topnav a.active {
   background: linear-gradient(transparent 58%, var(--marker) 58%);
   border-color: var(--ink);
 }
@@ -330,7 +353,7 @@ progress {
 
 .station-tabs {
   position: sticky;
-  top: 55px;
+  top: var(--topbar-height, 0px);
   z-index: 10;
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -340,7 +363,8 @@ progress {
   background: var(--paper);
 }
 
-.station-tabs button {
+.station-tabs button,
+.station-tabs a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -352,7 +376,8 @@ progress {
   background: var(--sheet);
 }
 
-.station-tabs button:last-child {
+.station-tabs button:last-child,
+.station-tabs a:last-child {
   border-right: 0;
 }
 
@@ -578,6 +603,33 @@ progress {
   color: var(--muted);
 }
 
+.skip-link {
+  position: fixed;
+  top: -44px;
+  left: 0;
+  z-index: 40;
+  padding: 8px 14px;
+  background: var(--ink);
+  color: var(--sheet);
+}
+
+.skip-link:focus-visible {
+  top: 0;
+}
+
+.update-banner {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--sheet);
+  border-bottom: 1px solid var(--rule);
+}
+
+.update-banner button {
+  min-height: 34px;
+}
+
 @media (max-width: 720px) {
   .topbar {
     grid-template-columns: auto minmax(0, 1fr);
@@ -597,7 +649,8 @@ progress {
     background: rgba(236, 239, 237, 0.98);
   }
 
-  .topnav button {
+  .topnav button,
+  .topnav a {
     min-width: 0;
     min-height: 46px;
     border-right: 0;
@@ -617,7 +670,7 @@ progress {
   }
 
   .station-tabs {
-    top: 55px;
+    top: var(--topbar-height, 0px);
   }
 }
 
@@ -635,7 +688,8 @@ progress {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .station-tabs button {
+  .station-tabs button,
+  .station-tabs a {
     gap: 4px;
     min-width: 0;
     min-height: 32px;
@@ -644,7 +698,8 @@ progress {
     font-size: 0.72rem;
   }
 
-  .station-tabs button:last-child {
+  .station-tabs button:last-child,
+  .station-tabs a:last-child {
     border-right: 0;
   }
 

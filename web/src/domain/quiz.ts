@@ -1,6 +1,7 @@
 import type { QuizQuestion } from "./types";
 
 const REVIEW_SOURCE_BLOCKS = ["theory", "terms", "practice", "diagrams", "summary"] as const;
+const quizCache = new Map<string, QuizQuestion[]>();
 
 interface MetadataMarker {
   index: number;
@@ -19,8 +20,13 @@ interface AutoBuildInput {
 
 export function parseQuiz(markdown: string): QuizQuestion[] {
   const text = String(markdown || "");
+  const cacheKey = `v1:${text}`;
+  const cached = quizCache.get(cacheKey);
+  if (cached) return cached;
   const matches = Array.from(text.matchAll(/^##\s*Q(\d+)\s*\(([^)]+)\)\s*$/gm));
-  return matches.map((match, index) => parseQuestion(text, matches, match, index)).filter(Boolean) as QuizQuestion[];
+  const parsed = matches.map((match, index) => parseQuestion(text, matches, match, index)).filter(Boolean) as QuizQuestion[];
+  quizCache.set(cacheKey, parsed);
+  return parsed;
 }
 
 export function parseAutoQuestion(number: number, type: string, body: string, sourceBlock = "theory"): QuizQuestion | null {
@@ -60,7 +66,16 @@ function parseQuestion(text: string, matches: RegExpMatchArray[], match: RegExpM
 function buildAutoQuestion(input: AutoBuildInput): QuizQuestion | null {
   if (/mcq/i.test(input.type)) return buildMcqQuestion(input);
   if (/true|false|верно/i.test(input.type)) return buildTrueFalseQuestion(input);
-  return null;
+  return {
+    number: input.number,
+    type: input.type,
+    kind: "auto",
+    text: input.text,
+    options: [],
+    answer: null,
+    explain: input.explain || "",
+    sourceBlock: normalizeSourceBlock(input.sourceBlock, "theory"),
+  };
 }
 
 function buildMcqQuestion(input: AutoBuildInput): QuizQuestion | null {

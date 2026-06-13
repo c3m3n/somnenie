@@ -9,9 +9,9 @@
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
-  "orientation": "portrait",
-  "background_color": "#070707",
-  "theme_color": "#070707",
+  "orientation": "any",
+  "background_color": "#ecefed",
+  "theme_color": "#ecefed",
   "categories": ["education", "health", "books"],
   "prefer_related_applications": false,
   "icons": [

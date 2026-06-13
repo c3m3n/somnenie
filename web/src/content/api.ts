@@ -1,10 +1,20 @@
 import { MODULE_FILES, type ClaimsContract, type ContentManifest, type CourseBundle, type CourseMap, type CourseModule, type ModuleFileName } from "../domain/types";
 
+const textCache = new Map<string, string>();
+const jsonCache = new Map<string, unknown>();
+const loadedModuleFiles = new Map<string, Set<ModuleFileName>>();
+
+type ManifestModuleFiles = {
+  modules: { id: string; title: string }[];
+  moduleFiles: ModuleFileName[];
+};
+
 export async function loadCourseBundle(): Promise<CourseBundle> {
   const manifest = await fetchJson<ContentManifest>("/content/manifest.json");
   const course = await fetchJson<CourseMap>("/content/course.json");
   const claims = await fetchJson<ClaimsContract>("/content/claims.json");
-  const modules = await Promise.all(manifest.modules.map((module) => loadModule(module.id, module.title, course)));
+  const moduleFiles = normalizeModuleFiles(manifest.moduleFiles);
+  const modules = manifest.modules.map((module) => loadModuleSkeleton(module.id, module.title, course, moduleFiles));
   return { manifest, course, claims, modules };
 }
 
@@ -12,19 +22,65 @@ export function moduleById(bundle: CourseBundle, moduleId: string): CourseModule
   return bundle.modules.find((module) => module.id === moduleId) || null;
 }
 
-async function loadModule(id: string, title: string, course: CourseMap): Promise<CourseModule> {
-  const files = Object.fromEntries(await Promise.all(MODULE_FILES.map(async (file) => [file, await fetchText(`/content/${id}/${file}`)]))) as Record<ModuleFileName, string>;
+export function moduleFilesLoaded(module: CourseModule, neededFiles: readonly ModuleFileName[] = MODULE_FILES): boolean {
+  const loaded = loadedModuleFiles.get(module.id);
+  return neededFiles.every((file) => loaded?.has(file));
+}
+
+export async function ensureModuleFiles(bundle: CourseBundle, moduleId: string, requestedFiles: readonly ModuleFileName[]): Promise<CourseModule | null> {
+  const module = moduleById(bundle, moduleId);
+  if (!module) return null;
+
+  const manifestModules = (bundle.manifest as ManifestModuleFiles).moduleFiles || MODULE_FILES;
+  const moduleFiles = normalizeModuleFiles(manifestModules);
+  const needed = requestedFiles.length ? requestedFiles : moduleFiles;
+  const loaded = loadedModuleFiles.get(module.id) || new Set<ModuleFileName>();
+  const missing = needed.filter((file) => !loaded.has(file));
+  if (!missing.length) return module;
+
+  const loadedFiles = await loadModuleFiles(module.id, missing);
+  for (const [file, content] of Object.entries(loadedFiles)) {
+    module.files[file as ModuleFileName] = content;
+    loaded.add(file as ModuleFileName);
+  }
+  loadedModuleFiles.set(module.id, loaded);
+  return module;
+}
+
+function normalizeModuleFiles(moduleFiles: unknown): ModuleFileName[] {
+  if (!Array.isArray(moduleFiles) || !moduleFiles.length) return [...MODULE_FILES];
+  const normalized = moduleFiles
+    .map((value) => String(value || "").trim())
+    .filter((value) => MODULE_FILES.includes(value as ModuleFileName));
+  return (normalized.length ? normalized : MODULE_FILES) as ModuleFileName[];
+}
+
+function loadModuleSkeleton(id: string, title: string, course: CourseMap, moduleFiles: ModuleFileName[]): CourseModule {
   const phase = course.phases.find((item) => item.modules.includes(id));
-  return { id, title, phaseId: phase?.id || "phase", phaseTitle: phase?.title || "Курс", files };
+  const files = Object.fromEntries(moduleFiles.map((file) => [file, ""])) as Record<ModuleFileName, string>;
+  return { id, title, phaseId: phase?.id || "phase", phaseTitle: phase?.title || "Блок", files };
+}
+
+async function loadModuleFiles(moduleId: string, moduleFiles: readonly ModuleFileName[]): Promise<Record<ModuleFileName, string>> {
+  const entries = await Promise.all(moduleFiles.map(async (file) => [file, await fetchText(`/content/${moduleId}/${file}`)] as const));
+  return Object.fromEntries(entries) as Record<ModuleFileName, string>;
 }
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const response = await fetch(url, { cache: "no-cache" });
+  if (jsonCache.has(url)) return jsonCache.get(url) as T;
+  const response = await fetch(url);
   if (!response.ok) throw new Error(`Не удалось загрузить ${url}`);
-  return await response.json() as T;
+  const value = await response.json() as T;
+  jsonCache.set(url, value);
+  return value;
 }
 
 async function fetchText(url: string): Promise<string> {
-  const response = await fetch(url, { cache: "no-cache" });
-  return response.ok ? await response.text() : "";
+  const cached = textCache.get(url);
+  if (cached !== undefined) return cached;
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Не удалось загрузить ${url}: ${response.status}`);
+  const value = await response.text();
+  textCache.set(url, value);
+  return value;
 }

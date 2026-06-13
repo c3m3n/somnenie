@@ -12,7 +12,7 @@ import {
   getRemediationPlan,
   getBlockingCheckpoint,
 } from "./learningPath";
-import type { AppState, CourseModule, ModuleProgress } from "./types";
+import type { AppState, CourseModule, ModuleProgress, ReviewState } from "./types";
 
 const modules = ["M01", "M02", "M03"].map((id) => moduleFixture(id));
 
@@ -118,7 +118,7 @@ describe("block checkpoint access", () => {
   });
 
   it("does not block on quizTotal === 0", () => {
-    const progress = { M01: { ...progressResult(0, 0), quizAttemptStatus: "complete" } };
+    const progress = { M01: progressResult(0, 0) };
     const outcome = getCheckpointOutcome("M01", progress);
     expect(outcome.status).not.toBe("failed");
     expect(outcome.isBlocking).toBe(false);
@@ -163,12 +163,26 @@ describe("block checkpoint access", () => {
   });
 
   it("remediation plan contains review actions for failed block", () => {
-    const progress = { M01: { ...failedLegacy(), weakSpots: { "1": { text: "A", questionNumber: 1, questionText: "Что", shortExplanation: "Важно", sourceBlock: "theory" } } };
+    const progress = {
+      M01: {
+        ...failedLegacy(),
+        weakSpots: {
+          "1": {
+            text: "A",
+            questionNumber: 1,
+            questionText: "sample question",
+            shortExplanation: "sample explanation",
+            sourceBlock: "theory",
+          },
+        },
+      },
+    };
     const plan = getRemediationPlan("M01", progress, reviewState("2026-06-13"));
     expect(plan).not.toBeNull();
     expect(plan?.actions).toContain("review_failed_questions");
     expect(plan?.canRetake).toBe(true);
   });
+
 });
 
 function moduleFixture(id: string): CourseModule {
@@ -195,10 +209,14 @@ function emptyState(): AppState {
   return { schemaVersion: 2, review: defaultReviewState(), sessions: { courseId: "nutrition", todayDone: {}, activeDays: [], lastDate: null, streakDays: 0, bestStreakDays: 0 } };
 }
 
-function reviewState(due: string): AppState {
-  return { ...emptyState(), review: normalizeReviewState({ items: [{ id: "M01-q1", moduleId: "M01", text: "Q", due, errors: 1, interval: 1 }] }) };
+function reviewState(due: string): ReviewState {
+  return normalizeReviewState({ items: [{ id: "M01-q1", moduleId: "M01", text: "Q", due, errors: 1, interval: 1 }] });
 }
 
 function stateWithReview(due: string): AppState {
-  return reviewState(due);
+  return { ...emptyState(), review: reviewState(due) };
+}
+
+function failedAttempt(blockId: string, startedAt: string): ReturnType<typeof baseAttempt> {
+  return { ...baseAttempt(blockId, startedAt) };
 }

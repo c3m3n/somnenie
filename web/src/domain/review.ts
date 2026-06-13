@@ -1,4 +1,4 @@
-import { addDaysISO, toISODate } from "./date";
+import { addDaysISO, dateFromISO, toISODate } from "./date";
 import { COURSE_ID, REVIEW_SCHEMA_VERSION, type ReviewItem, type ReviewState, type SessionsState } from "./types";
 
 export const REVIEW_INTERVALS = [1, 3, 7, 14, 30, 60] as const;
@@ -25,11 +25,13 @@ export function normalizeReviewState(review: unknown): ReviewState {
 export function normalizeSessionsState(sessions: unknown, today = toISODate()): SessionsState {
   const source = isRecord(sessions) ? sessions : {};
   const activeDays = Array.isArray(source.activeDays) ? source.activeDays.map(String) : [];
+  const sourceLastDate = typeof source.lastDate === "string" ? source.lastDate : today;
+  const lastDate = isValidDate(sourceLastDate) ? sourceLastDate : today;
   return {
     courseId: COURSE_ID,
     todayDone: isRecord(source.todayDone) ? numberRecord(source.todayDone) : {},
     activeDays,
-    lastDate: typeof source.lastDate === "string" ? source.lastDate : today,
+    lastDate,
     streakDays: numberOr(source.streakDays, 0),
     bestStreakDays: numberOr(source.bestStreakDays, 0),
   };
@@ -82,9 +84,10 @@ export function recordSessionActivity(sessions: SessionsState, activity: { revie
   const didWork = Boolean(activity.moduleStep) || numberOr(activity.reviews, 0) > 0;
   const activeDays = didWork && !state.activeDays.includes(today) ? [...state.activeDays, today] : state.activeDays;
   const streakDays = didWork ? nextStreak(state, today) : state.streakDays;
+  const effectiveTodayDone = state.lastDate === today ? state.todayDone : {};
   return {
     ...state,
-    todayDone: { ...state.todayDone, reviews: numberOr(state.todayDone.reviews, 0) + numberOr(activity.reviews, 0) },
+    todayDone: { ...effectiveTodayDone, reviews: numberOr(effectiveTodayDone.reviews, 0) + numberOr(activity.reviews, 0) },
     activeDays,
     lastDate: didWork ? today : state.lastDate,
     streakDays,
@@ -170,8 +173,17 @@ function nextIntervalAfter(interval: number): number {
 }
 
 function nextStreak(state: SessionsState, today: string): number {
-  if (!state.lastDate || state.lastDate === today) return Math.max(1, state.streakDays);
+  if (!state.lastDate) return 1;
+  if (state.lastDate === today) return state.streakDays || 1;
   return state.lastDate === addDaysISO(today, -1) ? state.streakDays + 1 : 1;
+}
+
+function isValidDate(iso: string): boolean {
+  try {
+    return Number.isFinite(dateFromISO(iso).getTime());
+  } catch {
+    return false;
+  }
 }
 
 function validInterval(value: unknown): number {

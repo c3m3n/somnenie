@@ -7,8 +7,12 @@ export function toISODate(input: Date | string = new Date()): string {
 }
 
 export function dateFromISO(iso: string): Date {
-  const [year, month, day] = iso.slice(0, 10).split("-").map(Number);
-  return new Date(year || 1970, (month || 1) - 1, day || 1);
+  const cleaned = String(iso || "").trim();
+  const parsed = new Date(cleaned);
+  if (!Number.isFinite(parsed.getTime())) {
+    throw new Error(`Некорректная дата: ${iso}`);
+  }
+  return parsed;
 }
 
 export function addDaysISO(input: string, days: number): string {

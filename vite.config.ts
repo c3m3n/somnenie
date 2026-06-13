@@ -13,7 +13,8 @@ export default defineConfig({
   build: {
     outDir: "../dist",
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: process.env.NODE_ENV !== "production",
+    manifest: true,
   },
   server: {
     host: "127.0.0.1",
