@@ -43,10 +43,6 @@
     return { lines, markers };
   }
 
-  function metadataValueFrom(markers, keyPredicate, startIndex = 0) {
-    return markers.find((entry, index) => index >= startIndex && keyPredicate(entry.key)) || null;
-  }
-
   function parseSourceBlock(body, fallback = "theory") {
     const { markers } = parseMetadata(body);
     const sourceMeta = markers.find((marker) => marker.key === "sourceblock" || marker.key === "источник");
@@ -130,8 +126,8 @@
       if (!options.some((opt) => opt.key === answer)) return null;
     } else {
       options = [{ key: true, text: "Да" }, { key: false, text: "Нет" }];
-      if (/ложь|false/i.test(answerRaw)) answer = false;
-      else if (/истина|true/i.test(answerRaw)) answer = true;
+      if (/неверно|нет|ложь|false/i.test(answerRaw)) answer = false;
+      else if (/верно|да|истина|true/i.test(answerRaw)) answer = true;
       if (answer === null) return null;
     }
 

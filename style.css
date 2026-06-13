@@ -860,31 +860,6 @@ body::after {
   line-height: 1;
 }
 
-.home-review-strip {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  width: fit-content;
-  max-width: 100%;
-  margin-top: 12px;
-  border-radius: 999px;
-  background: var(--review-soft);
-  color: var(--review);
-  padding: 5px 10px;
-  font-size: 0.86em;
-  font-weight: 700;
-}
-
-.home-review-strip.is-empty {
-  background: var(--surface-soft);
-  color: var(--muted);
-}
-
-.home-strip-icon {
-  width: 15px;
-  height: 15px;
-}
-
 .intro-card .disclaimer {
   margin-top: 10px;
   color: var(--warning);
@@ -940,74 +915,6 @@ body::after {
   padding: 10px 12px;
   font-size: 0.92em;
   font-weight: 700;
-}
-
-.home-review {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 16px;
-  margin-bottom: 18px;
-  box-shadow: 0 8px 22px rgba(31, 47, 38, 0.04);
-}
-
-.home-review h2 {
-  margin: 2px 0 4px;
-  font-size: 1.08em;
-  line-height: 1.25;
-}
-
-.review-module-list {
-  display: grid;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.review-module {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: #fbfcf9;
-  color: var(--ink);
-  padding: 10px 12px;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-}
-
-.review-module:hover {
-  border-color: var(--accent);
-}
-
-.review-module span {
-  color: var(--muted);
-  font-size: 0.78em;
-  font-weight: 700;
-}
-
-.review-module strong {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.review-module em {
-  color: var(--accent);
-  font-size: 0.82em;
-  font-style: normal;
-  font-weight: 700;
-}
-
-.review-module .review-mistake {
-  grid-column: 2 / -1;
-  color: var(--ochre);
-  font-size: 0.78em;
-  font-weight: 400;
 }
 
 .phase-header {
@@ -3030,12 +2937,6 @@ body::after {
     align-items: stretch;
     flex-direction: column;
   }
-  .review-module {
-    grid-template-columns: auto 1fr;
-  }
-  .review-module em {
-    grid-column: 2;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3157,8 +3058,7 @@ body::after {
 }
 
 .instrument-brand,
-.matrix-foot .n,
-.phase-num {
+.matrix-foot .n {
   font-family: var(--pixel);
   letter-spacing: 0;
 }
@@ -3458,101 +3358,6 @@ body::after {
   margin: 0;
 }
 
-.mode-home .home-review-strip {
-  margin-top: 22px;
-  border-radius: 0;
-  background: transparent;
-  color: var(--ochre);
-  padding: 0;
-}
-
-.mode-home .home-review-strip.is-empty {
-  color: var(--dim);
-  font-weight: 400;
-}
-
-.ledger {
-  margin: 36px 0 0;
-  animation-delay: 0.65s;
-}
-
-.instrument-phase {
-  display: grid;
-  grid-template-columns: 30px 1fr auto;
-  align-items: baseline;
-  gap: 12px;
-  margin: 0 -8px;
-  padding: 11px 8px;
-  border-bottom: 1px solid var(--line);
-  color: var(--dim);
-  font-size: 0.92em;
-  transition: color 200ms var(--ease), background 200ms var(--ease);
-}
-
-.instrument-phase:hover {
-  color: var(--bone);
-  background: rgba(70, 232, 150, 0.025);
-}
-
-.instrument-phase.is-active {
-  color: var(--bone);
-}
-
-.instrument-phase.is-active .phase-num {
-  color: var(--ember);
-  text-shadow: 0 0 8px var(--ember-glow);
-}
-
-.phase-num {
-  color: var(--dimmer);
-  font-size: 0.74em;
-}
-
-.phase-state {
-  color: var(--dimmer);
-  font-size: 0.78em;
-  letter-spacing: 0.1em;
-  white-space: nowrap;
-}
-
-.phase-state.done {
-  color: var(--signal);
-  text-shadow: 0 0 6px var(--signal-glow);
-}
-
-.phase-state.now {
-  color: var(--ember);
-  text-shadow: 0 0 6px var(--ember-glow);
-}
-
-.phase-cells {
-  display: inline-flex;
-  gap: 3px;
-  margin-right: 9px;
-  vertical-align: middle;
-}
-
-.phase-cells i {
-  width: 6px;
-  height: 6px;
-  border: 1px solid #1e1e23;
-  border-radius: 1px;
-  background: #131316;
-}
-
-.phase-cells i.on {
-  border-color: var(--signal);
-  background: var(--signal);
-  box-shadow: 0 0 4px var(--signal-glow);
-}
-
-.phase-cells i.now {
-  border-color: var(--ember);
-  background: var(--ember);
-  box-shadow: 0 0 4px var(--ember-glow);
-  animation: pulse 1.8s ease-in-out infinite;
-}
-
 .mode-home .progress-hierarchy,
 .mode-home .disclaimer {
   margin: 20px 0 0;
@@ -3599,13 +3404,6 @@ body::after {
     padding: 14px;
   }
 
-  .instrument-phase {
-    grid-template-columns: 26px 1fr;
-  }
-
-  .instrument-phase .phase-state {
-    grid-column: 2;
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -3614,7 +3412,6 @@ body::after {
   .sweep,
   .led,
   .cursor,
-  .phase-cells i.now,
   .instrument-matrix .course-map-segment.active::after,
   .instrument-matrix .course-map-segment.review::after,
   .instrument-matrix .course-map-segment.complete::after {
@@ -3693,7 +3490,6 @@ summary:focus-visible {
 .quiz-intro,
 .quiz-q,
 .quiz-result,
-.home-review,
 .lesson-nav,
 .material-subnav,
 .module-side-panel {
@@ -4075,39 +3871,6 @@ summary:focus-visible {
   margin-bottom: 12px;
 }
 
-.streak-line,
-.memory-caption {
-  margin: 8px 0;
-  color: var(--dim);
-  font-family: var(--mono);
-  font-size: 0.82em;
-}
-
-.memory-calendar {
-  display: grid;
-  grid-template-columns: repeat(30, minmax(6px, 1fr));
-  gap: 4px;
-  margin: 12px 0 6px;
-}
-
-.memory-calendar i {
-  display: block;
-  aspect-ratio: 1;
-  border: 1px solid var(--line);
-  background: rgba(18, 18, 20, 0.86);
-}
-
-.memory-calendar i.today {
-  border-color: var(--ochre);
-}
-
-.memory-calendar i.on {
-  border-color: var(--signal);
-  background: var(--signal-dim);
-  box-shadow: 0 0 10px rgba(70, 232, 150, 0.16);
-}
-
-.phase-cells i.review,
 .session-cells i.miss {
   border-color: var(--ochre);
   background: var(--ochre-dim);
@@ -4478,7 +4241,6 @@ summary:focus-visible {
 .weak-spot-text,
 .weak-card p,
 .session-head p,
-.home-review p,
 .takeaway-input,
 .dashboard-next,
 .progress-hierarchy,
@@ -4921,7 +4683,6 @@ body.quiet .glow-pool {
 
 .mode-home .next .meta,
 .mode-home .next-step-why,
-.mode-home .home-review-strip,
 .mode-home .home-progress-text span,
 .mode-profile .dashboard-next {
   font-family: var(--sans);
