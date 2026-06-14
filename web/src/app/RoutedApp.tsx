@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Brain, CircleUser, Gauge, Route as RouteIcon } from "lucide-react";
 import { registerServiceWorker } from "../pwa/register";
 import { forceServiceWorkerUpdate } from "../pwa/register";
 import { moduleById } from "../content/api";
@@ -16,6 +15,7 @@ import { CheckpointRemediationView, StationView } from "../features/station/Stat
 import { TodayView } from "../features/today/TodayView";
 import { ErrorBoundary } from "./ErrorBoundary";
 import { CourseCatalogView } from "../features/courses/CourseCatalogView";
+import { Shell } from "./Shell";
 import "../ui/styles.css";
 
 type AppScreenData = Omit<ReturnType<typeof useAppData>, "appState" | "bundle" | "progress"> & {
@@ -23,94 +23,6 @@ type AppScreenData = Omit<ReturnType<typeof useAppData>, "appState" | "bundle" |
   progress: ProgressMap;
   appState: AppState;
 };
-
-function NavItem({ active, href, icon, label, onClick }: { active: boolean; href: string; icon: React.ReactNode; label: string; onClick: () => void }) {
-  return (
-    <a className={active ? "active" : ""} aria-current={active ? "page" : undefined} href={href} onClick={(event) => {
-      event.preventDefault();
-      onClick();
-    }}>
-      {icon}{label}
-    </a>
-  );
-}
-
-function goBack(): void {
-  if (window.history.length > 1) window.history.back();
-  else navigate({ screen: "today", courseId: "nutrition" });
-}
-
-function Shell({
-  route,
-  children,
-  updateAvailable,
-  saveError,
-  onUpdate,
-  mainRef,
-  activeCourseId,
-}: {
-  route: Route;
-  children: React.ReactNode;
-  updateAvailable: boolean;
-  saveError?: string | null;
-  onUpdate: () => void;
-  mainRef?: React.RefObject<HTMLElement | null>;
-  activeCourseId: CourseId | null;
-}) {
-  return (
-    <div className="app-shell" role="application" aria-label="Приложение обучения">
-      <a className="skip-link" href="#main-content">Перейти к содержимому</a>
-      <header className="topbar">
-        <a
-          href={routeHash({ screen: "today", courseId: activeCourseId || "nutrition" })}
-          className="icon-button"
-          aria-label="Назад"
-          onClick={(event) => {
-            event.preventDefault();
-            goBack();
-          }}
-        >
-          <ArrowLeft size={18} />
-        </a>
-        <div className="brand">
-          <img src="/assets/generated/icon-today.png" alt="" />
-          <div><span>Somnenie</span><strong>{titleFor(route)}</strong></div>
-        </div>
-        <div className="topbar-actions">
-          <nav className="topnav" aria-label="Основные разделы">
-            <NavItem active={route.screen === "today"} href={routeHash({ screen: "today", courseId: activeCourseId || "nutrition" })} icon={<Gauge size={16} />} label="Сегодня" onClick={() => navigate({ screen: "today", courseId: activeCourseId || "nutrition" })} />
-            <NavItem active={route.screen === "atlas"} href={routeHash({ screen: "atlas", courseId: activeCourseId || "nutrition" })} icon={<RouteIcon size={16} />} label="Маршрут" onClick={() => navigate({ screen: "atlas", courseId: activeCourseId || "nutrition" })} />
-            <NavItem active={route.screen === "memory"} href={routeHash({ screen: "memory", courseId: activeCourseId || "nutrition" })} icon={<Brain size={16} />} label="Тренажёр" onClick={() => navigate({ screen: "memory", courseId: activeCourseId || "nutrition" })} />
-          </nav>
-          <a
-            className={route.screen === "journal" ? "icon-button active" : "icon-button"}
-            aria-current={route.screen === "journal" ? "page" : undefined}
-            aria-label="Профиль"
-            href={routeHash({ screen: "journal", courseId: activeCourseId || "nutrition" })}
-            onClick={(event) => {
-              event.preventDefault();
-              navigate({ screen: "journal", courseId: activeCourseId || "nutrition" });
-            }}
-          >
-            <CircleUser size={18} />
-          </a>
-        </div>
-      </header>
-      {updateAvailable ? (
-        <section className="update-banner" role="status" aria-live="polite">
-          <span>Доступно обновление приложения</span>
-          <button type="button" onClick={onUpdate}>Обновить</button>
-        </section>
-      ) : null}
-      {saveError ? (
-        <section className="save-error-banner" role="alert" aria-live="assertive">
-          <span>Ошибка сохранения: {saveError}</span>
-        </section>
-      ) : null}
-      <main id="main-content" ref={mainRef} tabIndex={-1}>{children}</main>
-    </div>
-  );
-}
 
 export function App() {
   const data = useAppData();
@@ -221,14 +133,14 @@ function LockedStationView({ access, bundle, progress }: { access: { reason: "pr
   const required = access.requiredBlockId ? moduleById(bundle, access.requiredBlockId) : null;
   const step = requiredStep(access.requiredBlockId, progress);
   return (
-    <section className="screen station-screen locked-station">
-      <header className="station-head">
-        <div className="section-kicker">Блок закрыт до {access.blockId}</div>
+    <section className="screen">
+      <header>
+        <div>Блок закрыт до {access.blockId}</div>
         <h2>Блок закрыт для продолжения</h2>
         <p>{reasonLabel(access.reason)}</p>
       </header>
-      <article className="locked-panel">
-        <span className="section-kicker">Необходимый блок</span>
+      <article>
+        <span>Необходимый блок</span>
         <strong>{required ? `${required.id}. ${required.title}` : access.requiredBlockId}</strong>
         <p>Пройдите обязательный предыдущий блок, затем вернитесь.</p>
         {required ? (
@@ -253,12 +165,4 @@ function reasonLabel(reason: "previous_checkpoint_failed" | "previous_checkpoint
   return reason === "previous_checkpoint_failed" ? "Зачёт предыдущего блока не сдан." : "Зачёт предыдущего блока должен быть закрыт.";
 }
 
-function titleFor(route: Route): string {
-  if (route.screen === "atlas") return "Маршрут";
-  if (route.screen === "memory") return "Тренажёр";
-  if (route.screen === "journal") return "Профиль";
-  if (route.screen === "remediation") return "Разбор ошибок";
-  if (route.screen === "station") return route.moduleId;
-  if (route.screen === "courses") return "Курсы";
-  return "Сегодня";
-}
+

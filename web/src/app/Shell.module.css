@@ -1,0 +1,226 @@
+.appShell {
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.skipLink {
+  position: fixed;
+  top: -44px;
+  left: 0;
+  z-index: 40;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-ink);
+  color: var(--color-sheet);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.skipLink:focus-visible {
+  top: 0;
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.topbar {
+  --topbar-height: 64px;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 9px clamp(14px, 3vw, 28px);
+  border-bottom: 1px solid var(--color-rule);
+  background: rgba(251, 239, 233, 0.96);
+  backdrop-filter: blur(4px);
+}
+
+.brand {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.brand img {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-ink);
+  border-radius: var(--radius-sm);
+}
+
+.brandText {
+  display: grid;
+  min-width: 0;
+}
+
+.brandName {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.brandTitle {
+  overflow: hidden;
+  color: var(--color-ink);
+  font-size: var(--text-body-md);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: var(--space-1);
+}
+
+.desktopNav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: end;
+  gap: var(--space-1);
+}
+
+.navItem {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-rule-dark);
+  border-radius: var(--radius-sm);
+  background: var(--color-sheet);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  transition: background var(--motion-duration) var(--motion-ease),
+    border-color var(--motion-duration) var(--motion-ease);
+}
+
+.navItem:focus-visible,
+.iconButton:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.navItemActive {
+  background: linear-gradient(transparent 58%, var(--color-marker) 58%);
+  border-color: var(--color-ink);
+}
+
+.iconButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  min-height: 38px;
+  border: 1px solid var(--color-rule-dark);
+  border-radius: var(--radius-sm);
+  background: var(--color-sheet);
+  color: var(--color-ink);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.iconButtonActive {
+  background: linear-gradient(transparent 58%, var(--color-marker) 58%);
+  border-color: var(--color-ink);
+}
+
+.main {
+  width: min(var(--max-content), 100%);
+  min-width: 0;
+  margin: 0 auto;
+  padding: var(--space-6) clamp(var(--space-4), 3vw, var(--space-8));
+}
+
+.updateBanner {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-sheet);
+  border-bottom: 1px solid var(--color-rule);
+}
+
+.saveErrorBanner {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-error-bg);
+  border-bottom: 1px solid var(--color-error-rule);
+  color: var(--color-error);
+  font-size: var(--text-body-sm);
+}
+
+@media (max-width: 720px) {
+  .topbar {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+  }
+
+  .desktopNav {
+    position: fixed;
+    right: 58px;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    padding: 6px;
+    border-top: 1px solid var(--color-rule-dark);
+    background: rgba(251, 239, 233, 0.98);
+  }
+
+  .actions .iconButton {
+    position: fixed;
+    right: 6px;
+    bottom: 6px;
+    z-index: 31;
+    width: 46px;
+    min-height: 46px;
+    border-radius: var(--radius-sm);
+    background: rgba(251, 239, 233, 0.98);
+  }
+
+  .navItem {
+    min-width: 0;
+    min-height: 46px;
+    border-right: 0;
+    font-size: var(--text-label);
+  }
+
+  .main {
+    padding-bottom: 86px;
+  }
+}
+
+@media (max-width: 520px) {
+  .main {
+    padding-inline: var(--space-3);
+    padding-top: var(--space-4);
+  }
+
+  .navItem {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .navItem,
+  .iconButton,
+  .skipLink {
+    transition: none;
+  }
+}

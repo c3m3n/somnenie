@@ -1,0 +1,11 @@
+.note {
+  max-width: var(--max-prose);
+  margin: 0;
+  border-top: 1px solid var(--color-rule-dark);
+  border-bottom: 1px solid var(--color-rule-dark);
+  padding: var(--space-3) 0;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  line-height: var(--line-height-body);
+}

@@ -19,3 +19,5 @@ tools/style-lab-check.mjs
 tools/capture-userpath-screenshots.mjs
 tools/take-screenshots.mjs
 .codex-shots/
+.superpowers/
+output/

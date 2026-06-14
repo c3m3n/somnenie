@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { ensureModuleFiles, moduleFilesLoaded, quizFileFromManifest } from "../../content/api";
+import { Button, ButtonLink } from "../../ui/components/Button";
+import { Kicker } from "../../ui/components/Kicker";
+import { ProcessTiles } from "../../ui/components/ProcessTiles";
 import { PASS_RATIO } from "../../domain/blockStateMachine";
 import { canRetakeCheckpoint, getCheckpointOutcome, RETAKE_COOLDOWN_MS } from "../../domain/learningPath";
 import { parseQuiz } from "../../domain/quiz";
@@ -10,6 +13,7 @@ import { navigate, routeHash } from "../../ui/route";
 import { Md, MdInline } from "../../ui/md";
 import { seededShuffle } from "../../shared/utils/seededShuffle";
 import { ReaderView } from "../reader/ReaderView";
+import styles from "./Station.module.css";
 
 const ANSWER_FEEDBACK_MS = 700;
 
@@ -52,11 +56,11 @@ function QuizLoader({ bundle, module, step, progress, appState, saveProgress, sa
 
   if (error) {
     return (
-      <section className="screen station-screen">
-        <div className="load-error" role="alert">
+      <section className={styles.screen}>
+        <div className={styles.loadError} role="alert">
           <p>Не удалось загрузить зачёт.</p>
           <p>Проверьте соединение и попробуйте снова.</p>
-          <button className="primary-action" type="button" onClick={() => loadQuiz()}>Повторить</button>
+          <Button variant="primary" onClick={() => loadQuiz()}>Повторить</Button>
         </div>
       </section>
     );
@@ -64,20 +68,21 @@ function QuizLoader({ bundle, module, step, progress, appState, saveProgress, sa
 
   if (!ready) {
     return (
-      <section className="screen station-screen">
-        <div className="loading" role="status">Загрузка зачёта...</div>
+      <section className={styles.screen}>
+        <div className={styles.loading} role="status">Загрузка зачёта...</div>
       </section>
     );
   }
 
   return (
-    <section className="screen station-screen station-check">
-      <header className="station-head">
-        <div className="section-kicker">Блок · {module.phaseTitle}</div>
+    <section className={[styles.screen, styles.stationCheck].filter(Boolean).join(" ")}>
+      <header className={styles.head}>
+        <Kicker>Блок · {module.phaseTitle}</Kicker>
         <h2>{module.id}. {module.title}</h2>
-        <p>Зачёт</p>
+        <p className={styles.headSubtitle}>Зачёт</p>
+        <ProcessTiles activeIndex={2} />
       </header>
-      <div className="station-product">
+      <div className={styles.product}>
         <QuizStep bundle={bundle} module={module} step={step} progress={progress} appState={appState} saveProgress={saveProgress} saveState={saveState} />
       </div>
     </section>
@@ -90,28 +95,28 @@ export function CheckpointRemediationView({ module, plan, courseId }: { module: 
 
   if (answers.length === 0) {
     return (
-      <section className="screen station-screen">
-        <header className="station-head">
-          <div className="section-kicker">Разбор ошибок</div>
+      <section className={styles.screen}>
+        <header className={styles.head}>
+          <Kicker>Разбор ошибок</Kicker>
           <h2>{module.id}. {module.title}</h2>
         </header>
-        <article className="remediation-empty">
+        <article className={styles.remediationEmpty}>
           <p>Не удалось восстановить список вопросов.</p>
           <p>Откройте материал блока и попробуйте пройти зачёт ещё раз.</p>
         </article>
-        <div className="remediation-actions">
-          <a className="primary-action" href={routeHash({ screen: "station", courseId, moduleId: module.id, step: "understand" })} onClick={(event) => {
+        <div className={styles.remediationActions}>
+          <ButtonLink variant="primary" href={routeHash({ screen: "station", courseId, moduleId: module.id, step: "understand" })} onClick={(event) => {
             event.preventDefault();
             navigate({ screen: "station", courseId, moduleId: module.id, step: "understand" });
           }}>
             Открыть материал
-          </a>
-          <a className="primary-action" href={routeHash({ screen: "station", courseId, moduleId: module.id, step: "check" })} onClick={(event) => {
+          </ButtonLink>
+          <ButtonLink variant="primary" href={routeHash({ screen: "station", courseId, moduleId: module.id, step: "check" })} onClick={(event) => {
             event.preventDefault();
             navigate({ screen: "station", courseId, moduleId: module.id, step: "check" });
           }}>
             Пройти зачёт
-          </a>
+          </ButtonLink>
         </div>
       </section>
     );
@@ -122,33 +127,33 @@ export function CheckpointRemediationView({ module, plan, courseId }: { module: 
   const targetStep = routeStepFromWeakSpot(current);
 
   return (
-    <section className="screen station-screen remediation-screen">
-      <header className="station-head">
-        <div className="section-kicker">Разбор ошибок</div>
+    <section className={styles.screen}>
+      <header className={styles.head}>
+        <Kicker>Разбор ошибок</Kicker>
         <h2>{module.id}. {module.title}</h2>
-        <p>Ошибка {index + 1} из {answers.length}</p>
+        <p className={styles.headSubtitle}>Ошибка {index + 1} из {answers.length}</p>
       </header>
-      <article className="remediation-card">
-        <p className="remediation-block">Блок {module.id}</p>
-        <p className="remediation-question-title">Вопрос: {current.questionText}</p>
+      <article className={styles.remediationCard}>
+        <p className={styles.remediationBlock}>Блок {module.id}</p>
+        <p className={styles.remediationQuestion}>Вопрос: {current.questionText}</p>
         <p><strong>Ваш ответ:</strong> {current.chosenOptionText || "—"}</p>
         <p><strong>Правильная идея:</strong> {current.correctOptionText || "—"}</p>
         <p><strong>Почему это важно:</strong> {current.explanation}</p>
         <p><strong>Связанный материал:</strong> {sourceLabel(current, module.id)}</p>
       </article>
-      <div className="remediation-actions">
-        <a className="primary-action" href={routeHash({ screen: "station", courseId, moduleId: module.id, step: targetStep })} onClick={(event) => {
+      <div className={styles.remediationActions}>
+        <ButtonLink variant="primary" href={routeHash({ screen: "station", courseId, moduleId: module.id, step: targetStep })} onClick={(event) => {
           event.preventDefault();
           navigate({ screen: "station", courseId, moduleId: module.id, step: targetStep });
         }}>
           Открыть материал
-        </a>
-        <button className="primary-action" type="button" onClick={() => {
+        </ButtonLink>
+        <Button variant="primary" onClick={() => {
           if (hasNext) setIndex(index + 1);
           else navigate({ screen: "station", courseId, moduleId: module.id, step: "check" });
         }}>
           {hasNext ? "Следующая ошибка" : plan.canRetake ? "Попробовать зачёт ещё раз" : "Вернуться к зачёту"}
-        </button>
+        </Button>
       </div>
     </section>
   );
@@ -193,40 +198,40 @@ function QuizResult({ module, outcome, canRetake, saveProgress, courseId }: { mo
   const isFailed = outcome.status === "failed";
   const resultRoute = isFailed ? routeHash({ screen: "remediation", courseId, moduleId: module.id }) : routeHash({ screen: "today", courseId });
   return (
-    <div className="quiz-result">
+    <div className={styles.quizResult}>
       <CheckCircle2 size={32} />
       <h3>Зачёт</h3>
       <p>{outcome.score.correct} / {outcome.score.total}</p>
       <p>{isFailed ? "Зачёт не сдан" : "Зачёт сдан"}</p>
       <p>{isFailed ? "Следующий блок пока закрыт." : "Следующий блок открыт."}</p>
-      <div className="result-actions">
+      <div className={styles.resultActions}>
         {isFailed ? (
           <>
-            <a className="primary-action" href={resultRoute} onClick={(event) => {
+            <ButtonLink variant="primary" href={resultRoute} onClick={(event) => {
               event.preventDefault();
               navigate({ screen: "remediation", courseId, moduleId: module.id });
             }}>
               Разобрать ошибки
-            </a>
+            </ButtonLink>
             {canRetake ? (
-              <button type="button" className="primary-action" onClick={() => void retryQuiz(module.id, saveProgress, courseId)}>
+              <Button variant="primary" onClick={() => void retryQuiz(module.id, saveProgress, courseId)}>
                 Попробовать ещё раз
-              </button>
+              </Button>
             ) : (
-              <p className="retry-cooldown">Следующая попытка доступна примерно через {minutesUntilRetake(outcome.failureDate)} мин.</p>
+              <p className={styles.retryCooldown}>Следующая попытка доступна примерно через {minutesUntilRetake(outcome.failureDate)} мин.</p>
             )}
           </>
         ) : (
           <>
-            <button className="primary-action" type="button" onClick={() => navigate({ screen: "atlas", courseId })}>
+            <Button variant="primary" onClick={() => navigate({ screen: "atlas", courseId })}>
               К следующему шагу
-            </button>
-            <a href={routeHash({ screen: "today", courseId })} onClick={(event) => {
+            </Button>
+            <ButtonLink variant="ghost" href={routeHash({ screen: "today", courseId })} onClick={(event) => {
               event.preventDefault();
               navigate({ screen: "today", courseId });
             }}>
               Вернуться в маршрут
-            </a>
+            </ButtonLink>
           </>
         )}
       </div>
@@ -242,9 +247,9 @@ function minutesUntilRetake(failureDate: string | null): number {
 
 function QuestionCard({ module, question, progress, isLast, autoTotal, appState, saveProgress, saveState }: { module: CourseModule; question: QuizQuestion; progress: ModuleProgress; isLast: boolean; autoTotal: number; appState: AppState; saveProgress: StationProps["saveProgress"]; saveState: StationProps["saveState"] }) {
   return (
-    <article className="quiz-card product-question">
-      <div className="section-kicker">Вопрос {question.number}</div>
-      <Md className="quiz-question">{question.text}</Md>
+    <article className={styles.quizCard}>
+      <span className={styles.questionNumber}>Вопрос {question.number}</span>
+      <Md className={[styles.questionText, "markdown-block"].join(" ")}>{question.text}</Md>
       {question.kind === "application" ? <ApplicationQuestion module={module} question={question} progress={progress} isLast={isLast} saveProgress={saveProgress} /> : <AutoQuestion module={module} question={question} progress={progress} isLast={isLast} autoTotal={autoTotal} appState={appState} saveProgress={saveProgress} saveState={saveState} />}
     </article>
   );
@@ -274,16 +279,33 @@ function AutoQuestion({ module, question, progress, isLast, autoTotal, appState,
     void answerAuto({ module, question, progress, isLast, autoTotal, appState, saveProgress, saveState }, key);
   };
 
+  const feedbackClass = feedback === "right" ? styles.feedbackRight : styles.feedbackWrong;
   return (
-    <div className="answer-list">
-      {question.options.map((option) => <button type="button" disabled={locked} key={option.key} onClick={() => void choose(option.key)}><span>{option.key}</span><MdInline>{option.text}</MdInline></button>)}
-      {feedback ? <p className={`quiz-feedback quiz-feedback-${feedback}`} role="status">{resultText}</p> : null}
+    <div className={styles.answerList}>
+      {question.options.map((option) => (
+        <button
+          type="button"
+          disabled={locked}
+          key={option.key}
+          className={styles.answerButton}
+          onClick={() => void choose(option.key)}
+        >
+          <span className={styles.answerLetter}>{option.key}</span>
+          <MdInline>{option.text}</MdInline>
+        </button>
+      ))}
+      {feedback ? <p className={[styles.feedback, feedbackClass].filter(Boolean).join(" ")} role="status">{resultText}</p> : null}
     </div>
   );
 }
 
 function ApplicationQuestion({ module, question, progress, isLast, saveProgress }: { module: CourseModule; question: QuizQuestion; progress: ModuleProgress; isLast: boolean; saveProgress: StationProps["saveProgress"] }) {
-  return <div className="application-block"><Md>{question.explain}</Md><button type="button" onClick={() => void recordOpenAnswer(module.id, progress, isLast, saveProgress)}>Продолжить</button></div>;
+  return (
+    <div className={styles.applicationBlock}>
+      <Md>{question.explain}</Md>
+      <Button variant="primary" onClick={() => void recordOpenAnswer(module.id, progress, isLast, saveProgress)}>Продолжить</Button>
+    </div>
+  );
 }
 
 async function answerAuto(context: AnswerContext, chosen: string): Promise<void> {

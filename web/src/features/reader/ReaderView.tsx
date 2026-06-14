@@ -4,6 +4,10 @@ import { ensureModuleFiles, moduleFilesLoaded, readerFilesFromManifest } from ".
 import type { AppState, CourseBundle, CourseModule, ModuleProgress } from "../../domain/types";
 import { navigate } from "../../ui/route";
 import { Md } from "../../ui/md";
+import { Kicker } from "../../ui/components/Kicker";
+import { Button } from "../../ui/components/Button";
+import { ProcessTiles } from "../../ui/components/ProcessTiles";
+import styles from "./ReaderView.module.css";
 
 const PAGE_LABELS: Record<string, string> = {
   "theory.md": "Теория",
@@ -68,8 +72,8 @@ export function ReaderView({ bundle, module, progress, saveProgress }: ReaderPro
 
   if (!page) {
     return (
-      <section className="screen station-screen">
-        <div className="load-error" role="alert">
+      <section className={styles.screen}>
+        <div className={styles.loadError} role="alert">
           <p>Не удалось определить файлы для чтения.</p>
         </div>
       </section>
@@ -78,11 +82,11 @@ export function ReaderView({ bundle, module, progress, saveProgress }: ReaderPro
 
   if (error) {
     return (
-      <section className="screen station-screen">
-        <div className="load-error" role="alert">
+      <section className={styles.screen}>
+        <div className={styles.loadError} role="alert">
           <p>Не удалось загрузить материал.</p>
           <p>Проверьте соединение и попробуйте снова.</p>
-          <button className="primary-action" type="button" onClick={() => loadFiles()}>Повторить</button>
+          <Button variant="primary" onClick={() => loadFiles()}>Повторить</Button>
         </div>
       </section>
     );
@@ -90,8 +94,8 @@ export function ReaderView({ bundle, module, progress, saveProgress }: ReaderPro
 
   if (!ready) {
     return (
-      <section className="screen station-screen">
-        <div className="loading" role="status">Загрузка материала...</div>
+      <section className={styles.screen}>
+        <div className={styles.loading} role="status">Загрузка материала...</div>
       </section>
     );
   }
@@ -125,31 +129,32 @@ export function ReaderView({ bundle, module, progress, saveProgress }: ReaderPro
   };
 
   return (
-    <section className="screen station-screen reader-screen">
-      <header className="station-head">
-        <div className="section-kicker">Блок · {module.phaseTitle}</div>
+    <section className={styles.screen}>
+      <header className={styles.head}>
+        <Kicker>Блок · {module.phaseTitle}</Kicker>
         <h2>{module.id}. {module.title}</h2>
-        <p>{page.label} · {pageIndex + 1} / {pageMeta.length}</p>
-        <progress className="reader-progress" max={pageMeta.length} value={pageIndex + 1} aria-label={`Страница ${pageIndex + 1} из ${pageMeta.length}`} />
+        <p className={styles.headSubtitle}>{page.label} · {pageIndex + 1} / {pageMeta.length}</p>
+        <ProcessTiles activeIndex={0} />
+        <progress className={styles.readerProgress} max={pageMeta.length} value={pageIndex + 1} aria-label={`Страница ${pageIndex + 1} из ${pageMeta.length}`} />
       </header>
       <Md as="article" className="markdown-block primary-sheet">{module.files[page.file]}</Md>
       {isLastPage ? (
-        <div className="takeaway-editor">
-          <label className="journal-editor">
+        <div className={styles.takeawayEditor}>
+          <label className={styles.editor}>
             <span><NotebookPen size={16} /> Конспект блока (необязательно):</span>
             <textarea placeholder="Запишите главную мысль блока..." value={draft} onChange={(event) => saveDraft(event.target.value)} />
           </label>
         </div>
       ) : null}
-      <nav className="reader-nav" aria-label="Навигация по страницам">
+      <nav className={styles.nav} aria-label="Навигация по страницам">
         {pageIndex > 0 ? (
-          <button type="button" className="reader-back" onClick={goBack}>
+          <Button variant="secondary" onClick={goBack}>
             <ArrowLeft size={18} />Назад
-          </button>
+          </Button>
         ) : <span />}
-        <button type="button" className="reader-forward primary-action" onClick={() => void goForward()}>
+        <Button variant="primary" onClick={() => void goForward()}>
           {isLastPage ? <>К зачёту<ArrowRight size={18} /></> : <>Дальше<ArrowRight size={18} /></>}
-        </button>
+        </Button>
       </nav>
     </section>
   );

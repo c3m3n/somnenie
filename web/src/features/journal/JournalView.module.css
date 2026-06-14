@@ -1,0 +1,132 @@
+.screen {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-6);
+}
+
+.title {
+  margin: 0;
+  max-width: var(--max-prose);
+  font-size: var(--text-display-lg);
+  line-height: var(--line-height-tight);
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.section {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 680px;
+}
+
+.summary {
+  display: grid;
+  gap: var(--space-2);
+  color: var(--color-muted);
+}
+
+.summary strong {
+  color: var(--color-ink);
+  font-size: var(--text-body-lg);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.stats div {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
+  background: var(--color-sheet);
+}
+
+.stats dt {
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+}
+
+.stats dd {
+  margin: 0;
+  color: var(--color-ink);
+  font-size: var(--text-body-md);
+  font-weight: 700;
+}
+
+.takeawayList {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.takeaway {
+  padding: var(--space-3);
+  border: 1px solid var(--color-rule-dark);
+  border-left: 4px solid var(--color-marker);
+  border-radius: var(--radius-sm);
+  background: var(--color-sheet);
+}
+
+.takeaway strong {
+  display: block;
+  margin-bottom: var(--space-1);
+  font-size: var(--text-body-md);
+}
+
+.takeaway p {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: var(--line-height-body);
+}
+
+.emptyState {
+  color: var(--color-muted);
+  line-height: var(--line-height-body);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.form label {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.form input,
+.form textarea {
+  width: 100%;
+  border: 1px solid var(--color-rule-dark);
+  border-radius: var(--radius-sm);
+  background: var(--color-sheet);
+  padding: var(--space-3);
+  font: inherit;
+}
+
+.form input:focus-visible,
+.form textarea:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.form textarea {
+  min-height: 120px;
+}
+
+.dataActions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-2);
+}
+
+.dangerZone {
+  border-top: 2px dashed var(--color-rule-dark);
+  padding-top: var(--space-4);
+}

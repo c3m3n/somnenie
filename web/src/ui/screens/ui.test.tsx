@@ -99,11 +99,11 @@ describe("React learner flow", () => {
     };
     render(<AtlasView bundle={bundle()} progress={progress} />);
 
-    expect(screen.getByRole("button", { name: /Блок M01/ })).toHaveClass("module-tile-checkpoint_passed");
-    expect(screen.getByRole("button", { name: /Блок M02/ })).toHaveClass("module-tile-in_progress", "module-tile-current");
+    expect(screen.getByRole("button", { name: /Блок M01.*Зачёт сдан/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Блок M02.*В процессе/ })).toBeInTheDocument();
     expect(screen.getByText("Зачёт сдан")).toBeInTheDocument();
     expect(screen.getByText("В процессе")).toBeInTheDocument();
-    expect(screen.getByText("Текущий блок")).toBeInTheDocument();
+    expect(screen.getByText("Текущий")).toBeInTheDocument();
     expect(screen.queryByText("Атлас")).toBeNull();
     expect(screen.queryByText("Станция")).toBeNull();
   });
@@ -116,7 +116,7 @@ describe("React learner flow", () => {
     };
     render(<AtlasView bundle={bundle()} progress={progress} />);
 
-    expect(screen.getByRole("button", { name: /Блок M02/ })).toHaveClass("module-tile-checkpoint_ready");
+    expect(screen.getByRole("button", { name: /Блок M02.*Нужен зачёт/ })).toBeInTheDocument();
     expect(screen.getByText("Нужен зачёт")).toBeInTheDocument();
   });
 
@@ -128,7 +128,7 @@ describe("React learner flow", () => {
     };
     render(<AtlasView bundle={bundle()} progress={progress} />);
 
-    expect(screen.getByRole("button", { name: /Блок M03/ })).toHaveClass("module-tile-checkpoint_failed");
+    expect(screen.getByRole("button", { name: /Блок M03.*Зачёт не сдан/ })).toBeInTheDocument();
     expect(screen.getByText("Зачёт не сдан")).toBeInTheDocument();
   });
 
@@ -239,7 +239,7 @@ describe("React learner flow", () => {
     expect(screen.getByText("Зачёт не сдан")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Разобрать ошибки" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Попробовать ещё раз/ })).toBeInTheDocument();
-    expect(container.querySelectorAll(".result-actions button")).toHaveLength(1);
+    expect(screen.getAllByRole("button").filter((button) => !(button as HTMLButtonElement).disabled)).toHaveLength(1);
     expect(screen.queryByRole("button", { name: /next block|следующ/iu })).toBeNull();
   });
 

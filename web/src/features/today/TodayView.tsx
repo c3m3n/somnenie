@@ -5,32 +5,39 @@ import { toISODate } from "../../domain/date";
 import type { CourseBundle, CourseId, CourseModule, ModuleFileName, ModuleProgress, ProgressMap, SessionsState, TodayAction } from "../../domain/types";
 import { readerFilesFromManifest } from "../../content/api";
 import { navigate } from "../../ui/route";
+import { Button } from "../../ui/components/Button";
+import { Card } from "../../ui/components/Card";
+import { Kicker } from "../../ui/components/Kicker";
+import { ProgressBar } from "../../ui/components/ProgressBar";
+import { SafetyNote } from "../../ui/components/SafetyNote";
+import styles from "./TodayView.module.css";
 
 export function TodayView({ bundle, progress, action, lastSessionDate, sessions }: { bundle: CourseBundle; progress: ProgressMap; action: TodayAction; lastSessionDate?: string | null; sessions?: SessionsState }) {
   const courseId = bundle.courseId;
   const screen = buildLearningScreenCopy(action, bundle, progress);
   const streakLine = buildStreakLine(sessions);
   return (
-    <section className="screen today-screen">
-      <h2>{screen.title}</h2>
-      <article className="learning-dispatcher-card">
-        <div>
-          <strong>{screen.cardTitle}</strong>
-          <p>{screen.description}</p>
-          {screen.context ? <span>{screen.context}</span> : null}
-        </div>
-      </article>
-      <button className="primary-action" type="button" onClick={() => runAction(action, courseId)}>
+    <section className={styles.screen}>
+      <Kicker>Сегодня</Kicker>
+      <h2 className={styles.title}>{screen.title}</h2>
+      <Card className={styles.card}>
+        <strong className={styles.cardTitle}>{screen.cardTitle}</strong>
+        <p className={styles.cardDescription}>{screen.description}</p>
+        {screen.context ? <span className={styles.cardContext}>{screen.context}</span> : null}
+      </Card>
+      <Button variant="primary" size="large" className={styles.cta} onClick={() => runAction(action, courseId)}>
         {iconFor(action.kind)}<span>{screen.primaryCta}</span>
-      </button>
-      <p className="after-action"><strong>После этого:</strong> {screen.afterAction}</p>
-      <div className="progress-strip">
+      </Button>
+      <p className={styles.afterAction}><strong>После этого:</strong> {screen.afterAction}</p>
+      <div className={styles.progress}>
         <span>{screen.progressLabel}</span>
-        <progress max={bundle.modules.length} value={screen.completed} aria-label="Прогресс маршрута" />
+        <ProgressBar max={bundle.modules.length} value={screen.completed} label="Прогресс маршрута" />
       </div>
-      {streakLine ? <p className="streak-line">{streakLine}</p> : null}
-      {lastSessionDate ? <p className="last-session">Последний раз: {lastSessionLabel(lastSessionDate)}</p> : null}
-      <p className="safety-note">Курс не заменяет профессиональную консультацию или индивидуальные рекомендации.</p>
+      {streakLine ? <p className={styles.streak}>{streakLine}</p> : null}
+      {lastSessionDate ? <p className={styles.lastSession}>Последний раз: {lastSessionLabel(lastSessionDate)}</p> : null}
+      <SafetyNote>
+        Курс не заменяет профессиональную консультацию или индивидуальные рекомендации.
+      </SafetyNote>
     </section>
   );
 }

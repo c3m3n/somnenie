@@ -1,0 +1,79 @@
+.screen {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-5);
+}
+
+.title {
+  margin: 0;
+  max-width: var(--max-prose);
+  font-size: var(--text-display-lg);
+  line-height: var(--line-height-tight);
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.card {
+  max-width: 680px;
+}
+
+.cardTitle {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--text-title-sm);
+  line-height: 1.25;
+}
+
+.cardDescription {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: var(--line-height-body);
+}
+
+.cardContext {
+  display: block;
+  margin-top: var(--space-2);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}
+
+.cta {
+  width: fit-content;
+}
+
+.afterAction {
+  margin: 0;
+  color: var(--color-muted);
+  line-height: var(--line-height-body);
+}
+
+.afterAction strong {
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}
+
+.progress {
+  display: grid;
+  gap: var(--space-2);
+  max-width: 460px;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}
+
+.streak {
+  margin: 0;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.lastSession {
+  margin: 0;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+}

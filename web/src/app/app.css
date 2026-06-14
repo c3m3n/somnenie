@@ -1,3 +1,6 @@
+@import "../ui/tokens.css";
+@import "../ui/content.css";
+
 @font-face {
   font-family: "IBM Plex Sans";
   src: url("/fonts/IBMPlexSans-Regular.woff2") format("woff2");
@@ -30,19 +33,20 @@
   font-display: swap;
 }
 
+/* Legacy variable aliases — keep until all components migrate to tokens directly */
 :root {
-  --paper: #ecefed;
-  --sheet: #fbfcf8;
-  --ink: #111210;
-  --muted: #5e6665;
-  --rule: #b8c0bf;
-  --rule-dark: #7d8785;
-  --marker: #d9ff3f;
-  --marker-blue: #aacbff;
-  --focus: #1b4bff;
-  color: var(--ink);
-  background: var(--paper);
-  font-family: "IBM Plex Sans", Arial, sans-serif;
+  --paper: var(--color-paper);
+  --sheet: var(--color-sheet);
+  --ink: var(--color-ink);
+  --muted: var(--color-muted);
+  --rule: var(--color-rule);
+  --rule-dark: var(--color-rule-dark);
+  --marker: var(--color-marker);
+  --marker-blue: var(--color-marker-blue);
+  --focus: var(--color-focus);
+  color: var(--color-ink);
+  background: var(--color-paper);
+  font-family: var(--font-display);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }

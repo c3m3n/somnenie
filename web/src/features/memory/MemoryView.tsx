@@ -6,6 +6,10 @@ import { applyReviewResult, dueReviewItems, DAILY_REVIEW_LIMIT, recordSessionAct
 import type { AppState, CourseBundle, CourseId, ReviewItem, ReviewState, SessionsState } from "../../domain/types";
 import { MdInline } from "../../ui/md";
 import { navigate, routeHash } from "../../ui/route";
+import { Button, ButtonLink } from "../../ui/components/Button";
+import { Kicker } from "../../ui/components/Kicker";
+import { Card } from "../../ui/components/Card";
+import styles from "./MemoryView.module.css";
 
 export function MemoryView({ bundle, appState, saveState }: { bundle: CourseBundle; appState: AppState; saveState: (patch: Partial<AppState>) => Promise<void> }) {
   const courseId = bundle.courseId;
@@ -23,9 +27,9 @@ export function MemoryView({ bundle, appState, saveState }: { bundle: CourseBund
 
   const item = items[index];
   return (
-    <section className="screen memory-screen trainer-screen">
-      <div className="section-kicker">Тренировка</div>
-      <h2>Вопрос {index + 1} из {items.length}</h2>
+    <section className={styles.screen}>
+      <Kicker>Тренировка</Kicker>
+      <h2 className={styles.title}>Вопрос {index + 1} из {items.length}</h2>
       {feedback ? (
         <TrainerFeedback
           feedback={feedback}
@@ -48,15 +52,15 @@ export function MemoryView({ bundle, appState, saveState }: { bundle: CourseBund
 
 function TrainerIntro({ items, onStart }: { items: ReviewItem[]; onStart: () => void }) {
   return (
-    <section className="screen memory-screen trainer-screen">
-      <div className="section-kicker">Тренажёр</div>
-      <h2>{trainerTitle(items.length)}</h2>
-      <p className="lead">Это короткая тренировка на 3-5 минут.</p>
-      <button className="primary-action" type="button" onClick={onStart}>
+    <section className={styles.screen}>
+      <Kicker>Тренажёр</Kicker>
+      <h2 className={styles.title}>{trainerTitle(items.length)}</h2>
+      <p className={styles.lead}>Это короткая тренировка на 3-5 минут.</p>
+      <Button variant="primary" size="large" onClick={onStart}>
         <Play size={18} />
         Начать тренировку
-      </button>
-      <ul className="trainer-spot-list">
+      </Button>
+      <ul className={styles.spotList}>
         {items.map((item) => <li key={item.id}>{item.userLabel || item.shortExplanation || item.text}</li>)}
       </ul>
     </section>
@@ -66,15 +70,15 @@ function TrainerIntro({ items, onStart }: { items: ReviewItem[]; onStart: () => 
 function TrainerCard({ item, bundle, onAnswer }: { item: ReviewItem; bundle: CourseBundle; onAnswer: (isRight: boolean) => void }) {
   const question = questionForItem(bundle, item);
   return (
-    <article className="memory-card">
-      <Brain size={24} />
+    <Card className={styles.card} flat>
+      <Brain size={24} className={styles.cardIcon} />
       <h3>{item.userLabel || "Слабое место"}</h3>
       {question ? (
         <>
-          <MdInline as="div" className="quiz-question">{question.text}</MdInline>
-          <div className="answer-list">
+          <MdInline as="div" className={styles.question}>{question.text}</MdInline>
+          <div className={styles.answerList}>
             {question.options.map((option) => (
-              <button type="button" key={option.key} onClick={() => onAnswer(String(option.key) === String(question.answer))}>
+              <button type="button" key={option.key} className={styles.answerButton} onClick={() => onAnswer(String(option.key) === String(question.answer))}>
                 <span>{option.key}</span>
                 <MdInline>{option.text}</MdInline>
               </button>
@@ -84,18 +88,18 @@ function TrainerCard({ item, bundle, onAnswer }: { item: ReviewItem; bundle: Cou
       ) : (
         <ConceptTrainer item={item} onAnswer={onAnswer} />
       )}
-    </article>
+    </Card>
   );
 }
 
 function ConceptTrainer({ item, onAnswer }: { item: ReviewItem; onAnswer: (isRight: boolean) => void }) {
   return (
     <>
-      <p className="trainer-prompt">Объясните себе:</p>
+      <p className={styles.prompt}>Объясните себе:</p>
       <p>{item.shortExplanation || item.text}</p>
-      <div className="memory-actions">
-        <button type="button" onClick={() => onAnswer(true)}><CheckCircle2 size={18} />Помню</button>
-        <button type="button" onClick={() => onAnswer(false)}><RotateCcw size={18} />Не помню</button>
+      <div className={styles.selfCheckActions}>
+        <Button variant="secondary" onClick={() => onAnswer(true)}><CheckCircle2 size={18} />Помню</Button>
+        <Button variant="secondary" onClick={() => onAnswer(false)}><RotateCcw size={18} />Не помню</Button>
       </div>
     </>
   );
@@ -103,12 +107,13 @@ function ConceptTrainer({ item, onAnswer }: { item: ReviewItem; onAnswer: (isRig
 
 function TrainerFeedback({ feedback, isLast, onNext }: { feedback: "right" | "wrong"; isLast: boolean; onNext: () => void }) {
   const isRight = feedback === "right";
+  const feedbackClass = isRight ? styles.feedbackRight : styles.feedbackWrong;
   return (
-    <article className="memory-card trainer-feedback" role="status">
+    <Card className={styles.card} flat role="status">
       <h3>{isRight ? "Верно" : "Пока не закрепилось"}</h3>
-      <p>{isRight ? "Вернём этот вопрос позже, чтобы закрепить." : "Вопрос вернётся завтра."}</p>
-      <button className="primary-action" type="button" onClick={onNext}>{isLast ? "Завершить тренировку" : "Следующий вопрос"}</button>
-    </article>
+      <p className={[styles.feedback, feedbackClass].filter(Boolean).join(" ")}>{isRight ? "Вернём этот вопрос позже, чтобы закрепить." : "Вопрос вернётся завтра."}</p>
+      <Button variant="primary" onClick={onNext}>{isLast ? "Завершить тренировку" : "Следующий вопрос"}</Button>
+    </Card>
   );
 }
 
@@ -116,30 +121,30 @@ function TrainerResult({ results, total, courseId }: { results: boolean[]; total
   const closed = results.filter(Boolean).length;
   const returned = total - closed;
   return (
-    <section className="screen memory-screen trainer-screen">
-      <div className="section-kicker">Тренажёр</div>
-      <h2>Тренировка завершена</h2>
-      <div className="trainer-result-lines">
+    <section className={styles.screen}>
+      <Kicker>Тренажёр</Kicker>
+      <h2 className={styles.title}>Тренировка завершена</h2>
+      <div className={styles.resultLines}>
         <p>Закрыто: {closed} из {total}</p>
         <p>Вернётся позже: {returned} {weakSpotNoun(returned)}</p>
       </div>
-      <a className="primary-action" href={routeHash({ screen: "today", courseId })} onClick={(event) => {
+      <ButtonLink variant="primary" href={routeHash({ screen: "today", courseId })} onClick={(event) => {
         event.preventDefault();
         navigate({ screen: "today", courseId });
       }}>
         Вернуться к учёбе
-      </a>
+      </ButtonLink>
     </section>
   );
 }
 
 function EmptyTrainer() {
   return (
-    <section className="screen memory-screen trainer-screen">
-      <div className="section-kicker">Тренажёр</div>
-      <h2>Пока всё чисто.</h2>
-      <p className="lead">Слабые места появятся после зачётов.</p>
-      <p className="lead">Продолжайте маршрут — тренажёр подключится, когда появятся слабые места.</p>
+    <section className={styles.screen}>
+      <Kicker>Тренажёр</Kicker>
+      <h2 className={styles.title}>Пока всё чисто.</h2>
+      <p className={styles.lead}>Слабые места появятся после зачётов.</p>
+      <p className={styles.lead}>Продолжайте маршрут — тренажёр подключится, когда появятся слабые места.</p>
     </section>
   );
 }

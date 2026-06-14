@@ -2,6 +2,18 @@ import { CheckCircle2, Circle, LockKeyhole, RotateCcw } from "lucide-react";
 import { getCourseBlockViewModels, type CourseBlockViewModel } from "../../domain/learningPath";
 import type { CourseBundle, CourseId, CourseModule, ProgressMap, StationStepKey } from "../../domain/types";
 import { navigate } from "../../ui/route";
+import { Kicker } from "../../ui/components/Kicker";
+import styles from "./AtlasView.module.css";
+
+const stateVariant: Record<CourseBlockViewModel["state"], string> = {
+  available: styles.available,
+  in_progress: styles.inProgress,
+  checkpoint_ready: styles.checkpointReady,
+  checkpoint_failed: styles.checkpointFailed,
+  checkpoint_passed: styles.checkpointPassed,
+  course_complete: styles.checkpointPassed,
+  locked: styles.locked,
+};
 
 export function AtlasView({ bundle, progress }: { bundle: CourseBundle; progress: ProgressMap }) {
   const courseId = bundle.courseId;
@@ -10,15 +22,15 @@ export function AtlasView({ bundle, progress }: { bundle: CourseBundle; progress
   const currentIndex = currentBlockIndex(ordered);
 
   return (
-    <section className="screen atlas-screen">
-      <div className="section-kicker">Маршрут</div>
-      <h2>{bundle.course.title}</h2>
-      <div className="phase-list">
+    <section className={styles.screen}>
+      <Kicker>Маршрут</Kicker>
+      <h2 className={styles.title}>{bundle.course.title}</h2>
+      <div className={styles.phaseList}>
         {bundle.course.phases.map((phase) => (
-          <section className="phase-band" key={phase.id}>
-            <h3>{phase.title}</h3>
-            {phase.subtitle ? <p>{phase.subtitle}</p> : null}
-            <div className="module-grid">
+          <section className={styles.phaseBand} key={phase.id}>
+            <h3 className={styles.phaseTitle}>{phase.title}</h3>
+            {phase.subtitle ? <p className={styles.phaseSubtitle}>{phase.subtitle}</p> : null}
+            <div className={styles.moduleGrid}>
               {modulesForPhase(bundle, phase.id).map((module) => (
                 <ModuleButton
                   key={module.id}
@@ -47,22 +59,27 @@ function ModuleButton({
   const status = statusText(view);
   const reason = isLocked ? lockReason(view, module.id) : null;
   const routeStep = stepFor(view);
+  const tileClasses = [
+    styles.moduleTile,
+    stateVariant[view.state],
+    isCurrent ? styles.current : "",
+  ].filter(Boolean).join(" ");
 
   return (
     <button
-      className={`module-tile module-tile-${view.state} ${isCurrent ? "module-tile-current" : ""}`}
+      className={tileClasses}
       type="button"
       onClick={() => navigate({ screen: "station", courseId, moduleId: module.id, step: routeStep })}
       aria-label={`Блок ${module.id} ${module.title} ${status}`}
     >
-      {iconFor(view)}
-      <div>
-        <span className="section-kicker">{module.id}</span>
-        {isCurrent ? <small className="module-current-label">Текущий блок</small> : null}
+      <div className={styles.tileHeader}>
+        {iconFor(view)}
+        <span className={styles.moduleId}>{module.id}</span>
+        {isCurrent ? <span className={styles.currentLabel}>Текущий</span> : null}
       </div>
-      <strong>{module.title}</strong>
-      <small className="module-status">{status}</small>
-      {reason ? <small className="module-locked-reason">{reason}</small> : null}
+      <strong className={styles.moduleTitle}>{module.title}</strong>
+      <span className={styles.moduleStatus}>{status}</span>
+      {reason ? <span className={styles.lockedReason}>{reason}</span> : null}
     </button>
   );
 }
@@ -99,13 +116,13 @@ function stepFor(viewModel: CourseBlockViewModel): StationStepKey {
 
 function iconFor(viewModel: CourseBlockViewModel) {
   if (viewModel.state === "locked") return <LockKeyhole size={18} />;
-  if (viewModel.state === "checkpoint_passed") return <CheckCircle2 size={18} />;
+  if (viewModel.state === "checkpoint_passed" || viewModel.state === "course_complete") return <CheckCircle2 size={18} />;
   if (viewModel.state === "checkpoint_failed") return <RotateCcw size={18} />;
   return <Circle size={18} />;
 }
 
 function statusText(viewModel: CourseBlockViewModel): string {
-  if (viewModel.state === "checkpoint_passed") return "Зачёт сдан";
+  if (viewModel.state === "checkpoint_passed" || viewModel.state === "course_complete") return "Зачёт сдан";
   if (viewModel.state === "checkpoint_failed") return "Зачёт не сдан";
   if (viewModel.state === "checkpoint_ready") return "Нужен зачёт";
   if (viewModel.state === "in_progress") return "В процессе";
