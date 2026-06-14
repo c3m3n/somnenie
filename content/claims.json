@@ -1,0 +1,1167 @@
+{
+  "schemaVersion": 1,
+  "reviewedAt": "2026-06-11",
+  "sources": [
+    {
+      "sourceId": "WHO_HEALTHY_DIET_2026",
+      "title": "WHO — Healthy diet",
+      "url": "https://www.who.int/news-room/fact-sheets/detail/healthy-diet",
+      "jurisdiction": "WHO/global",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "WHO_CARBS_NCBI_2023",
+      "title": "NCBI Bookshelf — WHO carbohydrate guideline summary",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK594787/",
+      "jurisdiction": "WHO/global",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "HEALTH_CANADA_DRI_MACROS",
+      "title": "Health Canada — DRI reference values for macronutrients",
+      "url": "https://www.canada.ca/en/health-canada/services/food-nutrition/healthy-eating/dietary-reference-intakes/tables/reference-values-macronutrients.html",
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NASEM_AMDR_2024",
+      "title": "National Academies — Description of AMDR",
+      "url": "https://www.nationalacademies.org/read/27957/chapter/5",
+      "jurisdiction": "US DRI",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "HALL_3500_RULE_2013",
+      "title": "Hall and Chow — Why is the 3500 kcal per pound weight loss rule wrong?",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/23774459/",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "HALL_WEIGHT_DYNAMICS_2011",
+      "title": "Hall et al. — Quantification of the effect of energy imbalance on bodyweight",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3880593/",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "EFSA_PROTEIN_DRV_2012",
+      "title": "EFSA — Dietary Reference Values for protein",
+      "url": "https://efsa.onlinelibrary.wiley.com/doi/10.2903/j.efsa.2012.2557",
+      "jurisdiction": "EU/EFSA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "ISSN_PROTEIN_EXERCISE_2017",
+      "title": "ISSN — Protein and exercise",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/28642676/",
+      "jurisdiction": "sports nutrition position stand",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "PROTAGE_OLDER_PROTEIN_2013",
+      "title": "PROT-AGE — protein intake in older adults",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/23867520/",
+      "jurisdiction": "expert group",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "KDIGO_CKD_2024",
+      "title": "KDIGO 2024 CKD guideline executive summary",
+      "url": "https://kdigo.org/wp-content/uploads/2017/02/KDIGO-2024-CKD-Guideline-Executive-Summary.pdf",
+      "jurisdiction": "clinical guideline",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_B6",
+      "title": "NIH ODS — Vitamin B6 fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminB6-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "EFSA_B6_UL_2023",
+      "title": "EFSA — Vitamin B6 tolerable upper intake level",
+      "url": "https://efsa.onlinelibrary.wiley.com/doi/10.2903/j.efsa.2023.8006",
+      "jurisdiction": "EU/EFSA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_FOLATE",
+      "title": "NIH ODS — Folate fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Folate-HealthProfessional/",
+      "jurisdiction": "US/FNB/CDC",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_VITAMIN_D",
+      "title": "NIH ODS — Vitamin D fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminD-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_OMEGA3",
+      "title": "NIH ODS — Omega-3 fatty acids fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Omega3FattyAcids-HealthProfessional/",
+      "jurisdiction": "US/FNB/FDA/AHA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "CDC_WEIGHT_LOSS_2025",
+      "title": "CDC — Steps for Losing Weight",
+      "url": "https://www.cdc.gov/healthy-weight-growth/losing-weight/index.html",
+      "jurisdiction": "US/CDC",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "CAMBRIDGE_AT_REVIEW_2022",
+      "title": "British Journal of Nutrition — adaptive thermogenesis systematic review",
+      "url": "https://www.cambridge.org/core/journals/british-journal-of-nutrition/article/does-adaptive-thermogenesis-occur-after-weight-loss-in-adults-a-systematic-review/726FC60518DA67349B9C3EC1D75A7156",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "CDC_PREGNANCY_ENERGY",
+      "title": "CDC — Pregnancy weight and energy needs",
+      "url": "https://www.cdc.gov/maternal-infant-health/pregnancy-weight/index.html",
+      "jurisdiction": "US/CDC",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "ACOG_HEALTHY_EATING",
+      "title": "ACOG — Healthy Eating",
+      "url": "https://www.acog.org/womens-health/faqs/healthy-eating",
+      "jurisdiction": "US/ACOG",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_PREGNANCY",
+      "title": "NIH ODS — Dietary Supplements and Life Stages: Pregnancy",
+      "url": "https://ods.od.nih.gov/factsheets/Pregnancy-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "AND_VEGETARIAN_2025",
+      "title": "Academy of Nutrition and Dietetics — Vegetarian Dietary Patterns for Adults",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/39923894/",
+      "jurisdiction": "US/Academy position paper",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "ADA_DIABETES_NUTRITION_2026",
+      "title": "ADA Standards of Care — Nutrition",
+      "url": "https://diabetesjournals.org/care/article/49/Supplement_1/S89/163932/",
+      "jurisdiction": "US/ADA clinical standards",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIDDK_CKD_EATING_2026",
+      "title": "NIDDK — Healthy Eating for Adults with Chronic Kidney Disease",
+      "url": "https://www.niddk.nih.gov/health-information/kidney-disease/chronic-kidney-disease-ckd/healthy-eating-adults-chronic-kidney-disease",
+      "jurisdiction": "US/NIDDK",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "AAAAI_FOOD_ALLERGY",
+      "title": "AAAAI — Food allergy and anaphylaxis",
+      "url": "https://www.aaaai.org/tools-for-the-public/conditions-library/allergies/food-allergy-ttr",
+      "jurisdiction": "US/allergy education",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "ODPHP_DGA_2025_2030",
+      "title": "ODPHP — Dietary Guidelines for Americans",
+      "url": "https://odphp.health.gov/our-work/nutrition-physical-activity/dietary-guidelines",
+      "jurisdiction": "US/DGA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "FDA_SUPPLEMENTS_REGULATION",
+      "title": "FDA — Regulation of Dietary Supplements",
+      "url": "https://www.fda.gov/drugs/news-events-human-drugs/fdas-regulation-dietary-supplements-dr-cara-welch",
+      "jurisdiction": "US/FDA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_VITAMIN_A",
+      "title": "NIH ODS — Vitamin A fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminA-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_VITAMIN_E",
+      "title": "NIH ODS — Vitamin E fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminE-Consumer/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_VITAMIN_K",
+      "title": "NIH ODS — Vitamin K fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminK-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_VITAMIN_C",
+      "title": "NIH ODS — Vitamin C fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminC-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_THIAMIN",
+      "title": "NIH ODS — Thiamin fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Thiamin-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_RIBOFLAVIN",
+      "title": "NIH ODS — Riboflavin fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Riboflavin-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_NIACIN",
+      "title": "NIH ODS — Niacin fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Niacin-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_B12",
+      "title": "NIH ODS — Vitamin B12 fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/VitaminB12-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NASEM_SODIUM_POTASSIUM_2019",
+      "title": "National Academies — Dietary Reference Intakes for Sodium and Potassium",
+      "url": "https://www.nationalacademies.org/read/25353/chapter/2",
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "WHO_SALT_POTASSIUM_2013",
+      "title": "WHO — Dietary salt and potassium guidance",
+      "url": "https://www.who.int/news/item/31-01-2013-who-issues-new-guidance-on-dietary-salt-and-potassium",
+      "jurisdiction": "WHO/global",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "CDC_SODIUM_POTASSIUM",
+      "title": "CDC — Effects of Sodium and Potassium",
+      "url": "https://www.cdc.gov/salt/sodium-potassium-health/index.html",
+      "jurisdiction": "US/CDC",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_CALCIUM",
+      "title": "NIH ODS — Calcium fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Calcium-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_MAGNESIUM",
+      "title": "NIH ODS — Magnesium fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Magnesium-Consumer/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_PHOSPHORUS",
+      "title": "NIH ODS — Phosphorus fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Phosphorus-Consumer/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_IRON",
+      "title": "NIH ODS — Iron fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Iron-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_ZINC",
+      "title": "NIH ODS — Zinc fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Zinc-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_IODINE",
+      "title": "NIH ODS — Iodine fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Iodine-Consumer/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_SELENIUM",
+      "title": "NIH ODS — Selenium fact sheet",
+      "url": "https://ods.od.nih.gov/factsheets/Selenium-HealthProfessional/",
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "ESPEN_GERIATRICS_2022",
+      "title": "ESPEN — Clinical nutrition and hydration in geriatrics",
+      "url": "https://www.espen.org/files/ESPEN-Guidelines/ESPEN_practical_guideline_Clinical_nutrition_and_hydration_in_geriatrics.pdf",
+      "jurisdiction": "EU/ESPEN clinical guideline",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "MAYO_UNEXPLAINED_WEIGHT_LOSS",
+      "title": "Mayo Clinic — Unexplained weight loss",
+      "url": "https://www.mayoclinic.org/symptoms/unexplained-weight-loss/basics/when-to-see-doctor/sym-20050700",
+      "jurisdiction": "clinical education",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "FDA_SERVING_SIZE_LABEL",
+      "title": "FDA — Serving Size on the Nutrition Facts Label",
+      "url": "https://www.fda.gov/food/nutrition-facts-label/serving-size-nutrition-facts-label",
+      "jurisdiction": "US/FDA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "FDA_PERCENT_DV",
+      "title": "FDA — Lows and Highs of Percent Daily Value",
+      "url": "https://www.fda.gov/food/nutrition-facts-label/lows-and-highs-percent-daily-value-nutrition-facts-label",
+      "jurisdiction": "US/FDA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "FDA_HEALTHY_CLAIM_2025",
+      "title": "FDA — Updated healthy nutrient content claim",
+      "url": "https://www.fda.gov/food/hfp-constituent-updates/fda-finalizes-updated-healthy-nutrient-content-claim",
+      "jurisdiction": "US/FDA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "CDC_NUTRITION_LABEL",
+      "title": "CDC — Nutrition Facts Label and Your Health",
+      "url": "https://www.cdc.gov/healthy-weight-growth/healthy-eating/nutrition-label.html",
+      "jurisdiction": "US/CDC",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "CDC_MEALS_SNACKS",
+      "title": "CDC — Healthier Meals and Snacks",
+      "url": "https://www.cdc.gov/healthy-weight-growth/healthy-eating/meals-snacks.html",
+      "jurisdiction": "US/CDC",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "ADA_PLATE_METHOD_2023",
+      "title": "American Diabetes Association — Plan Your Plate",
+      "url": "https://professional.diabetes.org/sites/dpro/files/2023-12/pe23_plan_your_plate_v_0.pdf",
+      "jurisdiction": "US/ADA education",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIH_ODS_EXERCISE_PERFORMANCE",
+      "title": "NIH ODS — Exercise and Athletic Performance",
+      "url": "https://ods.od.nih.gov/factsheets/ExerciseAndAthleticPerformance-HealthProfessional/",
+      "jurisdiction": "US/NIH ODS",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NCCIH_WEIGHT_CONTROL",
+      "title": "NCCIH — Weight Control",
+      "url": "https://www.nccih.nih.gov/health/weight-control",
+      "jurisdiction": "US/NCCIH",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "WHO_FREE_SUGARS_2015",
+      "title": "WHO — Free sugars intake (ELENA)",
+      "url": "https://www.who.int/tools/elena/interventions/free-sugars-adults-ncds",
+      "jurisdiction": "WHO/global",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "FDA_ADDED_SUGARS",
+      "title": "FDA — Added Sugars on the Nutrition Facts Label",
+      "url": "https://www.fda.gov/food/nutrition-facts-label/added-sugars-nutrition-facts-label",
+      "jurisdiction": "US/FDA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "WHO_TOTAL_FAT_2023",
+      "title": "WHO — Total fat intake guideline (2023)",
+      "url": "https://www.who.int/publications/i/item/9789240073654",
+      "jurisdiction": "WHO/global",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "AHA_FATS",
+      "title": "American Heart Association — Fats in Foods",
+      "url": "https://www.heart.org/en/healthy-living/healthy-eating/eat-smart/fats/fats-in-foods",
+      "jurisdiction": "US/AHA",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NASEM_WATER_2005",
+      "title": "National Academies — Dietary Reference Intakes for Water",
+      "url": "https://www.nationalacademies.org/read/10925/chapter/6",
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "ACADEMY_RMR",
+      "title": "Academy of Nutrition and Dietetics — Determination of Resting Metabolic Rate",
+      "url": "https://www.andeal.org/template.cfm?key=621",
+      "jurisdiction": "US/Academy",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "MIFFLIN_STJEOR_1990",
+      "title": "Mifflin et al. — A new predictive equation for resting energy expenditure",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/2305711/",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "MORTON_PROTEIN_2018",
+      "title": "Morton et al. — Protein supplementation and resistance training meta-analysis",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/28615996/",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "KETO_LOWCARB_LONGTERM_2024",
+      "title": "Frontiers in Nutrition — Low-carb vs low-fat long-term weight outcomes",
+      "url": "https://www.frontiersin.org/journals/nutrition/articles/10.3389/fnut.2024.1516086/full",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "IF_VS_CR_BMJ_2025",
+      "title": "BMJ (2025) — Intermittent fasting versus continuous calorie restriction",
+      "url": "https://www.bmj.com/content/389/bmj-2024-082007",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "AGA_PROBIOTICS_2020",
+      "title": "American Gastroenterological Association — Probiotics guideline",
+      "url": "https://gastro.org/news/aga-does-not-recommend-the-use-of-probiotics-for-most-digestive-conditions-2/",
+      "jurisdiction": "US/AGA clinical guideline",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "ISAPP_DEFINITIONS",
+      "title": "ISAPP — Consensus definitions (probiotics, prebiotics, postbiotics, fermented foods)",
+      "url": "https://isappscience.org/a-roundup-of-the-isapp-consensus-definitions-probiotics-prebiotics-synbiotics-postbiotics-and-fermented-foods/",
+      "jurisdiction": "scientific consensus",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "PROTEIN_SATIETY_META_2020",
+      "title": "Protein consumption and satiety — meta-analysis",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/32768415/",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "STATPEARLS_APPETITE",
+      "title": "StatPearls — Physiology, Appetite and Weight Regulation",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK574539/",
+      "jurisdiction": "physiology reference",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "NIDDK_DIGESTION",
+      "title": "NIDDK — Your Digestive System & How it Works",
+      "url": "https://www.niddk.nih.gov/health-information/digestive-diseases/digestive-system-how-it-works",
+      "jurisdiction": "US/NIDDK",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "STATPEARLS_ABSORPTION",
+      "title": "StatPearls — Physiology, Nutrient Absorption",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK597379/",
+      "jurisdiction": "physiology reference",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "STATPEARLS_GLUCOSE",
+      "title": "StatPearls — Physiology, Glucose Metabolism",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK560599/",
+      "jurisdiction": "physiology reference",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "STATPEARLS_FASTING",
+      "title": "StatPearls — Physiology, Fasting",
+      "url": "https://www.ncbi.nlm.nih.gov/books/NBK534877/",
+      "jurisdiction": "physiology reference",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "CEBM_LOE",
+      "title": "Oxford CEBM — Levels of Evidence",
+      "url": "https://www.cebm.ox.ac.uk/resources/levels-of-evidence/ocebm-levels-of-evidence",
+      "jurisdiction": "methodology",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "CDC_GRADE",
+      "title": "CDC/ACIP — GRADE criteria for certainty of evidence",
+      "url": "https://www.cdc.gov/acip-grade-handbook/hcp/chapter-7-grade-criteria-determining-certainty-of-evidence/index.html",
+      "jurisdiction": "methodology",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "HABIT_FORMATION_META_2024",
+      "title": "Habit formation time — systematic review and meta-analysis",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11641623/",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    },
+    {
+      "sourceId": "WOOD_NEAL_HABIT_2016",
+      "title": "Wood & Neal — Healthy through habit: behavior change and habit formation",
+      "url": "https://dornsife.usc.edu/wendy-wood/wp-content/uploads/sites/183/2023/10/Wood.Neal_.2016.pdf",
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11"
+    }
+  ],
+  "claims": [
+    {
+      "claimId": "M01-AMDR-DRI-ADULTS",
+      "moduleId": "M01",
+      "kind": "numeric_norm",
+      "claim": "For healthy adults, AMDR reference ranges are carbohydrate 45-65%, protein 10-35%, fat 20-35%, linoleic acid 5-10%, and alpha-linolenic acid 0.6-1.2% of energy.",
+      "sourceId": "NASEM_AMDR_2024",
+      "supportingSourceIds": ["HEALTH_CANADA_DRI_MACROS"],
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M01/theory.md", "content/M01/summary.md"]
+    },
+    {
+      "claimId": "M01-M05-WHO-CARB-RANGES",
+      "moduleId": "M01",
+      "kind": "numeric_norm",
+      "claim": "WHO healthy-diet guidance and carbohydrate guideline summaries use different framing for carbohydrate ranges: about 45-75% in the healthy-diet fact sheet and about 40-70% in guideline evidence summaries.",
+      "sourceId": "WHO_HEALTHY_DIET_2026",
+      "supportingSourceIds": ["WHO_CARBS_NCBI_2023"],
+      "jurisdiction": "WHO/global",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M01/theory.md", "content/M05/theory.md"]
+    },
+    {
+      "claimId": "M02-HALL-DYNAMIC-WEIGHT",
+      "moduleId": "M02",
+      "kind": "evidence_claim",
+      "claim": "The old 3500 kcal per pound rule is incomplete because body-weight response to energy change is dynamic and adapts over time.",
+      "sourceId": "HALL_3500_RULE_2013",
+      "supportingSourceIds": ["HALL_WEIGHT_DYNAMICS_2011"],
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M02/theory.md", "content/M02/summary.md"]
+    },
+    {
+      "claimId": "M04-PROTEIN-BASELINE-SPORT-OLDER",
+      "moduleId": "M04",
+      "kind": "numeric_norm",
+      "claim": "Protein targets vary by context: EFSA adult PRI 0.83 g/kg/day, ISSN exercise range 1.4-2.0 g/kg/day, and PROT-AGE older-adult range at least 1.0-1.2 g/kg/day.",
+      "sourceId": "EFSA_PROTEIN_DRV_2012",
+      "supportingSourceIds": ["ISSN_PROTEIN_EXERCISE_2017", "PROTAGE_OLDER_PROTEIN_2013"],
+      "jurisdiction": "EU/EFSA and expert/sports positions",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M04/theory.md", "content/M04/terms.md", "content/M04/summary.md"]
+    },
+    {
+      "claimId": "M04-M19-CKD-PROTEIN",
+      "moduleId": "M04",
+      "kind": "safety_claim",
+      "claim": "Adults with CKD G3-G5 are not covered by general high-protein guidance; KDIGO suggests 0.8 g/kg/day and avoiding high protein intake above 1.3 g/kg/day in those at risk of progression.",
+      "sourceId": "KDIGO_CKD_2024",
+      "supportingSourceIds": ["NIDDK_CKD_EATING_2026"],
+      "jurisdiction": "clinical guideline",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M04/theory.md", "content/M04/quiz.md", "content/M19/theory.md"]
+    },
+    {
+      "claimId": "M08-VITAMIN-A-RDA-UL",
+      "moduleId": "M08",
+      "kind": "safety_claim",
+      "claim": "For adults, vitamin A RDA is 900 mcg RAE/day for men and 700 mcg RAE/day for women; the adult UL for preformed vitamin A is 3000 mcg RAE/day and applies to retinol/retinyl ester sources, not ordinary provitamin A carotenoids from foods.",
+      "sourceId": "NIH_ODS_VITAMIN_A",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M08/theory.md", "content/M08/quiz.md", "content/M08/practice.md", "content/M08/terms.md", "content/M08/summary.md", "content/M08/diagrams.md"]
+    },
+    {
+      "claimId": "M08-VITAMIN-D-RDA-STATUS",
+      "moduleId": "M08",
+      "kind": "numeric_norm",
+      "claim": "For adults, vitamin D RDA is 15 mcg/day from ages 19-70 and 20 mcg/day after age 70; 25(OH)D is the main status marker, with less than 30 nmol/L linked to deficiency risk, 30 to less than 50 nmol/L generally inadequate, and 50 nmol/L or more generally adequate for most healthy people.",
+      "sourceId": "NIH_ODS_VITAMIN_D",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M08/theory.md", "content/M08/quiz.md", "content/M08/practice.md", "content/M08/terms.md", "content/M08/summary.md", "content/M08/diagrams.md"]
+    },
+    {
+      "claimId": "M08-VITAMIN-E-RDA-UL",
+      "moduleId": "M08",
+      "kind": "safety_claim",
+      "claim": "Adult vitamin E RDA is 15 mg/day alpha-tocopherol; high-dose vitamin E supplements can increase bleeding risk, and the adult supplement UL is 1000 mg/day.",
+      "sourceId": "NIH_ODS_VITAMIN_E",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M08/theory.md", "content/M08/quiz.md", "content/M08/practice.md", "content/M08/summary.md", "content/M08/diagrams.md"]
+    },
+    {
+      "claimId": "M08-VITAMIN-K-AI-WARFARIN",
+      "moduleId": "M08",
+      "kind": "safety_claim",
+      "claim": "Adult vitamin K AI is 120 mcg/day for men and 90 mcg/day for women; people taking warfarin or similar anticoagulants should keep vitamin K intake consistent because sudden changes can alter anticoagulant effect.",
+      "sourceId": "NIH_ODS_VITAMIN_K",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M08/theory.md", "content/M08/terms.md", "content/M08/summary.md", "content/M08/diagrams.md"]
+    },
+    {
+      "claimId": "M09-VITAMIN-C-RDA-UL-COLDS",
+      "moduleId": "M09",
+      "kind": "safety_claim",
+      "claim": "Adult vitamin C RDA is 90 mg/day for men and 75 mg/day for women, with smokers needing an additional 35 mg/day; the adult UL is 2000 mg/day, and regular intakes of at least 200 mg/day do not reduce common-cold incidence in the general population though they may slightly shorten duration.",
+      "sourceId": "NIH_ODS_VITAMIN_C",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M09/theory.md", "content/M09/quiz.md", "content/M09/practice.md", "content/M09/terms.md", "content/M09/summary.md", "content/M09/diagrams.md"]
+    },
+    {
+      "claimId": "M09-B1-B2-B3-RDA",
+      "moduleId": "M09",
+      "kind": "numeric_norm",
+      "claim": "Adult RDAs are thiamin 1.2 mg/day for men and 1.1 mg/day for women, riboflavin 1.3 mg/day for men and 1.1 mg/day for women, and niacin 16 mg NE/day for men and 14 mg NE/day for women.",
+      "sourceId": "NIH_ODS_THIAMIN",
+      "supportingSourceIds": ["NIH_ODS_RIBOFLAVIN", "NIH_ODS_NIACIN"],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M09/theory.md", "content/M09/practice.md", "content/M09/terms.md", "content/M09/summary.md", "content/M09/diagrams.md"]
+    },
+    {
+      "claimId": "M09-NIACIN-HIGH-DOSE-SAFETY",
+      "moduleId": "M09",
+      "kind": "safety_claim",
+      "claim": "High-dose nicotinic acid can improve lipid markers but has not shown clear cardiovascular event reduction when added to statin therapy and can cause flushing, hepatotoxicity, hyperglycemia, and other adverse effects; pharmacologic doses require medical supervision.",
+      "sourceId": "NIH_ODS_NIACIN",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB/clinical use",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M09/theory.md", "content/M09/summary.md", "content/M09/diagrams.md"]
+    },
+    {
+      "claimId": "M09-M22-B12-VEGAN-RISK",
+      "moduleId": "M09",
+      "kind": "safety_claim",
+      "claim": "Adult vitamin B12 RDA is 2.4 mcg/day; unfortified plant foods are not reliable natural B12 sources, vegans need fortified foods or supplements, and B12 deficiency can produce neurologic symptoms even without anemia.",
+      "sourceId": "NIH_ODS_B12",
+      "supportingSourceIds": ["AND_VEGETARIAN_2025"],
+      "jurisdiction": "US/FNB and Academy position paper",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M09/theory.md", "content/M09/quiz.md", "content/M09/practice.md", "content/M09/terms.md", "content/M09/summary.md", "content/M09/diagrams.md", "content/M19/theory.md", "content/M22/terms.md", "content/M22/summary.md", "content/M22/quiz.md"]
+    },
+    {
+      "claimId": "M10-SODIUM-US-WHO",
+      "moduleId": "M10",
+      "kind": "numeric_norm",
+      "claim": "US/Canada DRI sets adult sodium AI at 1500 mg/day and CDRR at reducing intake above 2300 mg/day; WHO guidance for adults is less than 2000 mg sodium/day, equivalent to less than 5 g salt/day.",
+      "sourceId": "NASEM_SODIUM_POTASSIUM_2019",
+      "supportingSourceIds": ["WHO_SALT_POTASSIUM_2013", "CDC_SODIUM_POTASSIUM"],
+      "jurisdiction": "US/Canada DRI and WHO/global",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M10/theory.md", "content/M10/terms.md", "content/M10/summary.md", "content/M10/diagrams.md", "content/M10/practice.md"]
+    },
+    {
+      "claimId": "M10-POTASSIUM-US-WHO-CKD",
+      "moduleId": "M10",
+      "kind": "safety_claim",
+      "claim": "US/Canada potassium AI is 3400 mg/day for adult men and 2600 mg/day for adult women, while WHO guidance is at least 3510 mg/day; high potassium intake from supplements or salt substitutes needs caution in people with kidney disease or relevant medication use.",
+      "sourceId": "NASEM_SODIUM_POTASSIUM_2019",
+      "supportingSourceIds": ["WHO_SALT_POTASSIUM_2013", "NIDDK_CKD_EATING_2026"],
+      "jurisdiction": "US/Canada DRI and WHO/global",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M10/theory.md", "content/M10/terms.md", "content/M10/summary.md", "content/M10/diagrams.md", "content/M10/practice.md", "content/M19/theory.md"]
+    },
+    {
+      "claimId": "M10-CALCIUM-RDA-UL-SUPPLEMENTS",
+      "moduleId": "M10",
+      "kind": "safety_claim",
+      "claim": "Adult calcium RDA is 1000 mg/day for most adults and 1200 mg/day for women 51+ and all adults over 70; adult UL ranges from 2000 to 2500 mg/day by age, and higher supplemental calcium intakes may increase kidney-stone risk.",
+      "sourceId": "NIH_ODS_CALCIUM",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M10/theory.md", "content/M10/quiz.md", "content/M10/terms.md", "content/M10/summary.md", "content/M10/diagrams.md"]
+    },
+    {
+      "claimId": "M10-MAGNESIUM-RDA-SUPPLEMENT-UL",
+      "moduleId": "M10",
+      "kind": "safety_claim",
+      "claim": "Adult magnesium RDA is 400-420 mg/day for men and 310-320 mg/day for women; the 350 mg/day adult UL applies only to magnesium from supplements and medications, and excess supplemental magnesium can cause gastrointestinal effects and serious toxicity at extreme intakes.",
+      "sourceId": "NIH_ODS_MAGNESIUM",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M10/theory.md", "content/M10/quiz.md", "content/M10/practice.md", "content/M10/terms.md", "content/M10/summary.md", "content/M10/diagrams.md"]
+    },
+    {
+      "claimId": "M10-PHOSPHORUS-CKD",
+      "moduleId": "M10",
+      "kind": "safety_claim",
+      "claim": "Adult phosphorus RDA is 700 mg/day; in severe CKD, excess phosphorus can build up because kidneys cannot clear it adequately, affecting bone health and worsening kidney disease risk.",
+      "sourceId": "NIH_ODS_PHOSPHORUS",
+      "supportingSourceIds": ["NIDDK_CKD_EATING_2026"],
+      "jurisdiction": "US/FNB/NIDDK",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M10/theory.md", "content/M10/terms.md", "content/M10/summary.md", "content/M10/diagrams.md", "content/M19/theory.md"]
+    },
+    {
+      "claimId": "M11-IRON-RDA-BIOAVAILABILITY",
+      "moduleId": "M11",
+      "kind": "numeric_norm",
+      "claim": "Adult iron RDA is 8 mg/day for men and adults 51+, and 18 mg/day for women ages 19-50; estimated iron bioavailability is about 14-18% from mixed diets with meat/seafood/vitamin C and 5-12% from vegetarian diets.",
+      "sourceId": "NIH_ODS_IRON",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M11/theory.md", "content/M11/quiz.md", "content/M11/practice.md", "content/M11/terms.md", "content/M11/summary.md", "content/M11/diagrams.md"]
+    },
+    {
+      "claimId": "M11-ZINC-RDA-BIOAVAILABILITY-EXCESS",
+      "moduleId": "M11",
+      "kind": "safety_claim",
+      "claim": "Adult zinc RDA is 11 mg/day for men and 8 mg/day for women; zinc absorption from food can range from about 5% to more than 50% depending on phytate load, and supplemental zinc doses of 50 mg/day or more for weeks can inhibit copper absorption and reduce immune function.",
+      "sourceId": "NIH_ODS_ZINC",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M11/theory.md", "content/M11/quiz.md", "content/M11/terms.md", "content/M11/summary.md", "content/M11/diagrams.md"]
+    },
+    {
+      "claimId": "M11-IODINE-RDA-PREGNANCY",
+      "moduleId": "M11",
+      "kind": "safety_claim",
+      "claim": "Iodine recommended intake is 150 mcg/day for adults, 220 mcg/day during pregnancy, and 290 mcg/day during lactation; inadequate iodine is especially important during pregnancy and early childhood because thyroid hormone is needed for neurodevelopment.",
+      "sourceId": "NIH_ODS_IODINE",
+      "supportingSourceIds": ["NIH_ODS_PREGNANCY"],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M11/theory.md", "content/M11/practice.md", "content/M11/terms.md", "content/M11/summary.md", "content/M11/diagrams.md", "content/M19/theory.md"]
+    },
+    {
+      "claimId": "M11-SELENIUM-RDA-UL",
+      "moduleId": "M11",
+      "kind": "safety_claim",
+      "claim": "Adult selenium RDA is 55 mcg/day and adult UL is 400 mcg/day; Brazil nuts can contain very high selenium amounts and chronic excessive intake can cause selenosis symptoms such as hair loss, brittle nails, gastrointestinal symptoms, and garlic breath.",
+      "sourceId": "NIH_ODS_SELENIUM",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M11/theory.md", "content/M11/quiz.md", "content/M11/terms.md", "content/M11/summary.md"]
+    },
+    {
+      "claimId": "M09-M22-B6-UL-US-EU",
+      "moduleId": "M09",
+      "kind": "safety_claim",
+      "claim": "Vitamin B6 upper limits differ by jurisdiction: US FNB 100 mg/day for adults, EFSA 12 mg/day for adults. Chronic high-dose supplementation can cause sensory neuropathy.",
+      "sourceId": "NIH_ODS_B6",
+      "supportingSourceIds": ["EFSA_B6_UL_2023"],
+      "jurisdiction": "US/FNB and EU/EFSA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M09/theory.md", "content/M09/quiz.md", "content/M09/practice.md", "content/M09/terms.md", "content/M09/summary.md", "content/M09/diagrams.md", "content/M22/practice.md"]
+    },
+    {
+      "claimId": "M09-M22-FOLATE-PREGNANCY",
+      "moduleId": "M09",
+      "kind": "safety_claim",
+      "claim": "People who could become pregnant are commonly advised to consume 400 mcg/day folic acid from supplements or fortified foods; synthetic folic acid UL is 1000 mcg/day for adults.",
+      "sourceId": "NIH_ODS_FOLATE",
+      "supportingSourceIds": ["NIH_ODS_PREGNANCY"],
+      "jurisdiction": "US/FNB/CDC",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M09/theory.md", "content/M09/quiz.md", "content/M09/practice.md", "content/M09/terms.md", "content/M09/summary.md", "content/M09/diagrams.md", "content/M19/theory.md", "content/M19/quiz.md", "content/M19/terms.md", "content/M22/theory.md", "content/M22/quiz.md", "content/M22/practice.md", "content/M22/terms.md", "content/M22/summary.md", "content/M22/diagrams.md"]
+    },
+    {
+      "claimId": "M17-WEIGHT-LOSS-RATE",
+      "moduleId": "M17",
+      "kind": "numeric_norm",
+      "claim": "Gradual weight loss around 1-2 lb per week is more likely to be maintained than faster loss.",
+      "sourceId": "CDC_WEIGHT_LOSS_2025",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/CDC",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M17/theory.md", "content/M17/quiz.md"]
+    },
+    {
+      "claimId": "M17-ADAPTIVE-THERMOGENESIS",
+      "moduleId": "M17",
+      "kind": "evidence_claim",
+      "claim": "Adaptive thermogenesis after weight loss may occur, but estimates vary and higher-quality methods often show smaller or non-significant values.",
+      "sourceId": "CAMBRIDGE_AT_REVIEW_2022",
+      "supportingSourceIds": [],
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M17/theory.md", "content/M17/terms.md"]
+    },
+    {
+      "claimId": "M19-PREGNANCY-ENERGY-NUTRIENTS",
+      "moduleId": "M19",
+      "kind": "safety_claim",
+      "claim": "Pregnancy and lactation energy and nutrient needs differ from the course baseline; key concerns include folic acid, iron, calcium, vitamin D, choline, iodine, and omega-3 status.",
+      "sourceId": "CDC_PREGNANCY_ENERGY",
+      "supportingSourceIds": ["ACOG_HEALTHY_EATING", "NIH_ODS_PREGNANCY"],
+      "jurisdiction": "US/CDC/ACOG/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M19/theory.md", "content/M19/quiz.md", "content/M19/practice.md", "content/M19/terms.md", "content/M19/summary.md", "content/M19/diagrams.md", "content/M22/theory.md", "content/M22/terms.md", "content/M22/summary.md"]
+    },
+    {
+      "claimId": "M19-VEGAN-RISK-POINTS",
+      "moduleId": "M19",
+      "kind": "safety_claim",
+      "claim": "Appropriately planned vegetarian and vegan adult dietary patterns can be nutritionally adequate, but vegan diets require active B12 planning and attention to other risk nutrients.",
+      "sourceId": "AND_VEGETARIAN_2025",
+      "supportingSourceIds": ["NIH_ODS_FOLATE"],
+      "jurisdiction": "US/Academy position paper",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M19/theory.md", "content/M19/quiz.md", "content/M19/practice.md", "content/M19/terms.md", "content/M19/summary.md", "content/M19/diagrams.md", "content/M22/quiz.md", "content/M22/terms.md", "content/M22/summary.md"]
+    },
+    {
+      "claimId": "M19-DIABETES-MACROS-CKD",
+      "moduleId": "M19",
+      "kind": "safety_claim",
+      "claim": "For diabetes, there is no ideal universal macro split; nutrition is individualized, especially with hypoglycemia-capable medication use or kidney disease.",
+      "sourceId": "ADA_DIABETES_NUTRITION_2026",
+      "supportingSourceIds": ["NIDDK_CKD_EATING_2026"],
+      "jurisdiction": "US/ADA/NIDDK",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M19/theory.md", "content/M19/quiz.md", "content/M19/practice.md", "content/M19/summary.md", "content/M19/diagrams.md"]
+    },
+    {
+      "claimId": "M19-ANAPHYLAXIS-EMERGENCY",
+      "moduleId": "M19",
+      "kind": "safety_claim",
+      "claim": "Food-allergy symptoms suggestive of anaphylaxis require epinephrine if prescribed and immediate emergency help rather than waiting.",
+      "sourceId": "AAAAI_FOOD_ALLERGY",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/allergy education",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M19/theory.md", "content/M19/quiz.md", "content/M19/practice.md", "content/M19/summary.md", "content/M19/diagrams.md"]
+    },
+    {
+      "claimId": "M22-VITAMIN-D-UL",
+      "moduleId": "M22",
+      "kind": "safety_claim",
+      "claim": "For most adults, 25(OH)D at or above 20 ng/mL is sufficient, and the adult vitamin D UL is 4000 IU/day unless a clinician prescribes otherwise.",
+      "sourceId": "NIH_ODS_VITAMIN_D",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M08/theory.md", "content/M08/quiz.md", "content/M08/practice.md", "content/M08/terms.md", "content/M08/summary.md", "content/M08/diagrams.md", "content/M22/theory.md", "content/M22/quiz.md", "content/M22/practice.md", "content/M22/terms.md", "content/M22/summary.md", "content/M22/diagrams.md"]
+    },
+    {
+      "claimId": "M22-OMEGA3-HIGH-DOSE-AF",
+      "moduleId": "M22",
+      "kind": "safety_claim",
+      "claim": "High-dose omega-3 products around 4 g/day are used for specific indications under supervision; large trials found a slight atrial-fibrillation risk increase in people with CVD or high CVD risk.",
+      "sourceId": "NIH_ODS_OMEGA3",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FNB/FDA/AHA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M22/theory.md", "content/M22/quiz.md", "content/M22/practice.md", "content/M22/terms.md", "content/M22/summary.md", "content/M22/diagrams.md"]
+    },
+    {
+      "claimId": "M19-OLDER-ADULT-PROTEIN-ESPEN",
+      "moduleId": "M19",
+      "kind": "numeric_norm",
+      "claim": "ESPEN practical guidance states that protein intake in older persons should be at least 1.0 g/kg/day and individualized by nutritional status, activity, disease status, and tolerance; higher ranges such as 1.2-1.5 g/kg/day are suggested for acute or chronic illness.",
+      "sourceId": "ESPEN_GERIATRICS_2022",
+      "supportingSourceIds": ["PROTAGE_OLDER_PROTEIN_2013"],
+      "jurisdiction": "EU/ESPEN clinical guideline",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M19/theory.md", "content/M19/quiz.md", "content/M19/practice.md", "content/M19/terms.md", "content/M19/summary.md", "content/M19/diagrams.md"]
+    },
+    {
+      "claimId": "M19-UNEXPLAINED-WEIGHT-LOSS-5PCT",
+      "moduleId": "M19",
+      "kind": "safety_claim",
+      "claim": "Unintentional loss of more than about 5% of body weight over 6-12 months is a clinical concern and a reason to talk with a healthcare professional, especially in older adults or people with ongoing medical issues.",
+      "sourceId": "MAYO_UNEXPLAINED_WEIGHT_LOSS",
+      "supportingSourceIds": [],
+      "jurisdiction": "clinical education",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M19/theory.md", "content/M19/quiz.md", "content/M19/practice.md", "content/M19/terms.md", "content/M19/summary.md", "content/M19/diagrams.md"]
+    },
+    {
+      "claimId": "M20-SERVING-SIZE-NOT-RECOMMENDATION",
+      "moduleId": "M20",
+      "kind": "evidence_claim",
+      "claim": "FDA explains that serving size on the Nutrition Facts label is based on amounts people typically consume, not a recommendation for how much to eat, and multi-serving packages may use dual-column labels for per-serving and per-package values.",
+      "sourceId": "FDA_SERVING_SIZE_LABEL",
+      "supportingSourceIds": ["CDC_NUTRITION_LABEL"],
+      "jurisdiction": "US/FDA/CDC",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M20/theory.md", "content/M20/quiz.md", "content/M20/practice.md", "content/M20/summary.md", "content/M20/diagrams.md"]
+    },
+    {
+      "claimId": "M20-PERCENT-DV-5-20",
+      "moduleId": "M20",
+      "kind": "numeric_norm",
+      "claim": "FDA's general %DV guide treats 5% DV or less per serving as low and 20% DV or more per serving as high, with higher fiber/vitamin D/calcium/iron/potassium and lower saturated fat/sodium/added sugars often preferred.",
+      "sourceId": "FDA_PERCENT_DV",
+      "supportingSourceIds": ["CDC_NUTRITION_LABEL"],
+      "jurisdiction": "US/FDA/CDC",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M20/theory.md", "content/M20/quiz.md", "content/M20/practice.md", "content/M20/terms.md", "content/M20/summary.md", "content/M20/diagrams.md"]
+    },
+    {
+      "claimId": "M20-FDA-HEALTHY-CLAIM-UPDATED",
+      "moduleId": "M20",
+      "kind": "evidence_claim",
+      "claim": "FDA finalized updated criteria for the voluntary 'healthy' nutrient content claim, requiring qualifying food-group amounts and limits for saturated fat, sodium, and added sugars.",
+      "sourceId": "FDA_HEALTHY_CLAIM_2025",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/FDA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M20/theory.md", "content/M20/terms.md"]
+    },
+    {
+      "claimId": "M21-PLATE-METHOD-PORTION-GUIDE",
+      "moduleId": "M21",
+      "kind": "numeric_norm",
+      "claim": "ADA's plate method uses a nine-inch plate divided into 1/2 non-starchy vegetables, 1/4 carbohydrate foods, and 1/4 protein; the protein section is roughly a three-ounce cooked portion, about the size of a deck of cards or palm.",
+      "sourceId": "ADA_PLATE_METHOD_2023",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/ADA education",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M21/theory.md", "content/M21/quiz.md", "content/M21/terms.md", "content/M21/summary.md", "content/M21/diagrams.md"]
+    },
+    {
+      "claimId": "M21-MEAL-PLANNING-CDC",
+      "moduleId": "M21",
+      "kind": "evidence_claim",
+      "claim": "CDC meal-and-snack guidance supports practical planning such as keeping healthier options available and planning meals ahead to reduce last-minute choices; this is a behavior aid, not a precise medical prescription.",
+      "sourceId": "CDC_MEALS_SNACKS",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/CDC",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M21/theory.md", "content/M21/quiz.md", "content/M21/practice.md", "content/M21/summary.md", "content/M21/diagrams.md"]
+    },
+    {
+      "claimId": "M22-CREATINE-SPORT-QUALITY",
+      "moduleId": "M22",
+      "kind": "safety_claim",
+      "claim": "NIH ODS describes creatine as a well-studied sports supplement for high-intensity exercise contexts, while third-party certification can provide extra independent assurance that products contain labeled ingredients and are free of many banned substances.",
+      "sourceId": "NIH_ODS_EXERCISE_PERFORMANCE",
+      "supportingSourceIds": ["FDA_SUPPLEMENTS_REGULATION"],
+      "jurisdiction": "US/NIH ODS/FDA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M22/theory.md", "content/M22/quiz.md", "content/M22/terms.md", "content/M22/summary.md", "content/M22/diagrams.md"]
+    },
+    {
+      "claimId": "M22-WEIGHT-LOSS-DETOX-SUPPLEMENTS",
+      "moduleId": "M22",
+      "kind": "safety_claim",
+      "claim": "NCCIH weight-control guidance does not support broad supplement promises for long-term weight control; rapid weight-loss, fat-burning, and detox claims should be treated as weak-evidence and safety-sensitive unless a specific indication is established.",
+      "sourceId": "NCCIH_WEIGHT_CONTROL",
+      "supportingSourceIds": ["FDA_SUPPLEMENTS_REGULATION"],
+      "jurisdiction": "US/NCCIH/FDA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M22/theory.md", "content/M22/quiz.md", "content/M22/practice.md", "content/M22/summary.md"]
+    },
+    {
+      "claimId": "M22-SUPPLEMENT-REGULATION",
+      "moduleId": "M22",
+      "kind": "safety_claim",
+      "claim": "Dietary supplements are not approved by FDA before marketing in the same way as drugs; users should prefer specific indications and quality controls over broad wellness promises.",
+      "sourceId": "FDA_SUPPLEMENTS_REGULATION",
+      "supportingSourceIds": ["ODPHP_DGA_2025_2030"],
+      "jurisdiction": "US/FDA/DGA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M22/theory.md", "content/M22/quiz.md", "content/M22/practice.md", "content/M22/terms.md", "content/M22/summary.md", "content/M22/diagrams.md"]
+    },
+    {
+      "claimId": "M03-GRADE-CERTAINTY-VS-DESIGN",
+      "moduleId": "M03",
+      "kind": "evidence_claim",
+      "claim": "Evidence hierarchies rank study designs, but GRADE assesses certainty in a specific result rather than the design label: interventional RCTs typically start as high certainty and observational studies as low certainty, and a high-tier design does not by itself guarantee high certainty.",
+      "sourceId": "CEBM_LOE",
+      "supportingSourceIds": ["CDC_GRADE"],
+      "jurisdiction": "methodology",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M03/theory.md", "content/M03/summary.md"]
+    },
+    {
+      "claimId": "M05-CARB-RDA-AMDR",
+      "moduleId": "M05",
+      "kind": "numeric_norm",
+      "claim": "The digestible-carbohydrate RDA is 130 g/day, set to cover brain glucose needs, and the carbohydrate AMDR is 45-65% of energy.",
+      "sourceId": "NASEM_AMDR_2024",
+      "supportingSourceIds": ["HEALTH_CANADA_DRI_MACROS"],
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M05/theory.md", "content/M05/summary.md"]
+    },
+    {
+      "claimId": "M05-FREE-VS-ADDED-SUGARS",
+      "moduleId": "M05",
+      "kind": "numeric_norm",
+      "claim": "WHO recommends free sugars below 10% of energy (about under 50 g/day on a 2000 kcal diet), with conditional extra benefit below 5%, while FDA's added-sugars label target is below 10% of calories; WHO free sugars are broader than FDA added sugars because they also include sugars naturally present in honey, syrups, and fruit juices.",
+      "sourceId": "WHO_FREE_SUGARS_2015",
+      "supportingSourceIds": ["FDA_ADDED_SUGARS"],
+      "jurisdiction": "WHO/global and US/FDA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M05/theory.md", "content/M05/summary.md"]
+    },
+    {
+      "claimId": "M06-FAT-TYPE-LIMITS",
+      "moduleId": "M06",
+      "kind": "safety_claim",
+      "claim": "Total fat AMDR is 20-35% of energy; WHO advises saturated fat at or below 10% of energy and industrial trans fat at or below 1% with a goal of elimination, and AHA suggests under 6% of calories from saturated fat for people needing to lower LDL. Industrial trans fats uniquely raise LDL and lower HDL.",
+      "sourceId": "WHO_TOTAL_FAT_2023",
+      "supportingSourceIds": ["AHA_FATS"],
+      "jurisdiction": "WHO/global and US/AHA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M06/theory.md", "content/M06/summary.md"]
+    },
+    {
+      "claimId": "M06-ESSENTIAL-FATTY-ACIDS",
+      "moduleId": "M06",
+      "kind": "numeric_norm",
+      "claim": "Essential fatty-acid AIs for adults 19-50 are linoleic acid (omega-6) 17 g/day for men and 12 g/day for women, and alpha-linolenic acid (omega-3) 1.6 g/day for men and 1.1 g/day for women; EFSA suggests about 250 mg/day EPA+DHA for cardiovascular benefit, and major bodies set separate LA and ALA targets rather than a single ideal omega-6/omega-3 ratio.",
+      "sourceId": "HEALTH_CANADA_DRI_MACROS",
+      "supportingSourceIds": ["NIH_ODS_OMEGA3"],
+      "jurisdiction": "US/Canada DRI and EU/EFSA",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M06/theory.md", "content/M06/terms.md", "content/M06/summary.md"]
+    },
+    {
+      "claimId": "M07-FIBER-DRI",
+      "moduleId": "M07",
+      "kind": "numeric_norm",
+      "claim": "Adequate fiber intake per DRI is about 14 g per 1000 kcal, roughly 38 g/day for younger men and 25 g/day for women; reference targets decline after age 50 along with average energy needs.",
+      "sourceId": "HEALTH_CANADA_DRI_MACROS",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M07/theory.md", "content/M07/terms.md", "content/M07/summary.md"]
+    },
+    {
+      "claimId": "M07-WATER-NO-UNIVERSAL-TARGET",
+      "moduleId": "M07",
+      "kind": "numeric_norm",
+      "claim": "There is no single universal daily water target; the US/Canada total-water AI is about 3.7 L/day for men and 2.7 L/day for women including water from both beverages and food (about 19% from food), and needs rise with heat, physical activity, fever, vomiting, or diarrhea.",
+      "sourceId": "NASEM_WATER_2005",
+      "supportingSourceIds": [],
+      "jurisdiction": "US/Canada DRI",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M07/theory.md", "content/M07/summary.md"]
+    },
+    {
+      "claimId": "M12-SMALL-INTESTINE-BILE-B12",
+      "moduleId": "M12",
+      "kind": "evidence_claim",
+      "claim": "Most nutrient digestion and absorption occurs in the small intestine rather than the stomach; bile is an emulsifier produced by the liver, not an enzyme, and vitamin B12 is absorbed in the terminal ileum only when bound to intrinsic factor.",
+      "sourceId": "NIDDK_DIGESTION",
+      "supportingSourceIds": ["STATPEARLS_ABSORPTION"],
+      "jurisdiction": "US/NIDDK and physiology reference",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M12/theory.md", "content/M12/summary.md"]
+    },
+    {
+      "claimId": "M13-FED-FASTED-SWITCHING",
+      "moduleId": "M13",
+      "kind": "evidence_claim",
+      "claim": "In the fed state insulin drives storage (glycogen, triglycerides, protein synthesis); during fasting the body shifts through glycogenolysis, then gluconeogenesis, lipolysis, and ketogenesis. There is no dedicated protein storage depot, so protein is a structural nutrient rather than stored fuel.",
+      "sourceId": "STATPEARLS_GLUCOSE",
+      "supportingSourceIds": ["STATPEARLS_FASTING"],
+      "jurisdiction": "physiology reference",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M13/theory.md", "content/M13/summary.md"]
+    },
+    {
+      "claimId": "M14-APPETITE-MULTISIGNAL",
+      "moduleId": "M14",
+      "kind": "evidence_claim",
+      "claim": "Appetite is a multi-signal system: ghrelin signals hunger before meals, leptin reports long-term fat stores, and CCK, PYY, and GLP-1 plus gastric stretch signal fullness during meals, so no single-hormone supplement 'hack' is physiologic; higher-protein meals are reliably more satiating.",
+      "sourceId": "STATPEARLS_APPETITE",
+      "supportingSourceIds": ["PROTEIN_SATIETY_META_2020"],
+      "jurisdiction": "physiology reference and research",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M14/theory.md", "content/M14/summary.md"]
+    },
+    {
+      "claimId": "M15-PROBIOTICS-STRAIN-SPECIFIC",
+      "moduleId": "M15",
+      "kind": "safety_claim",
+      "claim": "The American Gastroenterological Association does not recommend routine probiotics for most digestive conditions because evidence is insufficient, and any effect is strain-specific; ISAPP consensus separates prebiotics, probiotics, postbiotics, and fermented foods, so a 'probiotic' or 'fermented' label alone does not guarantee benefit.",
+      "sourceId": "AGA_PROBIOTICS_2020",
+      "supportingSourceIds": ["ISAPP_DEFINITIONS"],
+      "jurisdiction": "US/AGA and scientific consensus",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M15/theory.md", "content/M15/terms.md", "content/M15/summary.md"]
+    },
+    {
+      "claimId": "M16-RMR-EQUATION-CHOICE",
+      "moduleId": "M16",
+      "kind": "evidence_claim",
+      "claim": "When indirect calorimetry is unavailable, predictive equations estimate resting metabolic rate, and the Academy of Nutrition and Dietetics finds the Mifflin-St Jeor equation generally more accurate for adults, including people with overweight, than the older Harris-Benedict equation; a calculator is a starting estimate to be validated by the weight trend over 2-3 weeks.",
+      "sourceId": "ACADEMY_RMR",
+      "supportingSourceIds": ["MIFFLIN_STJEOR_1990"],
+      "jurisdiction": "US/Academy",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M16/theory.md", "content/M16/summary.md"]
+    },
+    {
+      "claimId": "M18-PROTEIN-PLATEAU-CREATINE",
+      "moduleId": "M18",
+      "kind": "numeric_norm",
+      "claim": "For trained people the ISSN protein range is 1.4-2.0 g/kg/day, and a meta-analysis places the hypertrophy benefit plateau around 1.6 g/kg/day; creatine monohydrate at about 3-5 g/day (optionally a loading phase near 0.3 g/kg/day for 5-7 days) is the most evidence-backed performance supplement and is well tolerated by healthy adults.",
+      "sourceId": "ISSN_PROTEIN_EXERCISE_2017",
+      "supportingSourceIds": ["MORTON_PROTEIN_2018"],
+      "jurisdiction": "sports nutrition position stand and research",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M18/theory.md", "content/M18/summary.md"]
+    },
+    {
+      "claimId": "M23-FAD-DIETS-WORK-VIA-DEFICIT",
+      "moduleId": "M23",
+      "kind": "evidence_claim",
+      "claim": "Popular diets such as keto and intermittent fasting produce weight outcomes broadly similar to ordinary calorie restriction over the long term, working through energy deficit, structure, and adherence rather than metabolic magic; detox/cleanse and alkaline-diet weight or health claims are not supported by evidence.",
+      "sourceId": "KETO_LOWCARB_LONGTERM_2024",
+      "supportingSourceIds": ["IF_VS_CR_BMJ_2025", "NCCIH_WEIGHT_CONTROL"],
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M23/theory.md", "content/M23/summary.md"]
+    },
+    {
+      "claimId": "M24-HABIT-FORMATION-TIME",
+      "moduleId": "M24",
+      "kind": "evidence_claim",
+      "claim": "Habit-formation research finds new habits typically take on the order of two months to become automatic, not 21 days, with wide individual variation; durable behavior change relies on repeating an action in a stable context and redesigning the environment rather than on sustained willpower.",
+      "sourceId": "HABIT_FORMATION_META_2024",
+      "supportingSourceIds": ["WOOD_NEAL_HABIT_2016"],
+      "jurisdiction": "research",
+      "reviewedAt": "2026-06-11",
+      "files": ["content/M24/theory.md", "content/M24/summary.md"]
+    }
+  ]
+}

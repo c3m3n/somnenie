@@ -1,0 +1,15 @@
+.vercel
+tools/*
+!tools/postbuild.mjs
+!tools/load-static-config.mjs
+start.bat
+TODO.md
+.codex-shots
+20.txt
+AGENTS.md
+audit-plan.md
+audit
+docs
+style-lab
+Задача *.md
+МАНИФЕСТ.md
