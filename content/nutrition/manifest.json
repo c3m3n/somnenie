@@ -1,8 +1,9 @@
 {
   "schemaVersion": 1,
   "contentVersion": "2026-06-11-manifest-v1",
-  "course": "content/course.json",
-  "claims": "content/claims.json",
+  "courseId": "nutrition",
+  "course": "content/nutrition/course.json",
+  "claims": "content/nutrition/claims.json",
   "moduleFiles": ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"],
   "modules": [
     {

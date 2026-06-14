@@ -1,18 +1,18 @@
 {
-  "name": "Somnenie — нутрициология без мифов",
+  "name": "Somnenie — курсы",
   "short_name": "Somnenie",
-  "description": "Доказательный курс по нутрициологии: маршрут, зачёты и тренажёр слабых мест. Работает офлайн.",
+  "description": "Пошаговые курсы с маршрутом, зачётами и тренажёром слабых мест. Работает офлайн.",
   "id": "./",
   "lang": "ru",
   "dir": "ltr",
-  "start_url": "./index.html#today",
+  "start_url": "./index.html#/courses",
   "scope": "./",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "any",
   "background_color": "#ecefed",
   "theme_color": "#ecefed",
-  "categories": ["education", "health", "books"],
+  "categories": ["education", "books"],
   "prefer_related_applications": false,
   "icons": [
     { "src": "icons/favicon-32.png", "sizes": "32x32", "type": "image/png", "purpose": "any" },
@@ -23,31 +23,38 @@
   ],
   "shortcuts": [
     {
+      "name": "Курсы",
+      "short_name": "Курсы",
+      "description": "Открыть каталог курсов.",
+      "url": "./index.html#/courses",
+      "icons": [{ "src": "assets/generated/icon-today.png", "sizes": "256x256", "type": "image/png" }]
+    },
+    {
       "name": "Дальше",
       "short_name": "Дальше",
       "description": "Открыть следующий учебный шаг.",
-      "url": "./index.html#today",
+      "url": "./index.html#/nutrition/today",
       "icons": [{ "src": "assets/generated/icon-today.png", "sizes": "256x256", "type": "image/png" }]
     },
     {
       "name": "Маршрут",
       "short_name": "Маршрут",
       "description": "Открыть маршрут обучения.",
-      "url": "./index.html#atlas",
+      "url": "./index.html#/nutrition/atlas",
       "icons": [{ "src": "assets/generated/icon-atlas.png", "sizes": "256x256", "type": "image/png" }]
     },
     {
       "name": "Тренажёр",
       "short_name": "Тренажёр",
       "description": "Открыть слабые места и тренировку.",
-      "url": "./index.html#memory",
+      "url": "./index.html#/nutrition/memory",
       "icons": [{ "src": "assets/generated/icon-memory.png", "sizes": "256x256", "type": "image/png" }]
     },
     {
       "name": "Профиль",
       "short_name": "Профиль",
       "description": "Открыть профиль и конспект.",
-      "url": "./index.html#journal",
+      "url": "./index.html#/nutrition/journal",
       "icons": [{ "src": "assets/generated/icon-journal.png", "sizes": "256x256", "type": "image/png" }]
     }
   ],

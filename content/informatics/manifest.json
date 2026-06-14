@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "contentVersion": "2026-06-14-informatics-v1",
+  "courseId": "informatics",
+  "course": "content/informatics/course.json",
+  "claims": "content/informatics/claims.json",
+  "moduleFiles": ["theory.md", "quiz.md", "practice.md", "summary.md"],
+  "modules": [
+    {
+      "id": "M01",
+      "title": "Введение в информатику. Данные, алгоритмы и программы"
+    },
+    {
+      "id": "M02",
+      "title": "Алгоритмы и блок-схемы"
+    },
+    {
+      "id": "M03",
+      "title": "Структуры данных: массивы и списки"
+    }
+  ]
+}

@@ -4,31 +4,31 @@ import { COURSE_ID, REVIEW_SCHEMA_VERSION, type ReviewItem, type ReviewState, ty
 export const REVIEW_INTERVALS = [1, 3, 7, 14, 30, 60] as const;
 export const DAILY_REVIEW_LIMIT = 10;
 
-export function defaultReviewState(): ReviewState {
-  return { schemaVersion: REVIEW_SCHEMA_VERSION, courseId: COURSE_ID, items: [] };
+export function defaultReviewState(courseId = COURSE_ID): ReviewState {
+  return { schemaVersion: REVIEW_SCHEMA_VERSION, courseId, items: [] };
 }
 
-export function defaultSessionsState(today = toISODate()): SessionsState {
-  return { courseId: COURSE_ID, todayDone: {}, activeDays: [], lastDate: today, streakDays: 0, bestStreakDays: 0 };
+export function defaultSessionsState(today = toISODate(), courseId = COURSE_ID): SessionsState {
+  return { courseId, todayDone: {}, activeDays: [], lastDate: today, streakDays: 0, bestStreakDays: 0 };
 }
 
-export function normalizeReviewState(review: unknown): ReviewState {
+export function normalizeReviewState(review: unknown, courseId = COURSE_ID): ReviewState {
   const source = isRecord(review) ? review : {};
   const rawItems = Array.isArray(source.items) ? source.items : [];
   return {
     schemaVersion: REVIEW_SCHEMA_VERSION,
-    courseId: COURSE_ID,
+    courseId,
     items: rawItems.map((item) => normalizeReviewItem(item)).filter(Boolean) as ReviewItem[],
   };
 }
 
-export function normalizeSessionsState(sessions: unknown, today = toISODate()): SessionsState {
+export function normalizeSessionsState(sessions: unknown, today = toISODate(), courseId = COURSE_ID): SessionsState {
   const source = isRecord(sessions) ? sessions : {};
   const activeDays = Array.isArray(source.activeDays) ? source.activeDays.map(String) : [];
   const sourceLastDate = typeof source.lastDate === "string" ? source.lastDate : today;
   const lastDate = isValidDate(sourceLastDate) ? sourceLastDate : today;
   return {
-    courseId: COURSE_ID,
+    courseId,
     todayDone: isRecord(source.todayDone) ? numberRecord(source.todayDone) : {},
     activeDays,
     lastDate,
@@ -50,23 +50,25 @@ export function upsertWrongQuestion(review: ReviewState, payload: {
   userLabel?: string;
   reviewStrategy?: string;
 }, now = new Date()): ReviewState {
-  const state = normalizeReviewState(review);
+  const state = normalizeReviewState(review, review.courseId);
   const today = toISODate(now);
+  const nowIso = now.toISOString();
   const id = questionReviewId(payload.moduleId, payload.questionNumber);
   const previous = state.items.find((item) => item.id === id);
-  const next = buildWrongQuestionItem(payload, previous, today);
+  const next = buildWrongQuestionItem({ ...payload, courseId: review.courseId }, previous, today, nowIso);
   return replaceReviewItem(state, next);
 }
 
 export function applyReviewAnswer(item: ReviewItem, isRight: boolean, now = new Date()): ReviewItem {
   const today = toISODate(now);
+  const nowIso = now.toISOString();
   const source = normalizeReviewItem(item) as ReviewItem;
-  if (!isRight) return wrongReviewItem(source, today);
-  return rightReviewItem(source, today);
+  if (!isRight) return wrongReviewItem(source, today, nowIso);
+  return rightReviewItem(source, today, nowIso);
 }
 
 export function applyReviewResult(review: ReviewState, itemId: string, isRight: boolean, now = new Date()): ReviewState {
-  const state = normalizeReviewState(review);
+  const state = normalizeReviewState(review, review.courseId);
   return {
     ...state,
     items: state.items.map((item) => item.id === itemId ? applyReviewAnswer(item, isRight, now) : item),
@@ -80,7 +82,7 @@ export function dueReviewItems(review: ReviewState, now = new Date(), limit = DA
 
 export function recordSessionActivity(sessions: SessionsState, activity: { reviews?: number; moduleStep?: boolean }, now = new Date()): SessionsState {
   const today = toISODate(now);
-  const state = normalizeSessionsState(sessions, today);
+  const state = normalizeSessionsState(sessions, today, sessions.courseId);
   const didWork = Boolean(activity.moduleStep) || numberOr(activity.reviews, 0) > 0;
   const activeDays = didWork && !state.activeDays.includes(today) ? [...state.activeDays, today] : state.activeDays;
   const streakDays = didWork ? nextStreak(state, today) : state.streakDays;
@@ -95,11 +97,11 @@ export function recordSessionActivity(sessions: SessionsState, activity: { revie
   };
 }
 
-function buildWrongQuestionItem(payload: Parameters<typeof upsertWrongQuestion>[1], previous: ReviewItem | undefined, today: string): ReviewItem {
-  const nowIso = new Date().toISOString();
+function buildWrongQuestionItem(payload: Parameters<typeof upsertWrongQuestion>[1] & { courseId?: string }, previous: ReviewItem | undefined, today: string, nowIso: string): ReviewItem {
+  const courseId = payload.courseId ?? COURSE_ID;
   return normalizeReviewItem({
     id: questionReviewId(payload.moduleId, payload.questionNumber),
-    courseId: COURSE_ID,
+    courseId,
     moduleId: payload.moduleId,
     kind: "question",
     questionNumber: payload.questionNumber,
@@ -157,19 +159,19 @@ function replaceReviewItem(state: ReviewState, item: ReviewItem): ReviewState {
   return { ...state, items: [...items, item] };
 }
 
-function rightReviewItem(item: ReviewItem, today: string): ReviewItem {
+function rightReviewItem(item: ReviewItem, today: string, nowIso: string): ReviewItem {
   const interval = nextIntervalAfter(item.interval);
   const retired = item.interval >= 60;
-  return { ...item, interval, due: retired ? null : addDaysISO(today, interval), lastResult: "right", streak: item.streak + 1, updatedAt: new Date().toISOString(), retired };
+  return { ...item, interval, due: retired ? null : addDaysISO(today, interval), lastResult: "right", streak: item.streak + 1, updatedAt: nowIso, retired };
 }
 
-function wrongReviewItem(item: ReviewItem, today: string): ReviewItem {
-  return { ...item, interval: 1, due: addDaysISO(today, 1), lastResult: "wrong", errors: item.errors + 1, streak: 0, updatedAt: new Date().toISOString(), retired: false };
+function wrongReviewItem(item: ReviewItem, today: string, nowIso: string): ReviewItem {
+  return { ...item, interval: 1, due: addDaysISO(today, 1), lastResult: "wrong", errors: item.errors + 1, streak: 0, updatedAt: nowIso, retired: false };
 }
 
 function nextIntervalAfter(interval: number): number {
   const index = REVIEW_INTERVALS.indexOf(interval as (typeof REVIEW_INTERVALS)[number]);
-  return REVIEW_INTERVALS[Math.min(index + 1, REVIEW_INTERVALS.length - 1)] || 1;
+  return REVIEW_INTERVALS[Math.min(index + 1, REVIEW_INTERVALS.length - 1)];
 }
 
 function nextStreak(state: SessionsState, today: string): number {

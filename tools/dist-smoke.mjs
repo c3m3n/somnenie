@@ -24,9 +24,11 @@ assert(!/<script(?![^>]+src=)[^>]*>/i.test(index), "dist index should not contai
 for (const file of [
   "sw.js",
   "manifest.webmanifest",
-  "content/manifest.json",
-  "content/course.json",
-  "content/claims.json",
+  "content/catalog.json",
+  "content/nutrition/manifest.json",
+  "content/nutrition/course.json",
+  "content/nutrition/claims.json",
+  "content/informatics/manifest.json",
   "icons/icon-192.png",
   "assets/generated/icon-today.png",
 ]) {
@@ -35,6 +37,6 @@ for (const file of [
 
 const sw = await fs.readFile(path.join(dist, "sw.js"), "utf8");
 assert(sw.includes("nutrio-react-v"), "dist service worker should use the React cache version");
-assert(sw.includes("content/manifest.json"), "dist service worker should cache content indexes");
+assert(sw.includes("content/catalog.json"), "dist service worker should cache content catalog");
 
 console.log("Dist smoke passed.");

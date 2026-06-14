@@ -9,7 +9,7 @@ const BUILD_HASH = String(__NUTRIO_BUILD_HASH__ || "dev");
 const VERSION = `nutrio-react-v${BUILD_HASH}`;
 const SHELL_CACHE = `${VERSION}-shell`;
 const CONTENT_CACHE = `${VERSION}-content`;
-const MODULE_FILES = ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"];
+const DEFAULT_MODULE_FILES = ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"];
 
 const APP_SHELL = [
   "/",
@@ -140,17 +140,32 @@ async function cacheFirst(request: Request): Promise<Response> {
 async function precacheContent(): Promise<void> {
   const cache = await caches.open(CONTENT_CACHE);
   await precacheContentIndexes(cache);
-  const manifest = await fetchJson<{ modules?: { id?: string }[]; moduleFiles?: string[] }>("/content/manifest.json");
-  const moduleFileList = Array.isArray(manifest.moduleFiles) && manifest.moduleFiles.length ? manifest.moduleFiles : MODULE_FILES;
+  const catalog = await fetchJson<{ courses?: { id?: string; manifest?: string }[] }>("/content/catalog.json");
+  const courses = (catalog.courses || []).filter((course) => course.id && course.manifest);
+  await Promise.all(courses.map((course) => precacheCourseContent(course.id!, cache)));
+}
+
+async function precacheCourseContent(courseId: string, cache: Cache): Promise<void> {
+  const manifest = await fetchJson<{ modules?: { id?: string }[]; moduleFiles?: string[] }>(`/content/${courseId}/manifest.json`);
+  const moduleFileList = Array.isArray(manifest.moduleFiles) && manifest.moduleFiles.length ? manifest.moduleFiles : DEFAULT_MODULE_FILES;
   const urls = (manifest.modules || [])
-    .flatMap((module) => module.id ? moduleFileList.map((file) => `/content/${module.id}/${file}`) : [])
+    .flatMap((module) => module.id ? moduleFileList.map((file) => `/content/${courseId}/${module.id}/${file}`) : [])
     .filter((url) => !!url);
   await runWithConcurrencyLimit(urls, 6, (url) => cache.add(url));
 }
 
 async function precacheContentIndexes(cache?: Cache): Promise<void> {
   const target = cache || await caches.open(CONTENT_CACHE);
-  await Promise.allSettled(["/content/manifest.json", "/content/course.json", "/content/claims.json"].map((url) => target.add(url)));
+  await Promise.allSettled(["/content/catalog.json"].map((url) => target.add(url)));
+  const catalog = await fetchJson<{ courses?: { id?: string }[] }>("/content/catalog.json").catch(() => ({ courses: [] }));
+  await Promise.allSettled((catalog.courses || [])
+    .filter((course) => course.id)
+    .flatMap((course) => [
+      `/content/${course.id}/manifest.json`,
+      `/content/${course.id}/course.json`,
+      `/content/${course.id}/claims.json`,
+    ])
+    .map((url) => target.add(url).catch(() => undefined)));
 }
 
 async function runWithConcurrencyLimit(urls: string[], limit: number, loader: (url: string) => Promise<void>): Promise<void> {

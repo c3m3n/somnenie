@@ -3,11 +3,12 @@ import { Brain, CheckCircle2, Play, RotateCcw } from "lucide-react";
 import { moduleById } from "../../content/api";
 import { parseQuiz } from "../../domain/quiz";
 import { applyReviewResult, dueReviewItems, DAILY_REVIEW_LIMIT, recordSessionActivity } from "../../domain/review";
-import type { AppState, CourseBundle, ReviewItem, ReviewState, SessionsState } from "../../domain/types";
+import type { AppState, CourseBundle, CourseId, ReviewItem, ReviewState, SessionsState } from "../../domain/types";
 import { MdInline } from "../../ui/md";
 import { navigate, routeHash } from "../../ui/route";
 
 export function MemoryView({ bundle, appState, saveState }: { bundle: CourseBundle; appState: AppState; saveState: (patch: Partial<AppState>) => Promise<void> }) {
+  const courseId = bundle.courseId;
   const [items] = useState(() => dueReviewItems(appState.review, new Date(), DAILY_REVIEW_LIMIT));
   const [review, setReview] = useState<ReviewState>(appState.review);
   const [sessions, setSessions] = useState<SessionsState>(appState.sessions);
@@ -18,7 +19,7 @@ export function MemoryView({ bundle, appState, saveState }: { bundle: CourseBund
 
   if (!items.length) return <EmptyTrainer />;
   if (!started) return <TrainerIntro items={items} onStart={() => setStarted(true)} />;
-  if (index >= items.length) return <TrainerResult results={results} total={items.length} />;
+  if (index >= items.length) return <TrainerResult results={results} total={items.length} courseId={courseId} />;
 
   const item = items[index];
   return (
@@ -111,7 +112,7 @@ function TrainerFeedback({ feedback, isLast, onNext }: { feedback: "right" | "wr
   );
 }
 
-function TrainerResult({ results, total }: { results: boolean[]; total: number }) {
+function TrainerResult({ results, total, courseId }: { results: boolean[]; total: number; courseId: CourseId }) {
   const closed = results.filter(Boolean).length;
   const returned = total - closed;
   return (
@@ -122,9 +123,9 @@ function TrainerResult({ results, total }: { results: boolean[]; total: number }
         <p>Закрыто: {closed} из {total}</p>
         <p>Вернётся позже: {returned} {weakSpotNoun(returned)}</p>
       </div>
-      <a className="primary-action" href={routeHash({ screen: "today" })} onClick={(event) => {
+      <a className="primary-action" href={routeHash({ screen: "today", courseId })} onClick={(event) => {
         event.preventDefault();
-        navigate({ screen: "today" });
+        navigate({ screen: "today", courseId });
       }}>
         Вернуться к учёбе
       </a>

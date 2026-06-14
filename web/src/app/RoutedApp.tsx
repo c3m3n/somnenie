@@ -5,7 +5,7 @@ import { forceServiceWorkerUpdate } from "../pwa/register";
 import { moduleById } from "../content/api";
 import { getBlockAccess, getRemediationPlan, getBlockState } from "../domain/learningPath";
 import { buildTodayAction } from "../domain/today";
-import type { CourseBundle, ProgressMap, StationStepKey } from "../domain/types";
+import type { AppState, CourseBundle, CourseId, ProgressMap, StationStepKey } from "../domain/types";
 import { useAppData } from "../ui/useAppData";
 import { navigate, parseRoute, routeHash, type Route } from "../ui/route";
 import { AtlasView } from "../features/atlas/AtlasView";
@@ -15,12 +15,13 @@ import { MemoryView } from "../features/memory/MemoryView";
 import { CheckpointRemediationView, StationView } from "../features/station/StationView";
 import { TodayView } from "../features/today/TodayView";
 import { ErrorBoundary } from "./ErrorBoundary";
+import { CourseCatalogView } from "../features/courses/CourseCatalogView";
 import "../ui/styles.css";
 
 type AppScreenData = Omit<ReturnType<typeof useAppData>, "appState" | "bundle" | "progress"> & {
   bundle: CourseBundle;
   progress: ProgressMap;
-  appState: NonNullable<ReturnType<typeof useAppData>["appState"]>;
+  appState: AppState;
 };
 
 function NavItem({ active, href, icon, label, onClick }: { active: boolean; href: string; icon: React.ReactNode; label: string; onClick: () => void }) {
@@ -36,7 +37,7 @@ function NavItem({ active, href, icon, label, onClick }: { active: boolean; href
 
 function goBack(): void {
   if (window.history.length > 1) window.history.back();
-  else navigate({ screen: "today" });
+  else navigate({ screen: "today", courseId: "nutrition" });
 }
 
 function Shell({
@@ -46,6 +47,7 @@ function Shell({
   saveError,
   onUpdate,
   mainRef,
+  activeCourseId,
 }: {
   route: Route;
   children: React.ReactNode;
@@ -53,13 +55,14 @@ function Shell({
   saveError?: string | null;
   onUpdate: () => void;
   mainRef?: React.RefObject<HTMLElement | null>;
+  activeCourseId: CourseId | null;
 }) {
   return (
     <div className="app-shell" role="application" aria-label="Приложение обучения">
       <a className="skip-link" href="#main-content">Перейти к содержимому</a>
       <header className="topbar">
         <a
-          href={routeHash({ screen: "today" })}
+          href={routeHash({ screen: "today", courseId: activeCourseId || "nutrition" })}
           className="icon-button"
           aria-label="Назад"
           onClick={(event) => {
@@ -75,18 +78,18 @@ function Shell({
         </div>
         <div className="topbar-actions">
           <nav className="topnav" aria-label="Основные разделы">
-            <NavItem active={route.screen === "today"} href={routeHash({ screen: "today" })} icon={<Gauge size={16} />} label="Сегодня" onClick={() => navigate({ screen: "today" })} />
-            <NavItem active={route.screen === "atlas"} href={routeHash({ screen: "atlas" })} icon={<RouteIcon size={16} />} label="Маршрут" onClick={() => navigate({ screen: "atlas" })} />
-            <NavItem active={route.screen === "memory"} href={routeHash({ screen: "memory" })} icon={<Brain size={16} />} label="Тренажёр" onClick={() => navigate({ screen: "memory" })} />
+            <NavItem active={route.screen === "today"} href={routeHash({ screen: "today", courseId: activeCourseId || "nutrition" })} icon={<Gauge size={16} />} label="Сегодня" onClick={() => navigate({ screen: "today", courseId: activeCourseId || "nutrition" })} />
+            <NavItem active={route.screen === "atlas"} href={routeHash({ screen: "atlas", courseId: activeCourseId || "nutrition" })} icon={<RouteIcon size={16} />} label="Маршрут" onClick={() => navigate({ screen: "atlas", courseId: activeCourseId || "nutrition" })} />
+            <NavItem active={route.screen === "memory"} href={routeHash({ screen: "memory", courseId: activeCourseId || "nutrition" })} icon={<Brain size={16} />} label="Тренажёр" onClick={() => navigate({ screen: "memory", courseId: activeCourseId || "nutrition" })} />
           </nav>
           <a
             className={route.screen === "journal" ? "icon-button active" : "icon-button"}
             aria-current={route.screen === "journal" ? "page" : undefined}
             aria-label="Профиль"
-            href={routeHash({ screen: "journal" })}
+            href={routeHash({ screen: "journal", courseId: activeCourseId || "nutrition" })}
             onClick={(event) => {
               event.preventDefault();
-              navigate({ screen: "journal" });
+              navigate({ screen: "journal", courseId: activeCourseId || "nutrition" });
             }}
           >
             <CircleUser size={18} />
@@ -149,11 +152,19 @@ export function App() {
     setUpdateAvailable(false);
   };
 
+  if (route.screen === "courses" || !data.activeCourseId) {
+    return (
+      <Shell route={route} onUpdate={() => {}} updateAvailable={false} activeCourseId={data.activeCourseId}>
+        <CourseCatalogView catalog={data.catalog} progress={data.progress} onSelectCourse={handleSelectCourse} saveProfile={data.saveProfile} />
+      </Shell>
+    );
+  }
+
   if (data.loading) {
-    return <Shell route={route} onUpdate={() => {}} updateAvailable={false}><div className="loading" role="status">Загрузка приложения...</div></Shell>;
+    return <Shell route={route} onUpdate={() => {}} updateAvailable={false} activeCourseId={data.activeCourseId}><div className="loading" role="status">Загрузка приложения...</div></Shell>;
   }
   if (data.error || !data.bundle || !data.appState) {
-    return <Shell route={route} onUpdate={() => {}} updateAvailable={false}><section className="screen" role="alert"><h2>Ошибка загрузки</h2><p>{data.error || "Не удалось загрузить приложение."}</p></section></Shell>;
+    return <Shell route={route} onUpdate={() => {}} updateAvailable={false} activeCourseId={data.activeCourseId}><section className="screen" role="alert"><h2>Ошибка загрузки</h2><p>{data.error || "Не удалось загрузить приложение."}</p></section></Shell>;
   }
   if (!data.profile) {
     return <OnboardingView saveProfile={data.saveProfile} />;
@@ -163,12 +174,17 @@ export function App() {
   const todayAction = data.todayAction ?? buildTodayAction(data.bundle.modules, data.progress, data.appState);
 
   return (
-    <Shell route={route} onUpdate={handleUpdateFlow} updateAvailable={updateAvailable} saveError={data.saveError} mainRef={mainRef}>
+    <Shell route={route} onUpdate={handleUpdateFlow} updateAvailable={updateAvailable} saveError={data.saveError} mainRef={mainRef} activeCourseId={data.activeCourseId}>
       <ErrorBoundary>
         <RenderRoute route={route} data={{ ...readyData, todayAction }} />
       </ErrorBoundary>
     </Shell>
   );
+
+  function handleSelectCourse(courseId: CourseId) {
+    void data.saveProfile({ ...data.profile, activeCourseId: courseId });
+    navigate({ screen: "today", courseId });
+  }
 }
 
 function RenderRoute({ route, data }: { route: Route; data: AppScreenData & { todayAction: ReturnType<typeof buildTodayAction> } }): React.ReactNode {
@@ -194,7 +210,7 @@ function remediationRoute(moduleId: string, data: AppScreenData & { todayAction:
   const module = moduleById(data.bundle, moduleId);
   const plan = module && getRemediationPlan(module.id, data.progress, data.appState?.review);
   if (!module || !plan) return <TodayView bundle={data.bundle} progress={data.progress} action={data.todayAction} sessions={data.appState.sessions} />;
-  return <CheckpointRemediationView module={module} plan={plan} />;
+  return <CheckpointRemediationView module={module} plan={plan} courseId={data.bundle.courseId} />;
 }
 
 function MissingModule({ moduleId }: { moduleId: string }) {
@@ -216,9 +232,9 @@ function LockedStationView({ access, bundle, progress }: { access: { reason: "pr
         <strong>{required ? `${required.id}. ${required.title}` : access.requiredBlockId}</strong>
         <p>Пройдите обязательный предыдущий блок, затем вернитесь.</p>
         {required ? (
-          <a className="primary-action" href={routeHash({ screen: "station", moduleId: required.id, step })} onClick={(event) => {
+          <a className="primary-action" href={routeHash({ screen: "station", courseId: bundle.courseId, moduleId: required.id, step })} onClick={(event) => {
             event.preventDefault();
-            navigate({ screen: "station", moduleId: required.id, step });
+            navigate({ screen: "station", courseId: bundle.courseId, moduleId: required.id, step });
           }}>
             Перейти в {required.id}
           </a>
@@ -243,5 +259,6 @@ function titleFor(route: Route): string {
   if (route.screen === "journal") return "Профиль";
   if (route.screen === "remediation") return "Разбор ошибок";
   if (route.screen === "station") return route.moduleId;
+  if (route.screen === "courses") return "Курсы";
   return "Сегодня";
 }

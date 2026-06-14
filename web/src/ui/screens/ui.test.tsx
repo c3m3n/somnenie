@@ -142,7 +142,7 @@ describe("React learner flow", () => {
       progress,
       todayAction: { kind: "station", label: "Продолжить", reason: "", moduleId: "M02", step: "understand" },
     });
-    window.location.hash = "#atlas";
+    window.location.hash = "#/nutrition/atlas";
 
     render(<App />);
     fireEvent.click(screen.getByRole("button", { name: /Блок M02/ }));
@@ -198,7 +198,7 @@ describe("React learner flow", () => {
     fireEvent.click(screen.getByRole("button", { name: /К зачёту/ }));
 
     await waitFor(() => expect(saveProgress).toHaveBeenCalledWith("M01", expect.objectContaining({ takeaway: "Суть для следующего шага" })));
-    expect(window.location.hash).toContain("#station/M01/check");
+    expect(window.location.hash).toContain("#/nutrition/station/M01/check");
   });
 
   it("Checkpoint result shows passed status and next-step action", async () => {
@@ -268,7 +268,7 @@ describe("React learner flow", () => {
       ],
     };
 
-    render(<CheckpointRemediationView module={module} plan={plan} />);
+    render(<CheckpointRemediationView module={module} plan={plan} courseId="nutrition" />);
 
     expect(screen.getByText("Ошибка 1 из 1")).toBeInTheDocument();
     expect(screen.getByText(/Вопрос:/)).toBeInTheDocument();
@@ -318,12 +318,12 @@ describe("React learner flow", () => {
       ],
     };
 
-    render(<CheckpointRemediationView module={module} plan={plan} />);
+    render(<CheckpointRemediationView module={module} plan={plan} courseId="nutrition" />);
     expect(screen.getByText("Ошибка 1 из 2")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Открыть материал" })).toHaveAttribute("href", "#station/M01/understand");
+    expect(screen.getByRole("link", { name: "Открыть материал" })).toHaveAttribute("href", "#/nutrition/station/M01/understand");
     fireEvent.click(screen.getByRole("button", { name: "Следующая ошибка" }));
     expect(screen.getByText("Ошибка 2 из 2")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Открыть материал" })).toHaveAttribute("href", "#station/M01/apply");
+    expect(screen.getByRole("link", { name: "Открыть материал" })).toHaveAttribute("href", "#/nutrition/station/M01/apply");
   });
 
   it("Remediation empty state shows fallback actions", () => {
@@ -337,7 +337,7 @@ describe("React learner flow", () => {
       failedAnswers: [],
     };
 
-    render(<CheckpointRemediationView module={module} plan={plan} />);
+    render(<CheckpointRemediationView module={module} plan={plan} courseId="nutrition" />);
     expect(screen.getByText("Не удалось восстановить список вопросов.")).toBeInTheDocument();
     expect(screen.getByText("Откройте материал блока и попробуйте пройти зачёт ещё раз.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Открыть материал" })).toBeInTheDocument();
@@ -511,6 +511,8 @@ function appData() {
   return {
     appState: appState(),
     bundle: bundle(),
+    catalog: catalog(),
+    activeCourseId: "nutrition" as const,
     error: null,
     exportData: vi.fn(async () => undefined),
     loading: false,
@@ -525,6 +527,10 @@ function appData() {
   };
 }
 
+function catalog() {
+  return { schemaVersion: 1, courses: [{ id: "nutrition", title: "Nutrition", manifest: "content/nutrition/manifest.json" }] };
+}
+
 function appState(due?: string): AppState {
   const items = due ? [reviewItem({ due })] : [];
   return appStateWithReviewItems(items);
@@ -537,7 +543,8 @@ function appStateWithReviewItems(items: unknown[]): AppState {
 function bundle(): CourseBundle {
   const modules = Array.from({ length: 24 }, (_, index) => ({ ...moduleFixture(`M${String(index + 1).padStart(2, "0")}`), phaseId: index < 12 ? "phase1" : "phase2", phaseTitle: index < 12 ? "Фаза 1" : "Фаза 2" } as CourseModule));
   return {
-    manifest: { schemaVersion: 1, contentVersion: "test", course: "", moduleFiles: ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"] as const, claims: "", modules: modules.map((module) => ({ id: module.id, title: module.title })) },
+    courseId: "nutrition",
+    manifest: { schemaVersion: 1, contentVersion: "test", courseId: "nutrition", course: "", moduleFiles: ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"] as const, claims: "", modules: modules.map((module) => ({ id: module.id, title: module.title })) },
     course: { title: "Course", phases: [{ id: "phase1", title: "Фаза 1", modules: modules.slice(0, 12).map((item) => item.id) }, { id: "phase2", title: "Фаза 2", modules: modules.slice(12).map((item) => item.id) }] },
     claims: { schemaVersion: 1, reviewedAt: "2026-06-13", sources: [], claims: [] },
     modules,

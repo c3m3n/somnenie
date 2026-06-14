@@ -104,14 +104,14 @@ describe("nextQuizProgress", () => {
 describe("retryQuiz", () => {
   it("does not reset quizBest", async () => {
     const saveProgress = vi.fn();
-    await retryQuiz("M01", saveProgress);
+    await retryQuiz("M01", saveProgress, "nutrition");
     const patch = saveProgress.mock.calls[0][1] as ModuleProgress;
     expect(patch.quizBest).toBeUndefined();
   });
 
   it("clears quizStartedAt and quizCompletedAt", async () => {
     const saveProgress = vi.fn();
-    await retryQuiz("M01", saveProgress);
+    await retryQuiz("M01", saveProgress, "nutrition");
     const patch = saveProgress.mock.calls[0][1] as ModuleProgress;
     expect(patch.quizStartedAt).toBeUndefined();
     expect(patch.quizCompletedAt).toBeUndefined();

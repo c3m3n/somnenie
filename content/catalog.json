@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "courses": [
+    {
+      "id": "nutrition",
+      "title": "Нутрициология без мифов",
+      "description": "Доказательный курс по нутрициологии: маршрут, зачёты и тренажёр слабых мест.",
+      "manifest": "content/nutrition/manifest.json"
+    },
+    {
+      "id": "informatics",
+      "title": "Информатика с нуля",
+      "description": "Базовый курс по информатике: алгоритмы, структуры данных и программирование.",
+      "manifest": "content/informatics/manifest.json"
+    }
+  ]
+}

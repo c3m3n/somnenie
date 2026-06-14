@@ -4,6 +4,7 @@ import {
   exportData,
   getAllProgress,
   getAppState,
+  getCourseAppState,
   getModuleProgress,
   getProfile,
   initStorage,
@@ -14,6 +15,7 @@ import {
   resetProgress,
   resetStorageConnectionForTests,
   saveAppState,
+  saveCourseAppState,
   saveModuleProgress,
   saveProfile,
 } from "./idb";
@@ -28,29 +30,29 @@ describe("IndexedDB storage compatibility", () => {
 
   it("persists module progress in the existing progress store shape", async () => {
     await initStorage();
-    await saveModuleProgress("M01", { takeaway: "Learned" });
-    expect((await getAllProgress()).M01.takeaway).toBe("Learned");
-    expect((await getModuleProgress("M01")).takeaway).toBe("Learned");
-    expect(await getModuleProgress("M99")).toEqual({});
+    await saveModuleProgress("nutrition", "M01", { takeaway: "Learned" });
+    expect((await getAllProgress("nutrition")).M01.takeaway).toBe("Learned");
+    expect((await getModuleProgress("nutrition", "M01")).takeaway).toBe("Learned");
+    expect(await getModuleProgress("nutrition", "M99")).toEqual({});
   });
 
   it("saves, exports and resets profile, progress and app state", async () => {
     await initStorage();
     await saveProfile({ name: "Learner" });
-    await replaceModuleProgress("M04", { takeaway: "Replaced", quizAttemptStatus: "complete" });
-    const state = await saveAppState({ sessions: { courseId: "nutrition", todayDone: { blocks: 1 }, activeDays: ["2026-06-14"], lastDate: "2026-06-14", streakDays: 1, bestStreakDays: 1 } });
-    const exported = await exportData();
+    await replaceModuleProgress("nutrition", "M04", { takeaway: "Replaced", quizAttemptStatus: "complete" });
+    const state = await saveAppState({ activeCourseId: "nutrition", courses: { nutrition: { review: { schemaVersion: 2, courseId: "nutrition", items: [] }, sessions: { courseId: "nutrition", todayDone: { blocks: 1 }, activeDays: ["2026-06-14"], lastDate: "2026-06-14", streakDays: 1, bestStreakDays: 1 } } } });
+    const exported = await exportData("nutrition");
     expect((await getProfile())?.name).toBe("Learner");
-    expect((await getAllProgress()).M04.takeaway).toBe("Replaced");
-    expect(state.sessions.todayDone.blocks).toBe(1);
+    expect((await getAllProgress("nutrition")).M04.takeaway).toBe("Replaced");
+    expect(state.courses.nutrition?.sessions.todayDone.blocks).toBe(1);
     expect(exported.profile?.name).toBe("Learner");
     expect(exported.progress.M04.quizAttemptStatus).toBe("complete");
 
     await resetProfile();
     await resetProgress();
     expect(await getProfile()).toBeNull();
-    expect(await getAllProgress()).toEqual({});
-    expect((await getAppState()).sessions.todayDone).toEqual({});
+    expect(await getAllProgress("nutrition")).toEqual({});
+    expect((await getCourseAppState("nutrition")).sessions.todayDone).toEqual({});
   });
 
   it("migrates legacy localStorage only after verified writes", async () => {
@@ -60,7 +62,7 @@ describe("IndexedDB storage compatibility", () => {
     const result = await migrateFromLocalStorage();
     expect(result.migrated).toBe(true);
     expect(await getProfile()).toMatchObject({ name: "Learner" });
-    expect((await getAllProgress()).M02.takeaway).toBe("Old");
+    expect((await getAllProgress("nutrition")).M02.takeaway).toBe("Old");
     expect(localStorage.getItem("nutrio-profile")).toBeNull();
   });
 
@@ -80,7 +82,7 @@ describe("IndexedDB storage compatibility", () => {
     await seedVersion2Database();
     resetStorageConnectionForTests();
     await initStorage();
-    const progress = await getAllProgress();
+    const progress = await getAllProgress("nutrition");
     expect(progress.M03.quizTotal).toBe(10);
     expect(progress.M03.quizTotalQuestions).toBe(10);
     expect(progress.M03.quizMistakes).toBe(3);
@@ -94,9 +96,9 @@ describe("IndexedDB storage compatibility", () => {
     resetStorageConnectionForTests();
     await initStorage();
     const state = await getAppState();
-    expect(state.schemaVersion).toBe(2);
-    expect(state.review.items[0]?.id).toBe("M01-q1");
-    expect(state.sessions.todayDone.reviews).toBe(2);
+    expect(state.schemaVersion).toBe(3);
+    expect(state.courses.nutrition?.review.items[0]?.id).toBe("M01-q1");
+    expect(state.courses.nutrition?.sessions.todayDone.reviews).toBe(2);
   });
 
   it("normalizes unknown future app state safely", () => {
@@ -105,9 +107,9 @@ describe("IndexedDB storage compatibility", () => {
       review: { items: [{ id: "M01-q1", moduleId: "M01", text: "Q", due: "2026-06-13", errors: 1, interval: 1 }] },
       sessions: { todayDone: { reviews: 3 }, activeDays: ["2026-06-13"], lastDate: "2026-06-13" },
     });
-    expect(state.schemaVersion).toBe(2);
-    expect(state.review.items[0]?.id).toBe("M01-q1");
-    expect(state.sessions.todayDone.reviews).toBe(3);
+    expect(state.schemaVersion).toBe(3);
+    expect(state.courses.nutrition?.review.items[0]?.id).toBe("M01-q1");
+    expect(state.courses.nutrition?.sessions.todayDone.reviews).toBe(3);
   });
 
   it("migrates progress maps without resetting progress, weak spots or takeaways", () => {
@@ -135,6 +137,34 @@ describe("IndexedDB storage compatibility", () => {
 
   it("fills app state defaults for non-record values", () => {
     expect(appStateWithDefaults(null).sessions.courseId).toBe("nutrition");
+  });
+
+  it("isolates progress per course", async () => {
+    await initStorage();
+    await saveModuleProgress("nutrition", "M01", { takeaway: "Nutrition" });
+    await saveModuleProgress("informatics", "M01", { takeaway: "Informatics" });
+    const nutrition = await getAllProgress("nutrition");
+    const informatics = await getAllProgress("informatics");
+    expect(nutrition.M01.takeaway).toBe("Nutrition");
+    expect(informatics.M01.takeaway).toBe("Informatics");
+  });
+
+  it("saves course-specific app state with defaults", async () => {
+    await initStorage();
+    const courseState = await saveCourseAppState("informatics", { review: { schemaVersion: 2, courseId: "informatics", items: [] } });
+    expect(courseState.sessions.courseId).toBe("informatics");
+    expect((await getCourseAppState("informatics")).sessions.courseId).toBe("informatics");
+  });
+
+  it("migrates malformed localStorage when getItem throws", async () => {
+    const originalGetItem = localStorage.getItem.bind(localStorage);
+    localStorage.getItem = () => {
+      throw new Error("disabled");
+    };
+    await initStorage();
+    const result = await migrateFromLocalStorage();
+    expect(result.migrated).toBe(false);
+    localStorage.getItem = originalGetItem;
   });
 });
 

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
-import { ensureModuleFiles, moduleFilesLoaded } from "../../content/api";
+import { ensureModuleFiles, moduleFilesLoaded, quizFileFromManifest } from "../../content/api";
 import { PASS_RATIO } from "../../domain/blockStateMachine";
 import { canRetakeCheckpoint, getCheckpointOutcome, RETAKE_COOLDOWN_MS } from "../../domain/learningPath";
 import { parseQuiz } from "../../domain/quiz";
 import { recordSessionActivity, upsertWrongQuestion } from "../../domain/review";
-import { QUIZ_PROGRESS_VERSION, type AppState, type CheckpointAttempt, type CourseBundle, type CourseModule, type FailedCheckpointAnswer, type ModuleProgress, type ProgressMap, type QuizQuestion, type RemediationPlan, type StationStepKey } from "../../domain/types";
+import { QUIZ_PROGRESS_VERSION, type AppState, type CheckpointAttempt, type CourseBundle, type CourseId, type CourseModule, type FailedCheckpointAnswer, type ModuleProgress, type ModuleFileName, type ProgressMap, type QuizQuestion, type RemediationPlan, type StationStepKey } from "../../domain/types";
 import { navigate, routeHash } from "../../ui/route";
 import { Md, MdInline } from "../../ui/md";
 import { seededShuffle } from "../../shared/utils/seededShuffle";
@@ -21,11 +21,12 @@ export function StationView(props: StationProps) {
 }
 
 function QuizLoader({ bundle, module, step, progress, appState, saveProgress, saveState }: StationProps) {
-  const [ready, setReady] = useState(() => moduleFilesLoaded(module, ["quiz.md"]));
+  const quizFile: ModuleFileName = quizFileFromManifest(bundle.manifest);
+  const [ready, setReady] = useState(() => moduleFilesLoaded(module, [quizFile]));
   const [error, setError] = useState(false);
 
   const loadQuiz = useCallback(() => {
-    if (moduleFilesLoaded(module, ["quiz.md"])) {
+    if (moduleFilesLoaded(module, [quizFile])) {
       setReady(true);
       setError(false);
       return () => undefined;
@@ -33,7 +34,7 @@ function QuizLoader({ bundle, module, step, progress, appState, saveProgress, sa
     let cancelled = false;
     setReady(false);
     setError(false);
-    void ensureModuleFiles(bundle, module.id, ["quiz.md"])
+    void ensureModuleFiles(bundle, module.id, [quizFile])
       .catch(() => {
         if (!cancelled) setError(true);
       })
@@ -43,7 +44,7 @@ function QuizLoader({ bundle, module, step, progress, appState, saveProgress, sa
     return () => {
       cancelled = true;
     };
-  }, [bundle, module]);
+  }, [bundle, module, quizFile]);
 
   useEffect(() => {
     return loadQuiz();
@@ -83,7 +84,7 @@ function QuizLoader({ bundle, module, step, progress, appState, saveProgress, sa
   );
 }
 
-export function CheckpointRemediationView({ module, plan }: { module: CourseModule; plan: RemediationPlan }) {
+export function CheckpointRemediationView({ module, plan, courseId }: { module: CourseModule; plan: RemediationPlan; courseId: CourseId }) {
   const [index, setIndex] = useState(0);
   const answers = plan.failedAnswers;
 
@@ -99,15 +100,15 @@ export function CheckpointRemediationView({ module, plan }: { module: CourseModu
           <p>Откройте материал блока и попробуйте пройти зачёт ещё раз.</p>
         </article>
         <div className="remediation-actions">
-          <a className="primary-action" href={routeHash({ screen: "station", moduleId: module.id, step: "understand" })} onClick={(event) => {
+          <a className="primary-action" href={routeHash({ screen: "station", courseId, moduleId: module.id, step: "understand" })} onClick={(event) => {
             event.preventDefault();
-            navigate({ screen: "station", moduleId: module.id, step: "understand" });
+            navigate({ screen: "station", courseId, moduleId: module.id, step: "understand" });
           }}>
             Открыть материал
           </a>
-          <a className="primary-action" href={routeHash({ screen: "station", moduleId: module.id, step: "check" })} onClick={(event) => {
+          <a className="primary-action" href={routeHash({ screen: "station", courseId, moduleId: module.id, step: "check" })} onClick={(event) => {
             event.preventDefault();
-            navigate({ screen: "station", moduleId: module.id, step: "check" });
+            navigate({ screen: "station", courseId, moduleId: module.id, step: "check" });
           }}>
             Пройти зачёт
           </a>
@@ -136,15 +137,15 @@ export function CheckpointRemediationView({ module, plan }: { module: CourseModu
         <p><strong>Связанный материал:</strong> {sourceLabel(current, module.id)}</p>
       </article>
       <div className="remediation-actions">
-        <a className="primary-action" href={routeHash({ screen: "station", moduleId: module.id, step: targetStep })} onClick={(event) => {
+        <a className="primary-action" href={routeHash({ screen: "station", courseId, moduleId: module.id, step: targetStep })} onClick={(event) => {
           event.preventDefault();
-          navigate({ screen: "station", moduleId: module.id, step: targetStep });
+          navigate({ screen: "station", courseId, moduleId: module.id, step: targetStep });
         }}>
           Открыть материал
         </a>
         <button className="primary-action" type="button" onClick={() => {
           if (hasNext) setIndex(index + 1);
-          else navigate({ screen: "station", moduleId: module.id, step: "check" });
+          else navigate({ screen: "station", courseId, moduleId: module.id, step: "check" });
         }}>
           {hasNext ? "Следующая ошибка" : plan.canRetake ? "Попробовать зачёт ещё раз" : "Вернуться к зачёту"}
         </button>
@@ -169,28 +170,28 @@ interface StationProps {
   saveState: (patch: Partial<AppState>) => Promise<void>;
 }
 
-
 function QuizStep(props: StationProps) {
-  const parsed = parseQuiz(props.module.files["quiz.md"], `${props.module.id}:${props.progress.quizVersion || QUIZ_PROGRESS_VERSION}`);
+  const quizFile = quizFileFromManifest(props.bundle.manifest);
+  const parsed = parseQuiz(props.module.files[quizFile], `${props.module.id}:${props.progress.quizVersion || QUIZ_PROGRESS_VERSION}`);
   const questions = typeof props.progress.quizSeed === "number" ? seededShuffle(parsed, props.progress.quizSeed) : parsed;
-  return <QuizFlow questions={questions} {...props} />;
+  return <QuizFlow questions={questions} courseId={props.bundle.courseId} {...props} />;
 }
 
-function QuizFlow(props: { module: CourseModule; progress: ModuleProgress; questions: QuizQuestion[]; appState: AppState; saveProgress: StationProps["saveProgress"]; saveState: StationProps["saveState"] }) {
-  const { module, progress, questions, appState, saveProgress, saveState } = props;
+function QuizFlow(props: { module: CourseModule; progress: ModuleProgress; questions: QuizQuestion[]; appState: AppState; saveProgress: StationProps["saveProgress"]; saveState: StationProps["saveState"]; courseId: CourseId }) {
+  const { module, progress, questions, appState, saveProgress, saveState, courseId } = props;
   const answered = progress.quizAnswered || 0;
   const current = questions[answered];
   const autoTotal = questions.filter((question) => question.kind === "auto").length;
   const moduleProgress: ProgressMap = { [module.id]: progress };
   const outcome = getCheckpointOutcome(module.id, moduleProgress);
   const canRetake = canRetakeCheckpoint(module.id, moduleProgress);
-  if (!current) return <QuizResult module={module} outcome={outcome} canRetake={canRetake} saveProgress={saveProgress} />;
+  if (!current) return <QuizResult module={module} outcome={outcome} canRetake={canRetake} saveProgress={saveProgress} courseId={courseId} />;
   return <QuestionCard key={current.number} module={module} question={current} progress={progress} isLast={answered + 1 >= questions.length} autoTotal={autoTotal} appState={appState} saveProgress={saveProgress} saveState={saveState} />;
 }
 
-function QuizResult({ module, outcome, canRetake, saveProgress }: { module: CourseModule; outcome: ReturnType<typeof getCheckpointOutcome>; canRetake: boolean; questions?: QuizQuestion[]; saveProgress: StationProps["saveProgress"] }) {
+function QuizResult({ module, outcome, canRetake, saveProgress, courseId }: { module: CourseModule; outcome: ReturnType<typeof getCheckpointOutcome>; canRetake: boolean; questions?: QuizQuestion[]; saveProgress: StationProps["saveProgress"]; courseId: CourseId }) {
   const isFailed = outcome.status === "failed";
-  const resultRoute = isFailed ? routeHash({ screen: "remediation", moduleId: module.id }) : routeHash({ screen: "today" });
+  const resultRoute = isFailed ? routeHash({ screen: "remediation", courseId, moduleId: module.id }) : routeHash({ screen: "today", courseId });
   return (
     <div className="quiz-result">
       <CheckCircle2 size={32} />
@@ -203,12 +204,12 @@ function QuizResult({ module, outcome, canRetake, saveProgress }: { module: Cour
           <>
             <a className="primary-action" href={resultRoute} onClick={(event) => {
               event.preventDefault();
-              navigate({ screen: "remediation", moduleId: module.id });
+              navigate({ screen: "remediation", courseId, moduleId: module.id });
             }}>
               Разобрать ошибки
             </a>
             {canRetake ? (
-              <button type="button" className="primary-action" onClick={() => void retryQuiz(module.id, saveProgress)}>
+              <button type="button" className="primary-action" onClick={() => void retryQuiz(module.id, saveProgress, courseId)}>
                 Попробовать ещё раз
               </button>
             ) : (
@@ -217,12 +218,12 @@ function QuizResult({ module, outcome, canRetake, saveProgress }: { module: Cour
           </>
         ) : (
           <>
-            <button className="primary-action" type="button" onClick={() => navigate({ screen: "atlas" })}>
+            <button className="primary-action" type="button" onClick={() => navigate({ screen: "atlas", courseId })}>
               К следующему шагу
             </button>
-            <a href={routeHash({ screen: "today" })} onClick={(event) => {
+            <a href={routeHash({ screen: "today", courseId })} onClick={(event) => {
               event.preventDefault();
-              navigate({ screen: "today" });
+              navigate({ screen: "today", courseId });
             }}>
               Вернуться в маршрут
             </a>
@@ -301,7 +302,7 @@ async function recordOpenAnswer(moduleId: string, progress: ModuleProgress, isLa
   await saveProgress(moduleId, { quizAnswered: (progress.quizAnswered || 0) + 1, quizAttemptStatus: isLast ? "complete" : "in-progress", quizCompletedAt: isLast ? new Date().toISOString() : progress.quizCompletedAt });
 }
 
-export async function retryQuiz(moduleId: string, saveProgress: StationProps["saveProgress"]): Promise<void> {
+export async function retryQuiz(moduleId: string, saveProgress: StationProps["saveProgress"], courseId: CourseId): Promise<void> {
   await saveProgress(moduleId, {
     quizAnswered: 0,
     quizCorrect: 0,
@@ -309,9 +310,8 @@ export async function retryQuiz(moduleId: string, saveProgress: StationProps["sa
     quizAttemptStatus: "in-progress",
     quizSeed: Math.floor(Math.random() * 2_147_483_647),
   });
-  navigate({ screen: "station", moduleId, step: "check" });
+  navigate({ screen: "station", courseId, moduleId, step: "check" });
 }
-
 
 export function nextQuizProgress(context: AnswerContext, isRight: boolean, now: string, chosen: string): ModuleProgress {
   const answered = (context.progress.quizAnswered || 0) + 1;

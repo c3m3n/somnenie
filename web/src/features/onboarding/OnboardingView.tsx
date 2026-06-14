@@ -12,22 +12,22 @@ export function OnboardingView({ saveProfile }: Props) {
   return (
     <div className="onboarding-screen">
       <div className="onboarding-body">
-        <span className="section-kicker">Somnenie · Курс нутрициологии</span>
-        <h1 className="onboarding-title">Питание без&nbsp;мифов</h1>
+        <span className="section-kicker">Somnenie · Курсы</span>
+        <h1 className="onboarding-title">Учиться без мифов</h1>
         <p className="onboarding-lead">
-          24 блока доказательной нутрициологии — от нутриентов до долгосрочных привычек.
-          Без детоксов, магических диет и маркетинга.
+          Пошаговые курсы с маршрутом, зачётами и тренажёром слабых мест.
+          Выбирайте направление и двигайтесь в своём темпе.
         </p>
         <ul className="onboarding-features">
-          <li><strong>Теория</strong> — только то, что подтверждено исследованиями</li>
-          <li><strong>Практика</strong> — задания после каждого блока</li>
+          <li><strong>Теория</strong> — проверенные источники и понятные объяснения</li>
+          <li><strong>Практика</strong> — задания и разбор после каждого блока</li>
           <li><strong>Тренажёр</strong> — интервальные повторения для долгого запоминания</li>
         </ul>
         <button className="primary-action onboarding-cta" type="button" onClick={handleStart}>
-          Начать курс
+          Начать
         </button>
         <p className="onboarding-disclaimer">
-          Курс не заменяет врача, диагностику и индивидуальные рекомендации.
+          Курсы не заменяют профессиональные консультации и индивидуальные рекомендации.
         </p>
       </div>
     </div>

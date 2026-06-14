@@ -1,19 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, NotebookPen } from "lucide-react";
-import { ensureModuleFiles, moduleFilesLoaded } from "../../content/api";
+import { ensureModuleFiles, moduleFilesLoaded, readerFilesFromManifest } from "../../content/api";
 import type { AppState, CourseBundle, CourseModule, ModuleProgress } from "../../domain/types";
 import { navigate } from "../../ui/route";
 import { Md } from "../../ui/md";
 
-const READER_FILES = ["theory.md", "terms.md", "practice.md", "diagrams.md", "summary.md"] as const;
-
-const PAGE_META: { file: (typeof READER_FILES)[number]; label: string }[] = [
-  { file: "theory.md", label: "Теория" },
-  { file: "terms.md", label: "Термины" },
-  { file: "practice.md", label: "Применение" },
-  { file: "diagrams.md", label: "Схемы" },
-  { file: "summary.md", label: "Суть" },
-];
+const PAGE_LABELS: Record<string, string> = {
+  "theory.md": "Теория",
+  "terms.md": "Термины",
+  "practice.md": "Применение",
+  "diagrams.md": "Схемы",
+  "summary.md": "Суть",
+  "reading.md": "Чтение",
+  "video-notes.md": "Конспект видео",
+  "lab.md": "Лабораторная",
+};
 
 interface ReaderProps {
   bundle: CourseBundle;
@@ -25,21 +26,23 @@ interface ReaderProps {
 }
 
 export function ReaderView({ bundle, module, progress, saveProgress }: ReaderProps) {
-  const [ready, setReady] = useState(() => moduleFilesLoaded(module, [...READER_FILES]));
+  const readerFiles = useMemo(() => readerFilesFromManifest(bundle.manifest), [bundle.manifest]);
+  const pageMeta = useMemo(() => readerFiles.map((file) => ({ file, label: PAGE_LABELS[file] || file })), [readerFiles]);
+  const [ready, setReady] = useState(() => moduleFilesLoaded(module, readerFiles));
   const [error, setError] = useState(false);
   const [draft, setDraft] = useState(progress.takeawayDraft ?? progress.takeaway ?? "");
   const saveTimer = useRef<number | null>(null);
   const rawIndex = progress.readerPageIndex ?? 0;
-  const pageIndex = Math.min(Math.max(0, rawIndex), PAGE_META.length - 1);
-  const isLastPage = pageIndex >= PAGE_META.length - 1;
-  const page = PAGE_META[pageIndex];
+  const pageIndex = Math.min(Math.max(0, rawIndex), pageMeta.length - 1);
+  const isLastPage = pageIndex >= pageMeta.length - 1;
+  const page = pageMeta[pageIndex];
 
   useEffect(() => () => {
     if (saveTimer.current) window.clearTimeout(saveTimer.current);
   }, []);
 
   const loadFiles = useCallback(() => {
-    if (moduleFilesLoaded(module, [...READER_FILES])) {
+    if (moduleFilesLoaded(module, readerFiles)) {
       setReady(true);
       setError(false);
       return () => undefined;
@@ -47,7 +50,7 @@ export function ReaderView({ bundle, module, progress, saveProgress }: ReaderPro
     let cancelled = false;
     setReady(false);
     setError(false);
-    void ensureModuleFiles(bundle, module.id, [...READER_FILES])
+    void ensureModuleFiles(bundle, module.id, readerFiles)
       .catch(() => {
         if (!cancelled) setError(true);
       })
@@ -57,11 +60,21 @@ export function ReaderView({ bundle, module, progress, saveProgress }: ReaderPro
     return () => {
       cancelled = true;
     };
-  }, [bundle, module]);
+  }, [bundle, module, readerFiles]);
 
   useEffect(() => {
     return loadFiles();
   }, [loadFiles]);
+
+  if (!page) {
+    return (
+      <section className="screen station-screen">
+        <div className="load-error" role="alert">
+          <p>Не удалось определить файлы для чтения.</p>
+        </div>
+      </section>
+    );
+  }
 
   if (error) {
     return (
@@ -105,7 +118,7 @@ export function ReaderView({ bundle, module, progress, saveProgress }: ReaderPro
         patch.takeawayUpdatedAt = new Date().toISOString();
       }
       await saveProgress(module.id, patch);
-      navigate({ screen: "station", moduleId: module.id, step: "check" });
+      navigate({ screen: "station", courseId: bundle.courseId, moduleId: module.id, step: "check" });
     } else {
       await saveProgress(module.id, { readerPageIndex: pageIndex + 1 });
     }
@@ -116,8 +129,8 @@ export function ReaderView({ bundle, module, progress, saveProgress }: ReaderPro
       <header className="station-head">
         <div className="section-kicker">Блок · {module.phaseTitle}</div>
         <h2>{module.id}. {module.title}</h2>
-        <p>{page.label} · {pageIndex + 1} / {PAGE_META.length}</p>
-        <progress className="reader-progress" max={PAGE_META.length} value={pageIndex + 1} aria-label={`Страница ${pageIndex + 1} из ${PAGE_META.length}`} />
+        <p>{page.label} · {pageIndex + 1} / {pageMeta.length}</p>
+        <progress className="reader-progress" max={pageMeta.length} value={pageIndex + 1} aria-label={`Страница ${pageIndex + 1} из ${pageMeta.length}`} />
       </header>
       <Md as="article" className="markdown-block primary-sheet">{module.files[page.file]}</Md>
       {isLastPage ? (

@@ -1,6 +1,6 @@
 import { dueReviewItems } from "./review";
 import { pluralize } from "../shared/utils/pluralize";
-import { deriveCheckpointStatus as deriveCheckpointStatusFromMachine, getState as getStateFromMachine } from "./blockStateMachine";
+import { deriveCheckpointStatus as deriveCheckpointStatusFromMachine, getState as getStateFromMachine, latestCheckpointAttempt } from "./blockStateMachine";
 import type {
   AppState,
   CheckpointAttempt,
@@ -63,7 +63,7 @@ export interface LearningAction {
 
 export function getPreviousBlock(blockId: string, course: CourseModule[]): CourseModule | null {
   const index = blockIndex(blockId, course);
-  return index > 0 ? course[index - 1] : null;
+  return index > 0 ? (course[index - 1] ?? null) : null;
 }
 
 export function getCheckpointStatus(blockId: string, progress: ProgressMap): CheckpointStatus {
@@ -212,23 +212,6 @@ function progressLabel(access: BlockAccess): string {
 
 function deriveCheckpointStatusFromProgress(progress?: ModuleProgress): CheckpointStatus {
   return deriveCheckpointStatusFromMachine(progress);
-}
-
-function latestCheckpointAttempt(progress?: ModuleProgress): CheckpointAttempt | null {
-  const attempts = (progress?.checkpointAttempts || []).filter(isScoredAttempt);
-  if (!attempts.length) return null;
-  return attempts.sort((left, right) => attemptEndedAt(right) - attemptEndedAt(left))[0] || null;
-}
-
-function isScoredAttempt(attempt: CheckpointAttempt): boolean {
-  return Number.isFinite(attempt.correct) && Number.isFinite(attempt.total);
-}
-
-function attemptEndedAt(attempt: CheckpointAttempt): number {
-  const completed = Date.parse(attempt.completedAt || "");
-  if (!Number.isNaN(completed)) return completed;
-  const started = Date.parse(attempt.startedAt || "");
-  return Number.isNaN(started) ? 0 : started;
 }
 
 function isCheckpointPassedWithoutAutoQuestions(progress?: ModuleProgress): boolean {

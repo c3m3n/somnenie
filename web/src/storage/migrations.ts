@@ -1,12 +1,64 @@
-import { COURSE_ID, SCHEMA_VERSION, type AppState, type ModuleProgress, type ProgressMap } from "../domain/types";
+import { COURSE_ID, SCHEMA_VERSION, type AppState, type CourseAppState, type CourseId, type ModuleProgress, type MultiCourseAppState, type ProgressMap } from "../domain/types";
 import { defaultReviewState, defaultSessionsState, normalizeReviewState, normalizeSessionsState } from "../domain/review";
 
-export function migrateAppState(state: unknown, targetVersion = SCHEMA_VERSION): AppState {
+const DEFAULT_COURSE_ID: CourseId = COURSE_ID;
+
+export function migrateAppState(state: unknown, targetVersion = SCHEMA_VERSION): MultiCourseAppState {
   const source = isRecord(state) ? state : {};
+  const activeCourseId = typeof source.activeCourseId === "string" ? source.activeCourseId : DEFAULT_COURSE_ID;
+
+  if (isLegacyAppState(source)) {
+    return migrateLegacyAppState(source, activeCourseId, targetVersion);
+  }
+
+  return migrateMultiCourseAppState(source, activeCourseId, targetVersion);
+}
+
+function isLegacyAppState(source: Record<string, unknown>): boolean {
+  return !isRecord(source.courses) && Boolean(source.review || source.sessions);
+}
+
+function migrateLegacyAppState(source: Record<string, unknown>, activeCourseId: string, targetVersion: number): MultiCourseAppState {
   return {
     schemaVersion: targetVersion,
-    review: normalizeReviewState(source.review),
-    sessions: normalizeSessionsState(source.sessions),
+    activeCourseId: activeCourseId,
+    courses: {
+      [DEFAULT_COURSE_ID]: buildCourseAppState(DEFAULT_COURSE_ID, source),
+    },
+  };
+}
+
+function migrateMultiCourseAppState(source: Record<string, unknown>, activeCourseId: string, targetVersion: number): MultiCourseAppState {
+  const courses = isRecord(source.courses) ? source.courses : {};
+  const migratedCourses = migrateCourseStates(courses);
+
+  if (!migratedCourses[DEFAULT_COURSE_ID]) {
+    migratedCourses[DEFAULT_COURSE_ID] = {
+      review: defaultReviewState(),
+      sessions: defaultSessionsState(),
+    };
+  }
+
+  return {
+    schemaVersion: targetVersion,
+    activeCourseId: activeCourseId,
+    courses: migratedCourses,
+  };
+}
+
+function migrateCourseStates(courses: Record<string, unknown>): Record<CourseId, CourseAppState> {
+  const migratedCourses: Record<CourseId, CourseAppState> = {};
+  for (const [courseId, courseState] of Object.entries(courses)) {
+    if (!isRecord(courseState)) continue;
+    migratedCourses[courseId] = buildCourseAppState(courseId, courseState);
+  }
+  return migratedCourses;
+}
+
+function buildCourseAppState(courseId: string, source: Record<string, unknown>): CourseAppState {
+  return {
+    review: normalizeReviewState(source.review, courseId),
+    sessions: normalizeSessionsState(source.sessions, undefined, courseId),
   };
 }
 
@@ -37,16 +89,29 @@ export function migrateModuleProgress(progress: unknown, _targetVersion = SCHEMA
   return next;
 }
 
-export function defaultAppState(): AppState {
-  return { schemaVersion: SCHEMA_VERSION, review: defaultReviewState(), sessions: defaultSessionsState() };
+export function defaultAppState(): MultiCourseAppState {
+  return {
+    schemaVersion: SCHEMA_VERSION,
+    activeCourseId: DEFAULT_COURSE_ID,
+    courses: {
+      [DEFAULT_COURSE_ID]: {
+        review: defaultReviewState(DEFAULT_COURSE_ID),
+        sessions: defaultSessionsState(undefined, DEFAULT_COURSE_ID),
+      },
+    },
+  };
 }
 
 export function appStateWithDefaults(value: unknown): AppState {
   const migrated = migrateAppState(value);
+  const courseState = migrated.courses[DEFAULT_COURSE_ID] || {
+    review: defaultReviewState(DEFAULT_COURSE_ID),
+    sessions: defaultSessionsState(undefined, DEFAULT_COURSE_ID),
+  };
   return {
     schemaVersion: SCHEMA_VERSION,
-    review: migrated.review || defaultReviewState(),
-    sessions: migrated.sessions || { courseId: COURSE_ID, todayDone: {}, activeDays: [], lastDate: null, streakDays: 0, bestStreakDays: 0 },
+    review: courseState.review || defaultReviewState(DEFAULT_COURSE_ID),
+    sessions: courseState.sessions || defaultSessionsState(undefined, DEFAULT_COURSE_ID),
   };
 }
 

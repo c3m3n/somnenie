@@ -57,17 +57,17 @@ function legacyScoredStatus(progress: ModuleProgress): { passed: boolean } | nul
   return { passed: progress.quizBest / progress.quizTotal >= LEGACY_PASS_RATIO };
 }
 
-function latestCheckpointAttempt(progress?: ModuleProgress): CheckpointAttempt | null {
+export function latestCheckpointAttempt(progress?: ModuleProgress): CheckpointAttempt | null {
   const attempts = (progress?.checkpointAttempts || []).filter(isScoredAttempt);
   if (!attempts.length) return null;
   return attempts.sort((left, right) => attemptEndedAt(right) - attemptEndedAt(left))[0] || null;
 }
 
-function isScoredAttempt(attempt: CheckpointAttempt): boolean {
+export function isScoredAttempt(attempt: CheckpointAttempt): boolean {
   return Number.isFinite(attempt.correct) && Number.isFinite(attempt.total);
 }
 
-function attemptEndedAt(attempt: CheckpointAttempt): number {
+export function attemptEndedAt(attempt: CheckpointAttempt): number {
   const completed = Date.parse(attempt.completedAt || "");
   if (!Number.isNaN(completed)) return completed;
   const started = Date.parse(attempt.startedAt || "");

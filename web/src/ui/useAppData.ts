@@ -1,14 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { buildTodayAction } from "../domain/today";
-import { SCHEMA_VERSION, type AppState, type CourseBundle, type LearnerProfile, type ModuleProgress, type ProgressMap } from "../domain/types";
+import { COURSE_ID, SCHEMA_VERSION, type AppState, type ContentCatalog, type CourseBundle, type CourseId, type LearnerProfile, type ModuleProgress, type ProgressMap } from "../domain/types";
 import { useAppServices } from "../shared/services/AppServicesContext";
 import type { AppServices } from "../shared/services/AppServicesContext";
 
 interface AppDataState {
+  catalog: ContentCatalog | null;
   bundle: CourseBundle | null;
   profile: LearnerProfile | null;
   progress: ProgressMap;
   appState: AppState | null;
+  activeCourseId: CourseId | null;
   todayAction: ReturnType<typeof buildTodayAction> | null;
   loading: boolean;
   error: string | null;
@@ -20,10 +22,12 @@ interface SaveQueue {
 }
 
 export interface AppData {
+  catalog: ContentCatalog | null;
   bundle: CourseBundle | null;
   profile: LearnerProfile | null;
   progress: ProgressMap;
   appState: AppState | null;
+  activeCourseId: CourseId | null;
   todayAction: ReturnType<typeof buildTodayAction> | null;
   loading: boolean;
   error: string | null;
@@ -42,9 +46,11 @@ export function useAppData(): AppData {
   const writeQueue = useRef(createSaveQueue());
   const todayActionRef = useRef<AppDataState["todayAction"]>(null);
   const moduleCountRef = useRef(0);
+  const activeCourseRef = useRef<CourseId | null>(null);
 
   const loadBundleAndState = useCallback(async () => {
     const stateResult = await loadState(services);
+    activeCourseRef.current = stateResult.activeCourseId;
     moduleCountRef.current = Object.keys(stateResult.progress).length;
     return stateResult;
   }, [services]);
@@ -57,8 +63,10 @@ export function useAppData(): AppData {
   }, [loadBundleAndState]);
 
   const saveProgress = useCallback(async (moduleId: string, patch: ModuleProgress) => {
+    const courseId = activeCourseRef.current;
+    if (!courseId) throw new Error("No active course");
     try {
-      const nextProgress = await writeQueue.current.enqueue(() => services.storage.saveModuleProgress(moduleId, patch));
+      const nextProgress = await writeQueue.current.enqueue(() => services.storage.saveModuleProgress(courseId, moduleId, patch));
       setState((current) => {
         const progress = { ...current.progress, [moduleId]: nextProgress };
         const nextAction = current.bundle && current.appState
@@ -74,8 +82,11 @@ export function useAppData(): AppData {
   }, [services.storage]);
 
   const saveState = useCallback(async (patch: Partial<AppState>) => {
+    const courseId = activeCourseRef.current;
+    if (!courseId) throw new Error("No active course");
     try {
-      const nextState = await writeQueue.current.enqueue(() => services.storage.saveAppState(patch));
+      const courseState = await writeQueue.current.enqueue(() => services.storage.saveCourseAppState(courseId, patch));
+      const nextState: AppState = { schemaVersion: SCHEMA_VERSION, review: courseState.review, sessions: courseState.sessions };
       setState((current) => {
         const nextAction = current.bundle ? buildTodayAction(current.bundle.modules, current.progress, nextState) : current.todayAction;
         todayActionRef.current = nextAction;
@@ -98,12 +109,14 @@ export function useAppData(): AppData {
   }, [services.storage]);
 
   const resetProgress = useCallback(async () => {
-    await writeQueue.current.enqueue(() => services.storage.resetProgress());
+    const courseId = activeCourseRef.current || COURSE_ID;
+    await writeQueue.current.enqueue(() => services.storage.resetProgress(courseId));
     await reload();
   }, [reload, services.storage]);
 
   const exportData = useCallback(async () => {
-    const payload = await services.storage.exportData();
+    const courseId = activeCourseRef.current || COURSE_ID;
+    const payload = await services.storage.exportData(courseId);
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const objectUrl = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
@@ -131,10 +144,12 @@ export function useAppData(): AppData {
 
 function createInitialState(): AppDataState {
   return {
+    catalog: null,
     bundle: null,
     profile: null,
     progress: {},
     appState: null,
+    activeCourseId: null,
     todayAction: null,
     loading: true,
     error: null,
@@ -146,20 +161,44 @@ async function loadState(services: AppServices) {
   try {
     await services.storage.initStorage();
     await services.storage.migrateFromLocalStorage();
-    const [bundle, profile, progress, appState] = await Promise.all([
-      services.content.loadCourseBundle(),
+    const [catalog, profile, globalAppState] = await Promise.all([
+      services.content.loadCatalog(),
       services.storage.getProfile(),
-      services.storage.getAllProgress(),
       services.storage.getAppState(),
     ]);
 
-    const appStateValue = appState || { schemaVersion: SCHEMA_VERSION, review: { schemaVersion: 2, courseId: "nutrition", items: [] }, sessions: { courseId: "nutrition", todayDone: {}, activeDays: [], lastDate: null, streakDays: 0, bestStreakDays: 0 } };
+    const activeCourseId = resolveActiveCourseId(services, catalog, profile, globalAppState);
+    if (!activeCourseId) {
+      return {
+        ...createInitialState(),
+        catalog,
+        profile,
+        activeCourseId: null,
+        loading: false,
+        error: null,
+      };
+    }
+
+    const [bundle, progress, courseAppState] = await Promise.all([
+      services.content.loadCourseBundle(activeCourseId),
+      services.storage.getAllProgress(activeCourseId),
+      services.storage.getCourseAppState(activeCourseId),
+    ]);
+
+    const appStateValue: AppState = {
+      schemaVersion: SCHEMA_VERSION,
+      review: courseAppState?.review || { schemaVersion: 2, courseId: activeCourseId, items: [] },
+      sessions: courseAppState?.sessions || { courseId: activeCourseId, todayDone: {}, activeDays: [], lastDate: null, streakDays: 0, bestStreakDays: 0 },
+    };
+
     return {
       ...createInitialState(),
+      catalog,
       bundle,
       profile,
       progress,
       appState: appStateValue,
+      activeCourseId,
       todayAction: buildTodayAction(bundle.modules, progress, appStateValue),
       loading: false,
       error: null,
@@ -171,6 +210,19 @@ async function loadState(services: AppServices) {
       error: error instanceof Error ? error.message : "Не удалось загрузить приложение",
     };
   }
+}
+
+function resolveActiveCourseId(
+  services: AppServices,
+  catalog: ContentCatalog | null,
+  profile: LearnerProfile | null,
+  globalAppState: { activeCourseId?: CourseId } | null,
+): CourseId | null {
+  const route = services.navigation.parseRoute();
+  if (route.screen !== "courses" && route.courseId) return route.courseId;
+  if (profile?.activeCourseId) return profile.activeCourseId;
+  if (globalAppState?.activeCourseId) return globalAppState.activeCourseId;
+  return catalog?.courses[0]?.id || null;
 }
 
 function createSaveQueue(): SaveQueue {

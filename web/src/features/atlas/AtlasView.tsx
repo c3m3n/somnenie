@@ -1,9 +1,10 @@
 import { CheckCircle2, Circle, LockKeyhole, RotateCcw } from "lucide-react";
 import { getCourseBlockViewModels, type CourseBlockViewModel } from "../../domain/learningPath";
-import type { CourseBundle, CourseModule, ProgressMap, StationStepKey } from "../../domain/types";
+import type { CourseBundle, CourseId, CourseModule, ProgressMap, StationStepKey } from "../../domain/types";
 import { navigate } from "../../ui/route";
 
 export function AtlasView({ bundle, progress }: { bundle: CourseBundle; progress: ProgressMap }) {
+  const courseId = bundle.courseId;
   const ordered = getCourseBlockViewModels(bundle.modules, progress);
   const viewModels = new Map(ordered.map((viewModel) => [viewModel.id, viewModel]));
   const currentIndex = currentBlockIndex(ordered);
@@ -24,6 +25,7 @@ export function AtlasView({ bundle, progress }: { bundle: CourseBundle; progress
                   module={module}
                   isCurrent={moduleIndex(ordered, module.id) === currentIndex}
                   viewModel={viewModels.get(module.id)}
+                  courseId={courseId}
                 />
               ))}
             </div>
@@ -38,7 +40,8 @@ function ModuleButton({
   module,
   isCurrent,
   viewModel,
-}: { module: CourseModule; isCurrent: boolean; viewModel?: CourseBlockViewModel }) {
+  courseId,
+}: { module: CourseModule; isCurrent: boolean; viewModel?: CourseBlockViewModel; courseId: CourseId }) {
   const view = viewModel || fallbackViewModel(module);
   const isLocked = view.state === "locked";
   const status = statusText(view);
@@ -49,7 +52,7 @@ function ModuleButton({
     <button
       className={`module-tile module-tile-${view.state} ${isCurrent ? "module-tile-current" : ""}`}
       type="button"
-      onClick={() => navigate({ screen: "station", moduleId: module.id, step: routeStep })}
+      onClick={() => navigate({ screen: "station", courseId, moduleId: module.id, step: routeStep })}
       aria-label={`Блок ${module.id} ${module.title} ${status}`}
     >
       {iconFor(view)}

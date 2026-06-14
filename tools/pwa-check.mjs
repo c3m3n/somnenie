@@ -38,7 +38,7 @@ const manifest = await readJson("manifest.webmanifest");
 assert(manifest.name && manifest.short_name, "manifest should expose app names");
 assert(manifest.id, "manifest should define a stable app id");
 assert(manifest.lang === "ru", "manifest language should be ru");
-assert(manifest.start_url?.includes("#today"), "manifest start_url should launch Today");
+assert(manifest.start_url?.includes("#/courses"), "manifest start_url should launch course catalog");
 assert(manifest.scope === "./", "manifest scope should stay local to the app");
 assert(manifest.display === "standalone", "manifest display should be standalone");
 assert(Array.isArray(manifest.display_override) && manifest.display_override.includes("standalone"), "manifest should include display_override");
@@ -52,7 +52,7 @@ assert(icons.some((icon) => icon.sizes === "512x512" && icon.purpose?.includes("
 for (const icon of icons) await assertPngSize(assetPath(icon.src), [icon.sizes]);
 
 const shortcuts = manifest.shortcuts || [];
-for (const route of ["#today", "#atlas", "#memory", "#journal"]) {
+for (const route of ["#/courses", "#/nutrition/today", "#/nutrition/atlas", "#/nutrition/memory", "#/nutrition/journal"]) {
   assert(shortcuts.some((item) => String(item.url || "").includes(route)), `manifest shortcut ${route} is missing`);
 }
 
@@ -63,9 +63,12 @@ for (const screenshot of screenshots) await assertPngSize(assetPath(screenshot.s
 
 const sw = await readText("sw.js");
 assert(sw.includes("nutrio-react-v"), "service worker should declare the React cache version");
-assert(sw.includes("/content/manifest.json"), "service worker should cache the content manifest");
-assert(sw.includes("/content/course.json"), "service worker should cache the course index");
-assert(sw.includes("/content/claims.json"), "service worker should cache claims");
+assert(sw.includes("/content/catalog.json"), "service worker should cache the content catalog");
+assert(sw.includes("precacheContentIndexes"), "service worker should precache content indexes");
+assert(sw.includes("precacheCourseContent"), "service worker should precache course content");
+assert(sw.includes('/content/') && sw.includes('/manifest.json'), "service worker should cache course manifests");
+assert(sw.includes('/course.json'), "service worker should cache course indexes");
+assert(sw.includes('/claims.json'), "service worker should cache course claims");
 assert(sw.includes("CACHE_CONTENT"), "service worker should support content warmup messages");
 assert(sw.includes("SKIP_WAITING"), "service worker should keep explicit update activation");
 assert(sw.includes("navigationPreload"), "service worker should keep navigation preload support");

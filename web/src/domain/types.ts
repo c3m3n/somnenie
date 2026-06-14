@@ -1,13 +1,19 @@
 export const COURSE_ID = "nutrition";
-export const SCHEMA_VERSION = 2;
+export const SCHEMA_VERSION = 3;
 export const REVIEW_SCHEMA_VERSION = 2;
 export const QUIZ_PROGRESS_VERSION = 2;
-export const MODULE_FILES = ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"] as const;
+export const DEFAULT_MODULE_FILES = ["theory.md", "terms.md", "quiz.md", "practice.md", "diagrams.md", "summary.md"] as const;
 
-export type ModuleFileName = (typeof MODULE_FILES)[number];
+export type CourseId = string;
+export type ModuleFileName = string;
 export type StationStepKey = "understand" | "apply" | "check" | "anchor";
 export type CheckpointStatus = "not_started" | "ready" | "in_progress" | "failed" | "passed";
 export type RemediationAction = "review_failed_questions" | "read_related_fragments" | "retake_checkpoint";
+
+export interface ContentCatalog {
+  schemaVersion: number;
+  courses: { id: CourseId; title: string; description?: string; manifest: string }[];
+}
 
 export interface ContentManifestModule {
   id: string;
@@ -17,6 +23,7 @@ export interface ContentManifestModule {
 export interface ContentManifest {
   schemaVersion: number;
   contentVersion: string;
+  courseId: CourseId;
   course: string;
   claims: string;
   moduleFiles: ModuleFileName[];
@@ -71,6 +78,7 @@ export interface CourseModule {
 }
 
 export interface CourseBundle {
+  courseId: CourseId;
   manifest: ContentManifest;
   course: CourseMap;
   claims: ClaimsContract;
@@ -85,6 +93,7 @@ export interface LearnerProfile {
   startedAt?: string;
   updatedAt?: string;
   quietMode?: boolean;
+  activeCourseId?: CourseId;
 }
 
 export interface WeakSpot {
@@ -216,10 +225,21 @@ export interface AppState {
   sessions: SessionsState;
 }
 
+export interface CourseAppState {
+  review: ReviewState;
+  sessions: SessionsState;
+}
+
+export interface MultiCourseAppState {
+  schemaVersion: number;
+  activeCourseId: CourseId;
+  courses: Record<CourseId, CourseAppState>;
+}
+
 export interface ExportPayload {
   schemaVersion: number;
   exportedAt: string;
-  courseId: string;
+  courseId: CourseId;
   profile: LearnerProfile | null;
   progress: ProgressMap;
   review: ReviewState;

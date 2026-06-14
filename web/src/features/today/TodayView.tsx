@@ -2,10 +2,12 @@ import { Brain, Play, ScrollText } from "lucide-react";
 import { pluralize } from "../../shared/utils/pluralize";
 import { completedCount } from "../../domain/today";
 import { toISODate } from "../../domain/date";
-import type { CourseBundle, CourseModule, ModuleProgress, ProgressMap, SessionsState, TodayAction } from "../../domain/types";
+import type { CourseBundle, CourseId, CourseModule, ModuleFileName, ModuleProgress, ProgressMap, SessionsState, TodayAction } from "../../domain/types";
+import { readerFilesFromManifest } from "../../content/api";
 import { navigate } from "../../ui/route";
 
 export function TodayView({ bundle, progress, action, lastSessionDate, sessions }: { bundle: CourseBundle; progress: ProgressMap; action: TodayAction; lastSessionDate?: string | null; sessions?: SessionsState }) {
+  const courseId = bundle.courseId;
   const screen = buildLearningScreenCopy(action, bundle, progress);
   const streakLine = buildStreakLine(sessions);
   return (
@@ -18,7 +20,7 @@ export function TodayView({ bundle, progress, action, lastSessionDate, sessions 
           {screen.context ? <span>{screen.context}</span> : null}
         </div>
       </article>
-      <button className="primary-action" type="button" onClick={() => runAction(action)}>
+      <button className="primary-action" type="button" onClick={() => runAction(action, courseId)}>
         {iconFor(action.kind)}<span>{screen.primaryCta}</span>
       </button>
       <p className="after-action"><strong>После этого:</strong> {screen.afterAction}</p>
@@ -28,7 +30,7 @@ export function TodayView({ bundle, progress, action, lastSessionDate, sessions 
       </div>
       {streakLine ? <p className="streak-line">{streakLine}</p> : null}
       {lastSessionDate ? <p className="last-session">Последний раз: {lastSessionLabel(lastSessionDate)}</p> : null}
-      <p className="safety-note">Курс не заменяет врача, диагностику, лечение или индивидуальные рекомендации по питанию.</p>
+      <p className="safety-note">Курс не заменяет профессиональную консультацию или индивидуальные рекомендации.</p>
     </section>
   );
 }
@@ -41,12 +43,12 @@ function buildStreakLine(sessions?: SessionsState): string | null {
   return `Серия: ${sessions.streakDays} ${pluralize(sessions.streakDays, "день", "дня", "дней")}`;
 }
 
-function runAction(action: TodayAction): void {
-  if (action.kind === "review") navigate({ screen: "memory" });
-  else if (action.kind === "journal") navigate({ screen: "journal" });
-  else if (action.kind === "remediation" && action.moduleId) navigate({ screen: "remediation", moduleId: action.moduleId });
-  else if (action.kind === "station" && action.moduleId) navigate({ screen: "station", moduleId: action.moduleId, step: action.step || "understand" });
-  else navigate({ screen: "today" });
+function runAction(action: TodayAction, courseId: CourseId): void {
+  if (action.kind === "review") navigate({ screen: "memory", courseId });
+  else if (action.kind === "journal") navigate({ screen: "journal", courseId });
+  else if (action.kind === "remediation" && action.moduleId) navigate({ screen: "remediation", courseId, moduleId: action.moduleId });
+  else if (action.kind === "station" && action.moduleId) navigate({ screen: "station", courseId, moduleId: action.moduleId, step: action.step || "understand" });
+  else navigate({ screen: "today", courseId });
 }
 
 function iconFor(kind: TodayAction["kind"]) {
@@ -185,7 +187,7 @@ function continueBlockCopy(base: LearningScreenBase, module: CourseModule): Lear
     title: started ? "Продолжить блок" : "Начать блок",
     cardTitle: moduleLine(module),
     description: started ? "Вы уже начали этот блок." : "Это следующий доступный блок маршрута.",
-    context: started ? readerContextLine(base.progress[module.id]) : undefined,
+    context: started ? readerContextLine(base.bundle, base.progress[module.id]) : undefined,
     primaryCta: started ? "Продолжить" : "Начать блок",
     afterAction: "дойдёте до зачёта блока.",
   };
@@ -217,18 +219,30 @@ function weakSpotLine(count: number): string {
 }
 
 
-const READER_PAGE_LABELS = ["Теория", "Термины", "Применение", "Схемы", "Суть"] as const;
-const READER_PAGE_COUNT = READER_PAGE_LABELS.length;
+const DEFAULT_READER_LABELS: Record<ModuleFileName, string> = {
+  "theory.md": "Теория",
+  "terms.md": "Термины",
+  "practice.md": "Применение",
+  "diagrams.md": "Схемы",
+  "summary.md": "Суть",
+  "reading.md": "Чтение",
+  "video-notes.md": "Конспект видео",
+  "lab.md": "Лабораторная",
+};
 
-function readerContextLine(progress: ModuleProgress | undefined): string | undefined {
+function readerContextLine(bundle: CourseBundle, progress: ModuleProgress | undefined): string | undefined {
   if (!progress) return undefined;
-  const idx = Math.min(Math.max(0, progress.readerPageIndex ?? 0), READER_PAGE_COUNT - 1);
-  const label = READER_PAGE_LABELS[idx];
-  const pagesLeft = READER_PAGE_COUNT - idx;
-  const tail = idx === READER_PAGE_COUNT - 1
+  const readerFiles = readerFilesFromManifest(bundle.manifest);
+  const pageCount = readerFiles.length;
+  if (!pageCount) return undefined;
+  const idx = Math.min(Math.max(0, progress.readerPageIndex ?? 0), pageCount - 1);
+  const file = readerFiles[idx];
+  const label = DEFAULT_READER_LABELS[file] || file;
+  const pagesLeft = pageCount - idx;
+  const tail = idx === pageCount - 1
     ? "последняя страница"
     : `ещё ${pagesLeft} ${pluralize(pagesLeft, "страница", "страницы", "страниц")}`;
-  return `${label} · ${idx + 1} / ${READER_PAGE_COUNT} · ${tail}`;
+  return `${label} · ${idx + 1} / ${pageCount} · ${tail}`;
 }
 
 function lastSessionLabel(dateStr: string): string {
