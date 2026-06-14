@@ -24,52 +24,6 @@
   font-size: var(--text-caption);
 }
 
-.tabs {
-  position: sticky;
-  top: var(--topbar-height, 0px);
-  z-index: 10;
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0;
-  padding: 0;
-  border: 1px solid var(--color-rule-dark);
-  background: var(--color-paper);
-}
-
-.tab,
-.tabActive {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 44px;
-  border: 0;
-  border-right: 1px solid var(--color-rule-dark);
-  border-radius: 0;
-  background: var(--color-sheet);
-  color: var(--color-ink);
-  font-family: var(--font-display);
-  font-size: var(--text-caption);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.tab:last-child,
-.tabActive:last-child {
-  border-right: 0;
-}
-
-.tabActive {
-  background: linear-gradient(transparent 54%, var(--color-marker) 54%);
-  font-weight: 700;
-}
-
-.tab:focus-visible,
-.tabActive:focus-visible {
-  outline: 2px solid var(--color-focus);
-  outline-offset: -2px;
-}
-
 .product {
   min-width: 0;
 }
@@ -120,22 +74,32 @@
   text-align: left;
   cursor: pointer;
   transition: border-color var(--motion-duration) var(--motion-ease),
-    box-shadow var(--motion-duration) var(--motion-ease);
+    background var(--motion-duration) var(--motion-ease);
 }
 
-.answerButton:hover:not(:disabled) {
+.answerButton:hover:not(.answerButtonLocked) {
   border-color: var(--color-ink);
-  box-shadow: inset 0 -5px 0 var(--color-marker-blue);
+  background: var(--color-primary-bg);
 }
 
-.answerButton:focus-visible {
+.answerButton:has(input:focus-visible) {
   outline: 2px solid var(--color-focus);
   outline-offset: 2px;
 }
 
-.answerButton:disabled {
+.answerButtonLocked {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+.answerInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .answerLetter {
@@ -257,39 +221,12 @@
 }
 
 @media (max-width: 520px) {
-  .tabs {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .tab,
-  .tabActive {
-    gap: 4px;
-    min-width: 0;
-    min-height: 44px;
-    padding-inline: 6px;
-    border-right: 1px solid var(--color-rule-dark);
-    font-size: var(--text-label);
-  }
-
-  .tab:last-child,
-  .tabActive:last-child {
-    border-right: 0;
-  }
-
-  .tab svg,
-  .tabActive svg {
-    width: 14px;
-    height: 14px;
-  }
-
   .questionText {
     font-size: var(--text-body-lg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .tab,
-  .tabActive,
   .answerButton {
     transition: none;
   }

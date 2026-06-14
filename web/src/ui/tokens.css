@@ -1,54 +1,60 @@
 :root {
   /* Ink / Paper / Sheet */
   --color-ink: #171717;
-  --color-paper: #fbefe9;
-  --color-sheet: #fffdf8;
+  --color-paper: #f7f5f2;
+  --color-sheet: #ffffff;
+
+  /* Primary / Highlight */
+  --color-primary: #171717;
+  --color-primary-bg: rgba(23, 23, 23, 0.04);
+  --color-highlight: #e8f0a0;
+  --color-highlight-strong: #d4e157;
 
   /* Accents */
-  --color-accent: #d64b3c;
-  --color-accent-hover: #ef4b26;
-  --color-accent-bg: #fde8e3;
+  --color-accent: #c44536;
+  --color-accent-hover: #d64b3c;
+  --color-accent-bg: #fdece8;
 
   /* Secondary states */
   --color-teal: #0d5c63;
   --color-teal-bg: #e6f2f3;
-  --color-blue: #4a6fa5;
+  --color-blue: #3d5f8f;
   --color-blue-bg: #e8f0fb;
 
   /* Neutrals */
-  --color-muted: #5e6665;
-  --color-rule: #b8c0bf;
-  --color-rule-dark: #7d8785;
-  --color-marker: #d9ff3f;
-  --color-marker-blue: #aacbff;
+  --color-muted: #5a6362;
+  --color-rule: #c8cfce;
+  --color-rule-dark: #8a9291;
+  --color-marker: #e8f0a0;
+  --color-marker-blue: #b8d4ff;
   --color-focus: #1b4bff;
 
   /* Feedback */
-  --color-success: #1f7a3d;
+  --color-success: #1f6b3d;
   --color-success-bg: #e4f5ea;
-  --color-error: #8b0000;
+  --color-error: #7a1f1f;
   --color-error-bg: #fde8e8;
   --color-error-rule: #f5a0a0;
-  --color-warning: #7a5f1c;
+  --color-warning: #6b5318;
   --color-warning-bg: #fbf3d9;
 
   /* Typography */
   --font-display: "IBM Plex Sans", Arial, sans-serif;
   --font-mono: "IBM Plex Mono", Consolas, monospace;
 
-  --text-display-xl: clamp(2.6rem, 7vw, 4.2rem);
-  --text-display-lg: clamp(2rem, 5vw, 3.2rem);
-  --text-title-lg: 1.55rem;
-  --text-title-md: 1.35rem;
-  --text-title-sm: 1.18rem;
-  --text-body-lg: 1.08rem;
+  --text-display-xl: clamp(2.4rem, 6vw, 3.8rem);
+  --text-display-lg: clamp(2rem, 4.5vw, 3rem);
+  --text-title-lg: 1.45rem;
+  --text-title-md: 1.25rem;
+  --text-title-sm: 1.1rem;
+  --text-body-lg: 1.05rem;
   --text-body-md: 1rem;
   --text-body-sm: 0.92rem;
-  --text-caption: 0.82rem;
-  --text-label: 0.75rem;
+  --text-caption: 0.8rem;
+  --text-label: 0.72rem;
 
-  --line-height-tight: 0.98;
-  --line-height-heading: 1.12;
+  --line-height-tight: 1;
+  --line-height-heading: 1.15;
   --line-height-body: 1.55;
   --line-height-loose: 1.72;
 
@@ -71,11 +77,11 @@
   --max-prose: 760px;
 
   /* Shadows */
-  --shadow-card: 0 1px 0 rgba(23, 23, 23, 0.06), 0 2px 8px rgba(23, 23, 23, 0.04);
-  --shadow-cta: 5px 5px 0 rgba(214, 75, 60, 0.22);
-  --shadow-cta-hover: 7px 7px 0 rgba(214, 75, 60, 0.28);
+  --shadow-card: 0 1px 2px rgba(23, 23, 23, 0.05);
+  --shadow-cta: none;
+  --shadow-cta-hover: none;
 
   /* Motion */
-  --motion-duration: 0.18s;
+  --motion-duration: 0.2s;
   --motion-ease: ease-out;
 }

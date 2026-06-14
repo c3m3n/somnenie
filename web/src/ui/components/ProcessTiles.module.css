@@ -33,17 +33,42 @@
 
 .active {
   border-color: var(--color-ink);
-  background: linear-gradient(transparent 58%, var(--color-marker) 58%);
+  background: var(--color-primary-bg);
 }
 
 @media (max-width: 720px) {
   .list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+    border: 1px solid var(--color-rule-dark);
+    background: var(--color-sheet);
+  }
+
+  .tile {
+    min-height: 52px;
+    padding: var(--space-2);
+    border: 0;
+    border-right: 1px solid var(--color-rule);
+    border-radius: 0;
+  }
+
+  .tile:last-child {
+    border-right: 0;
+  }
+
+  .number {
+    font-size: 0.68rem;
+  }
+
+  .label {
+    font-size: 0.8rem;
+    line-height: 1.1;
+    overflow-wrap: anywhere;
   }
 }
 
-@media (max-width: 520px) {
-  .list {
-    grid-template-columns: 1fr;
+@media (max-width: 360px) {
+  .label {
+    font-size: 0.72rem;
   }
 }

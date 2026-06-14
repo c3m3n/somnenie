@@ -164,6 +164,11 @@ async function screenshot(send, name) {
   fs.writeFileSync(path.join(shotDir, name), Buffer.from(image.data, "base64"));
 }
 
+async function preparePage(page, appUrl, hash = "#/nutrition/today") {
+  await page.send("Page.addScriptToEvaluateOnNewDocument", { source: seedScript() });
+  await page.send("Page.navigate", { url: `${appUrl}${hash}` });
+}
+
 async function runSmoke(appUrl) {
   const chromePath = browserCandidates().find((candidate) => fs.existsSync(candidate));
   assert(chromePath, "Chrome or Edge executable was not found. Set CHROME_PATH to run smoke.");
@@ -185,17 +190,17 @@ async function runSmoke(appUrl) {
     const cdp = await connect(version.webSocketDebuggerUrl);
     try {
       const desktop = await page(cdp);
-      await desktop.send("Page.navigate", { url: appUrl });
-      await waitFor(desktop.evalJs, "Boolean(document.querySelector('.today-screen, .onboarding-screen'))", "App start");
-      const desktopSummary = value(await desktop.evalJs(flowScript(), true), "desktop smoke");
+      await preparePage(desktop, appUrl);
+      await waitFor(desktop.evalJs, "Boolean(document.body)", "App start");
+      const desktopSummary = value(await desktop.evalJs(flowScriptV2(), true), "desktop smoke");
       assert(desktopSummary.ok, JSON.stringify(desktopSummary, null, 2));
       await screenshot(desktop.send, "desktop-product.png");
 
       const mobile = await page(cdp);
       await mobile.send("Emulation.setDeviceMetricsOverride", { width: 390, height: 844, deviceScaleFactor: 1, mobile: false });
-      await mobile.send("Page.navigate", { url: `${appUrl}?mobile=${Date.now()}` });
-      await waitFor(mobile.evalJs, "Boolean(document.querySelector('.today-screen, .onboarding-screen'))", "Mobile app start");
-      const mobileSummary = value(await mobile.evalJs(mobileScript(), true), "mobile smoke");
+      await preparePage(mobile, appUrl);
+      await waitFor(mobile.evalJs, "Boolean(document.body)", "Mobile app start");
+      const mobileSummary = value(await mobile.evalJs(mobileScriptV2(), true), "mobile smoke");
       assert(mobileSummary.ok, JSON.stringify(mobileSummary, null, 2));
       await screenshot(mobile.send, "mobile-product.png");
 
@@ -212,6 +217,15 @@ async function runSmoke(appUrl) {
   } finally {
     chrome.kill();
   }
+}
+
+function seedScript() {
+  return `
+    localStorage.setItem("nutrio-profile", JSON.stringify({ startedAt: "2026-06-14T00:00:00.000Z", activeCourseId: "nutrition" }));
+    localStorage.setItem("nutrio-progress", JSON.stringify({
+      M01: { theoryRead: true, readerPageIndex: 4, takeaway: "Тестовый вывод" }
+    }));
+  `;
 }
 
 function flowScript() {
@@ -308,6 +322,107 @@ function mobileScript() {
       await delay(100);
       const noOverflow = document.documentElement.scrollWidth <= window.innerWidth + 1;
       return { ok: navOk && readingVisible && tableEnhanced && noOverflow, navOk, readingVisible, tableEnhanced, noOverflow };
+    } catch (error) {
+      return { ok: false, error: String(error && (error.stack || error.message || error)), body: document.body.innerText.slice(0, 700) };
+    }
+  }})()`;
+}
+
+function flowScriptV2() {
+  return `(${async function smokeFlow() {
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const bodyText = () => document.body.innerText || "";
+    const waitFor = async (predicate, label) => {
+      for (let attempt = 0; attempt < 50; attempt += 1) {
+        if (predicate()) return;
+        await delay(100);
+      }
+      throw new Error("Timed out: " + label);
+    };
+    const clickElement = async (element, label) => {
+      if (!element) throw new Error("Missing " + label);
+      element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      await delay(250);
+    };
+    const interactiveByText = (label) => {
+      return Array.from(document.querySelectorAll("a, button")).find((element) => {
+        const text = element.textContent || "";
+        const aria = element.getAttribute("aria-label") || "";
+        return text.includes(label) || aria.includes(label);
+      });
+    };
+    const clickText = async (label) => clickElement(interactiveByText(label), label);
+    const clickModule = async (moduleId) => {
+      const element = Array.from(document.querySelectorAll("button, a")).find((node) => {
+        const text = node.textContent || "";
+        const aria = node.getAttribute("aria-label") || "";
+        return text.includes(moduleId) || aria.includes(moduleId);
+      });
+      await clickElement(element, moduleId);
+    };
+    try {
+      await waitFor(() => bodyText().includes("Сегодня") || bodyText().includes("Начните"), "Today");
+      const nav = document.querySelector("nav");
+      const navText = nav?.textContent || "";
+      const navOk = Boolean(nav) && nav.querySelectorAll("a").length === 3 && navText.includes("Сегодня") && navText.includes("Маршрут") && navText.includes("Тренажёр") && !navText.includes("Дальше") && Boolean(document.querySelector('[aria-label="Профиль"]'));
+      await clickText("Маршрут");
+      await waitFor(() => bodyText().includes("Фаза") && Array.from(document.querySelectorAll("button")).some((button) => (button.textContent || button.getAttribute("aria-label") || "").includes("M01")), "Route modules");
+      const routeVisible = bodyText().includes("Маршрут") && bodyText().includes("M01");
+      await clickModule("M01");
+      await waitFor(() => bodyText().includes("M01") && (bodyText().includes("Теория") || bodyText().includes("Суть") || bodyText().includes("/ 5")), "Block reader");
+      const readingVisible = bodyText().includes("M01") && (bodyText().includes("Теория") || bodyText().includes("Суть") || bodyText().includes("/ 5"));
+      window.location.hash = "#/nutrition/station/M01/check";
+      await waitFor(() => bodyText().includes("Вопрос") || bodyText().includes("Зачёт"), "Product quiz frame");
+      const quizVisible = bodyText().includes("Вопрос") || bodyText().includes("Зачёт");
+      await clickText("Профиль");
+      await waitFor(() => bodyText().includes("Профиль"), "Journal");
+      const noOverflow = document.documentElement.scrollWidth <= window.innerWidth + 1;
+      return { ok: navOk && routeVisible && readingVisible && quizVisible && noOverflow, navOk, routeVisible, readingVisible, quizVisible, noOverflow };
+    } catch (error) {
+      return { ok: false, error: String(error && (error.stack || error.message || error)), body: document.body.innerText.slice(0, 700) };
+    }
+  }})()`;
+}
+
+function mobileScriptV2() {
+  return `(${async function mobileSmoke() {
+    const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+    const bodyText = () => document.body.innerText || "";
+    const waitFor = async (predicate, label) => {
+      for (let attempt = 0; attempt < 50; attempt += 1) {
+        if (predicate()) return;
+        await delay(100);
+      }
+      throw new Error("Timed out: " + label);
+    };
+    const clickText = async (label) => {
+      const element = Array.from(document.querySelectorAll("a, button")).find((node) => {
+        const text = node.textContent || "";
+        const aria = node.getAttribute("aria-label") || "";
+        return text.includes(label) || aria.includes(label);
+      });
+      if (!element) throw new Error("Missing " + label);
+      element.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+      await delay(250);
+    };
+    try {
+      await waitFor(() => bodyText().includes("Сегодня") || bodyText().includes("Начните"), "Today");
+      const nav = document.querySelector("nav");
+      const navStyle = nav ? getComputedStyle(nav) : null;
+      const navText = nav?.textContent || "";
+      const navOk = Boolean(nav) && nav.querySelectorAll("a").length === 3 && navText.includes("Сегодня") && navText.includes("Маршрут") && navText.includes("Тренажёр") && !navText.includes("Дальше") && navStyle?.position === "fixed";
+      await clickText("Маршрут");
+      await waitFor(() => bodyText().includes("Фаза") && bodyText().includes("M01"), "Route modules");
+      const routeVisible = bodyText().includes("M01");
+      window.location.hash = "#/nutrition/station/M01/understand";
+      await waitFor(() => bodyText().includes("M01") && (bodyText().includes("Теория") || bodyText().includes("Суть") || bodyText().includes("/ 5")), "Block reader");
+      const readingVisible = bodyText().includes("M01");
+      const table = document.querySelector("table");
+      const tableEnhanced = !table || Boolean(table.querySelector("td[data-label]"));
+      document.querySelector("table")?.scrollIntoView({ block: "center" });
+      await delay(100);
+      const noOverflow = document.documentElement.scrollWidth <= window.innerWidth + 1;
+      return { ok: navOk && routeVisible && readingVisible && tableEnhanced && noOverflow, navOk, routeVisible, readingVisible, tableEnhanced, noOverflow };
     } catch (error) {
       return { ok: false, error: String(error && (error.stack || error.message || error)), body: document.body.innerText.slice(0, 700) };
     }

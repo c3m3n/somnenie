@@ -138,8 +138,9 @@
 }
 
 .navItemActive {
-  background: linear-gradient(transparent 58%, var(--color-marker) 58%);
+  background: var(--color-primary-bg);
   border-color: var(--color-ink);
+  font-weight: 700;
 }
 
 .iconButton {
@@ -157,7 +158,7 @@
 }
 
 .iconButtonActive {
-  background: linear-gradient(transparent 58%, var(--color-marker) 58%);
+  background: var(--color-primary-bg);
   border-color: var(--color-ink);
 }
 

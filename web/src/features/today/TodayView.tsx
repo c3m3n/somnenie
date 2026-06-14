@@ -17,42 +17,29 @@ export function TodayView({ bundle, progress, action, lastSessionDate, sessions 
   const streakLine = buildStreakLine(sessions);
   return (
     <section className={styles.screen} data-state={screen.state}>
-      <div className={styles.stage}>
-        <article className={styles.sessionCard} aria-labelledby="today-heading">
-          <header className={styles.sessionTop}>
-            <span>S</span>
-            <span>{screen.moduleId || "MENU"}</span>
-          </header>
+      <article className={styles.sessionCard} aria-labelledby="today-heading">
+        <Kicker className={styles.kicker}>{screen.kicker}</Kicker>
+        <h2 id="today-heading" className={styles.title}>{screen.title}</h2>
+        {screen.context ? <p className={styles.contextLine}>{screen.context}</p> : null}
 
-          <Kicker className={styles.kicker}>{screen.kicker}</Kicker>
-          <h2 id="today-heading" className={styles.title}>{screen.title}</h2>
+        <ol className={styles.actionGrid} aria-label="Режимы сессии">
+          {sessionTiles(screen.activeTile).map((tile) => (
+            <li key={tile.number} className={[styles.actionTile, tile.active ? styles.actionTileActive : ""].filter(Boolean).join(" ")} aria-current={tile.active ? "step" : undefined}>
+              <span>{tile.number}</span>
+              <strong>{tile.label}</strong>
+            </li>
+          ))}
+        </ol>
 
-          <ol className={styles.actionGrid} aria-label="Режимы сессии">
-            {sessionTiles(screen.activeTile).map((tile) => (
-              <li key={tile.number} className={[styles.actionTile, tile.active ? styles.actionTileActive : ""].filter(Boolean).join(" ")} aria-current={tile.active ? "step" : undefined}>
-                <span>{tile.number}</span>
-                <strong>{tile.label}</strong>
-              </li>
-            ))}
-          </ol>
+        <div className={styles.timeBox}>
+          <strong>{screen.minutes} минут</strong>
+          <p>{screen.description}</p>
+        </div>
 
-          <div className={styles.timeBox}>
-            <strong>{screen.minutes} минут</strong>
-            <p>{screen.description}</p>
-          </div>
-
-          <Button variant="primary" size="large" className={styles.cta} onClick={() => runAction(action, courseId)}>
-            {iconFor(action.kind)}<span>{screen.primaryCta}</span>
-          </Button>
-        </article>
-
-        <aside className={styles.rulePanel} aria-label="Контекст сессии">
-          <Kicker className={styles.ruleKicker}>mobile rule</Kicker>
-          <p className={styles.ruleTitle}>{screen.ruleTitle}</p>
-          <p className={styles.ruleText}>{screen.cardTitle}</p>
-          {screen.context ? <p className={styles.cardContext}>{screen.context}</p> : null}
-        </aside>
-      </div>
+        <Button variant="primary" size="large" className={styles.cta} onClick={() => runAction(action, courseId)}>
+          {iconFor(action.kind)}<span>{screen.primaryCta}</span>
+        </Button>
+      </article>
 
       <div className={styles.statusGrid}>
         <p className={styles.afterAction}><strong>После этого</strong><span>{screen.afterAction}</span></p>
@@ -108,8 +95,6 @@ interface LearningScreenCopy {
   activeTile: number;
   kicker: string;
   minutes: number;
-  moduleId?: string;
-  ruleTitle: string;
 }
 
 function buildLearningScreenCopy(action: TodayAction, bundle: CourseBundle, progress: ProgressMap): LearningScreenCopy {
@@ -158,8 +143,6 @@ function checkpointFailedCopy(base: LearningScreenBase): LearningScreenCopy {
     activeTile: 3,
     kicker: kickerLine(module),
     minutes: 8,
-    moduleId: module.id,
-    ruleTitle: "Ошибка становится материалом",
   };
 }
 
@@ -175,7 +158,6 @@ function trainingCopy(base: LearningScreenBase, count: number): LearningScreenCo
     activeTile: 3,
     kicker: "Сегодня / тренажёр",
     minutes: 5,
-    ruleTitle: "Память работает короткими подходами",
   };
 }
 
@@ -191,7 +173,6 @@ function courseCompleteCopy(base: LearningScreenBase): LearningScreenCopy {
     activeTile: 4,
     kicker: "Сегодня / итог",
     minutes: 4,
-    ruleTitle: "Вывод закрывает петлю обучения",
   };
 }
 
@@ -209,8 +190,6 @@ function checkpointReadyCopy(base: LearningScreenBase): LearningScreenCopy {
     activeTile: 3,
     kicker: kickerLine(module),
     minutes: 10,
-    moduleId: module.id,
-    ruleTitle: "Проверка идёт сразу после идеи",
   };
 }
 
@@ -238,8 +217,6 @@ function firstStartCopy(base: LearningScreenBase, module: CourseModule): Learnin
     activeTile: 1,
     kicker: kickerLine(module),
     minutes: 12,
-    moduleId: module.id,
-    ruleTitle: "Один экран, один вопрос, один следующий шаг",
   };
 }
 
@@ -257,8 +234,6 @@ function continueBlockCopy(base: LearningScreenBase, module: CourseModule): Lear
     activeTile: activeTileForAction(base.action),
     kicker: kickerLine(module),
     minutes: 12,
-    moduleId: module.id,
-    ruleTitle: started ? "Продолжение должно быть очевидным" : "Начало должно быть действием",
   };
 }
 
@@ -274,7 +249,6 @@ function fallbackStartCopy(base: LearningScreenBase, action: TodayAction): Learn
     activeTile: activeTileForAction(action),
     kicker: "Сегодня / маршрут",
     minutes: 12,
-    ruleTitle: "Сегодняшняя сессия должна быть видна сразу",
   };
 }
 

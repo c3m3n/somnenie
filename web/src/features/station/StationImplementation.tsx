@@ -15,7 +15,7 @@ import { seededShuffle } from "../../shared/utils/seededShuffle";
 import { ReaderView } from "../reader/ReaderView";
 import styles from "./Station.module.css";
 
-const ANSWER_FEEDBACK_MS = 700;
+const ANSWER_FEEDBACK_MS = 1200;
 
 export function StationView(props: StationProps) {
   if (props.step !== "check") {
@@ -239,6 +239,12 @@ function QuizResult({ module, outcome, canRetake, saveProgress, courseId }: { mo
   );
 }
 
+function buildFeedbackText(isRight: boolean, question: QuizQuestion): string {
+  if (isRight) return "Верно, переходим к следующему вопросу";
+  const correctOption = question.options.find((option) => String(question.answer) === option.key);
+  return correctOption ? `Неверно. Правильный ответ: ${correctOption.key}. Сохранено для разбора.` : "Неверно, сохранено для разбора";
+}
+
 function minutesUntilRetake(failureDate: string | null): number {
   if (!failureDate) return Math.ceil(RETAKE_COOLDOWN_MS / 60000);
   const remaining = RETAKE_COOLDOWN_MS - (Date.now() - new Date(failureDate).getTime());
@@ -272,7 +278,7 @@ function AutoQuestion({ module, question, progress, isLast, autoTotal, appState,
     lockRef.current = true;
     setLocked(true);
     setFeedback(isRight ? "right" : "wrong");
-    setResultText(isRight ? "Верно, переходим к следующему" : "Неверно, сохранено для разбора");
+    setResultText(buildFeedbackText(isRight, question));
     feedbackTimeout.current = window.setTimeout(() => {
       setFeedback(null);
     }, ANSWER_FEEDBACK_MS);
@@ -280,19 +286,22 @@ function AutoQuestion({ module, question, progress, isLast, autoTotal, appState,
   };
 
   const feedbackClass = feedback === "right" ? styles.feedbackRight : styles.feedbackWrong;
+  const groupName = `question-${question.number}`;
   return (
-    <div className={styles.answerList}>
+    <div className={styles.answerList} role="radiogroup" aria-label={`Варианты ответа на вопрос ${question.number}`}>
       {question.options.map((option) => (
-        <button
-          type="button"
-          disabled={locked}
-          key={option.key}
-          className={styles.answerButton}
-          onClick={() => void choose(option.key)}
-        >
+        <label key={option.key} className={[styles.answerButton, locked ? styles.answerButtonLocked : ""].filter(Boolean).join(" ")}>
+          <input
+            type="radio"
+            name={groupName}
+            value={option.key}
+            disabled={locked}
+            onChange={() => void choose(option.key)}
+            className={styles.answerInput}
+          />
           <span className={styles.answerLetter}>{option.key}</span>
           <MdInline>{option.text}</MdInline>
-        </button>
+        </label>
       ))}
       {feedback ? <p className={[styles.feedback, feedbackClass].filter(Boolean).join(" ")} role="status">{resultText}</p> : null}
     </div>

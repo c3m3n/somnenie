@@ -14,6 +14,7 @@ interface AppDataState {
   todayAction: ReturnType<typeof buildTodayAction> | null;
   loading: boolean;
   error: string | null;
+  bundleError: string | null;
   saveError: string | null;
 }
 
@@ -31,8 +32,10 @@ export interface AppData {
   todayAction: ReturnType<typeof buildTodayAction> | null;
   loading: boolean;
   error: string | null;
+  bundleError: string | null;
   saveError: string | null;
   reload: () => Promise<void>;
+  loadCourse: (courseId: CourseId) => Promise<void>;
   saveProgress: (moduleId: string, patch: ModuleProgress) => Promise<void>;
   saveState: (patch: Partial<AppState>) => Promise<void>;
   saveProfile: (profile: LearnerProfile) => Promise<void>;
@@ -48,19 +51,117 @@ export function useAppData(): AppData {
   const moduleCountRef = useRef(0);
   const activeCourseRef = useRef<CourseId | null>(null);
 
-  const loadBundleAndState = useCallback(async () => {
-    const stateResult = await loadState(services);
-    activeCourseRef.current = stateResult.activeCourseId;
-    moduleCountRef.current = Object.keys(stateResult.progress).length;
-    return stateResult;
+  const loadBase = useCallback(async () => {
+    await services.storage.initStorage();
+    await services.storage.migrateFromLocalStorage();
+    const [catalog, profile, globalAppState] = await Promise.all([
+      services.content.loadCatalog(),
+      services.storage.getProfile(),
+      services.storage.getAppState(),
+    ]);
+    const activeCourseId = resolveActiveCourseId(services, catalog, profile, globalAppState);
+    activeCourseRef.current = activeCourseId;
+    return { catalog, profile, globalAppState, activeCourseId };
+  }, [services]);
+
+  const loadCourse = useCallback(async (courseId: CourseId) => {
+    const [bundle, progress, courseAppState] = await Promise.all([
+      services.content.loadCourseBundle(courseId),
+      services.storage.getAllProgress(courseId),
+      services.storage.getCourseAppState(courseId),
+    ]);
+    const appStateValue: AppState = {
+      schemaVersion: SCHEMA_VERSION,
+      review: courseAppState?.review || { schemaVersion: 2, courseId, items: [] },
+      sessions: courseAppState?.sessions || { courseId, todayDone: {}, activeDays: [], lastDate: null, streakDays: 0, bestStreakDays: 0 },
+    };
+    moduleCountRef.current = Object.keys(progress).length;
+    return { bundle, progress, appState: appStateValue };
   }, [services]);
 
   const reload = useCallback(async () => {
-    setState((current) => ({ ...current, loading: true, error: null }));
-    const next = await loadBundleAndState();
-    setState(next);
-    todayActionRef.current = next.todayAction;
-  }, [loadBundleAndState]);
+    setState((current) => ({ ...current, loading: true, error: null, bundleError: null }));
+    try {
+      const base = await loadBase();
+      if (!base.activeCourseId) {
+        setState({
+          ...createInitialState(),
+          catalog: base.catalog,
+          profile: base.profile,
+          activeCourseId: null,
+          loading: false,
+          error: null,
+          bundleError: null,
+        });
+        todayActionRef.current = null;
+        return;
+      }
+      try {
+        const course = await loadCourse(base.activeCourseId);
+        setState({
+          ...createInitialState(),
+          catalog: base.catalog,
+          bundle: course.bundle,
+          profile: base.profile,
+          progress: course.progress,
+          appState: course.appState,
+          activeCourseId: base.activeCourseId,
+          todayAction: buildTodayAction(course.bundle.modules, course.progress, course.appState),
+          loading: false,
+          error: null,
+          bundleError: null,
+        });
+        todayActionRef.current = buildTodayAction(course.bundle.modules, course.progress, course.appState);
+      } catch (courseError) {
+        setState({
+          ...createInitialState(),
+          catalog: base.catalog,
+          profile: base.profile,
+          activeCourseId: base.activeCourseId,
+          loading: false,
+          error: null,
+          bundleError: courseError instanceof Error ? courseError.message : "Не удалось загрузить курс",
+        });
+        todayActionRef.current = null;
+      }
+    } catch (error) {
+      setState({
+        ...createInitialState(),
+        loading: false,
+        error: error instanceof Error ? error.message : "Не удалось загрузить приложение",
+        bundleError: null,
+      });
+      todayActionRef.current = null;
+    }
+  }, [loadBase, loadCourse]);
+
+  const loadCourseById = useCallback(async (courseId: CourseId) => {
+    setState((current) => ({ ...current, loading: true, bundleError: null, error: null }));
+    activeCourseRef.current = courseId;
+    try {
+      const course = await loadCourse(courseId);
+      setState((current) => ({
+        ...current,
+        bundle: course.bundle,
+        progress: course.progress,
+        appState: course.appState,
+        activeCourseId: courseId,
+        todayAction: buildTodayAction(course.bundle.modules, course.progress, course.appState),
+        loading: false,
+        bundleError: null,
+        error: null,
+      }));
+      todayActionRef.current = buildTodayAction(course.bundle.modules, course.progress, course.appState);
+    } catch (courseError) {
+      setState((current) => ({
+        ...current,
+        loading: false,
+        bundleError: courseError instanceof Error ? courseError.message : "Не удалось загрузить курс",
+        error: null,
+      }));
+      todayActionRef.current = null;
+    }
+  }, [loadCourse]);
 
   const saveProgress = useCallback(async (moduleId: string, patch: ModuleProgress) => {
     const courseId = activeCourseRef.current;
@@ -134,6 +235,7 @@ export function useAppData(): AppData {
     ...state,
     todayAction: todayActionRef.current ?? state.todayAction,
     reload,
+    loadCourse: loadCourseById,
     saveProgress,
     saveState,
     saveProfile,
@@ -153,63 +255,9 @@ function createInitialState(): AppDataState {
     todayAction: null,
     loading: true,
     error: null,
+    bundleError: null,
     saveError: null,
   };
-}
-
-async function loadState(services: AppServices) {
-  try {
-    await services.storage.initStorage();
-    await services.storage.migrateFromLocalStorage();
-    const [catalog, profile, globalAppState] = await Promise.all([
-      services.content.loadCatalog(),
-      services.storage.getProfile(),
-      services.storage.getAppState(),
-    ]);
-
-    const activeCourseId = resolveActiveCourseId(services, catalog, profile, globalAppState);
-    if (!activeCourseId) {
-      return {
-        ...createInitialState(),
-        catalog,
-        profile,
-        activeCourseId: null,
-        loading: false,
-        error: null,
-      };
-    }
-
-    const [bundle, progress, courseAppState] = await Promise.all([
-      services.content.loadCourseBundle(activeCourseId),
-      services.storage.getAllProgress(activeCourseId),
-      services.storage.getCourseAppState(activeCourseId),
-    ]);
-
-    const appStateValue: AppState = {
-      schemaVersion: SCHEMA_VERSION,
-      review: courseAppState?.review || { schemaVersion: 2, courseId: activeCourseId, items: [] },
-      sessions: courseAppState?.sessions || { courseId: activeCourseId, todayDone: {}, activeDays: [], lastDate: null, streakDays: 0, bestStreakDays: 0 },
-    };
-
-    return {
-      ...createInitialState(),
-      catalog,
-      bundle,
-      profile,
-      progress,
-      appState: appStateValue,
-      activeCourseId,
-      todayAction: buildTodayAction(bundle.modules, progress, appStateValue),
-      loading: false,
-      error: null,
-    };
-  } catch (error) {
-    return {
-      ...createInitialState(),
-      loading: false,
-      error: error instanceof Error ? error.message : "Не удалось загрузить приложение",
-    };
-  }
 }
 
 function resolveActiveCourseId(

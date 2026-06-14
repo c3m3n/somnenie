@@ -39,7 +39,7 @@
 
 .moduleGrid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--space-2);
 }
 
@@ -47,21 +47,21 @@
   display: grid;
   justify-items: start;
   gap: var(--space-1);
-  min-height: 128px;
+  min-height: 120px;
   padding: var(--space-3);
   text-align: left;
-  border: 2px solid var(--color-rule);
+  border: 1px solid var(--color-rule);
   border-left-width: 4px;
   border-radius: var(--radius-sm);
   background: var(--color-sheet);
   cursor: pointer;
   transition: border-color var(--motion-duration) var(--motion-ease),
-    box-shadow var(--motion-duration) var(--motion-ease);
+    background var(--motion-duration) var(--motion-ease);
 }
 
 .moduleTile:hover:not(:disabled) {
   border-color: var(--color-ink);
-  box-shadow: inset 0 -6px 0 var(--color-marker-blue);
+  background: var(--color-primary-bg);
 }
 
 .moduleTile:focus-visible {
@@ -109,43 +109,44 @@
 
 /* State variants */
 .available {
-  border-color: var(--color-rule);
+  border-left-color: var(--color-rule);
 }
 
 .inProgress {
-  border-color: var(--color-blue);
-  background: var(--color-blue-bg);
+  border-left-color: var(--color-blue);
 }
 
 .checkpointReady {
-  border-color: var(--color-warning);
-  background: var(--color-warning-bg);
+  border-left-color: var(--color-warning);
 }
 
 .checkpointFailed {
-  border-color: var(--color-error);
-  background: var(--color-error-bg);
+  border-left-color: var(--color-error);
 }
 
 .checkpointPassed {
-  border-color: var(--color-success);
-  background: var(--color-success-bg);
+  border-left-color: var(--color-success);
 }
 
 .locked {
-  border-style: dashed;
-  border-color: var(--color-rule-dark);
+  border-color: var(--color-rule);
+  border-left-color: var(--color-rule-dark);
   cursor: default;
-  opacity: 0.8;
+  opacity: 0.75;
 }
 
 .current {
   border-color: var(--color-ink);
-  box-shadow: 0 0 0 2px rgba(27, 75, 255, 0.18);
-  background: linear-gradient(transparent 54%, rgba(170, 203, 255, 0.16) 54%);
+  background: var(--color-primary-bg);
 }
 
-@media (max-width: 520px) {
+@media (max-width: 900px) {
+  .moduleGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
   .moduleGrid {
     grid-template-columns: 1fr;
   }

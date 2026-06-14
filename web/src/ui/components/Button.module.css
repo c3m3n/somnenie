@@ -30,18 +30,24 @@
   border-color: var(--color-ink);
   background: var(--color-ink);
   color: var(--color-sheet);
-  box-shadow: var(--shadow-cta);
 }
 
 .primary:hover:not(:disabled) {
-  background: var(--color-accent-hover);
-  border-color: var(--color-accent-hover);
-  box-shadow: var(--shadow-cta-hover);
+  background: var(--color-primary-bg);
+  color: var(--color-ink);
+}
+
+.primary:active:not(:disabled) {
+  background: var(--color-rule);
 }
 
 .secondary:hover:not(:disabled) {
   border-color: var(--color-ink);
-  box-shadow: inset 0 -5px 0 var(--color-marker-blue);
+  background: var(--color-primary-bg);
+}
+
+.secondary:active:not(:disabled) {
+  background: var(--color-rule);
 }
 
 .ghost {
@@ -50,7 +56,11 @@
 }
 
 .ghost:hover:not(:disabled) {
-  background: rgba(23, 23, 23, 0.04);
+  background: var(--color-primary-bg);
+}
+
+.ghost:active:not(:disabled) {
+  background: var(--color-rule);
 }
 
 .large {

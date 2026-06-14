@@ -59,44 +59,68 @@ export function App() {
     }
   }, [route]);
 
-  const handleUpdateFlow = () => {
-    forceServiceWorkerUpdate();
-    setUpdateAvailable(false);
-  };
+  const showCatalog = shouldShowCatalog(route, data);
 
-  if (route.screen === "courses" || !data.activeCourseId) {
+  if (showCatalog) {
     return (
       <Shell route={route} onUpdate={() => {}} updateAvailable={false} activeCourseId={data.activeCourseId}>
-        <CourseCatalogView catalog={data.catalog} progress={data.progress} onSelectCourse={handleSelectCourse} saveProfile={data.saveProfile} />
+        <CourseCatalogView
+          catalog={data.catalog}
+          progress={data.progress}
+          error={data.error}
+          bundleError={data.bundleError}
+          loading={data.loading}
+          onSelectCourse={(courseId) => void handleSelectCourse(data, courseId)}
+          onRetry={() => void data.reload()}
+        />
       </Shell>
     );
   }
 
-  if (data.loading) {
-    return <Shell route={route} onUpdate={() => {}} updateAvailable={false} activeCourseId={data.activeCourseId}><div className="loading" role="status">Загрузка приложения...</div></Shell>;
-  }
-  if (data.error || !data.bundle || !data.appState) {
-    return <Shell route={route} onUpdate={() => {}} updateAvailable={false} activeCourseId={data.activeCourseId}><section className="screen" role="alert"><h2>Ошибка загрузки</h2><p>{data.error || "Не удалось загрузить приложение."}</p></section></Shell>;
-  }
   if (!data.profile) {
     return <OnboardingView saveProfile={data.saveProfile} />;
   }
 
-  const readyData = data as AppScreenData;
+  if (!isReadyData(data)) {
+    return (
+      <Shell route={route} onUpdate={() => {}} updateAvailable={false} activeCourseId={data.activeCourseId}>
+        <section className="screen" role="alert">
+          <h2>Ошибка загрузки</h2>
+          <p>{data.error || data.bundleError || "Не удалось загрузить приложение."}</p>
+          <button type="button" className="primary-action" onClick={() => void data.reload()}>
+            Попробовать снова
+          </button>
+        </section>
+      </Shell>
+    );
+  }
+
+  const readyData = data;
   const todayAction = data.todayAction ?? buildTodayAction(data.bundle.modules, data.progress, data.appState);
 
   return (
-    <Shell route={route} onUpdate={handleUpdateFlow} updateAvailable={updateAvailable} saveError={data.saveError} mainRef={mainRef} activeCourseId={data.activeCourseId}>
+    <Shell
+      route={route}
+      onUpdate={() => {
+        forceServiceWorkerUpdate();
+        setUpdateAvailable(false);
+      }}
+      updateAvailable={updateAvailable}
+      saveError={data.saveError}
+      mainRef={mainRef}
+      activeCourseId={data.activeCourseId}
+    >
       <ErrorBoundary>
         <RenderRoute route={route} data={{ ...readyData, todayAction }} />
       </ErrorBoundary>
     </Shell>
   );
+}
 
-  function handleSelectCourse(courseId: CourseId) {
-    void data.saveProfile({ ...data.profile, activeCourseId: courseId });
-    navigate({ screen: "today", courseId });
-  }
+async function handleSelectCourse(data: ReturnType<typeof useAppData>, courseId: CourseId) {
+  await data.saveProfile({ ...data.profile, activeCourseId: courseId });
+  await data.loadCourse(courseId);
+  navigate({ screen: "today", courseId });
 }
 
 function RenderRoute({ route, data }: { route: Route; data: AppScreenData & { todayAction: ReturnType<typeof buildTodayAction> } }): React.ReactNode {
@@ -165,4 +189,10 @@ function reasonLabel(reason: "previous_checkpoint_failed" | "previous_checkpoint
   return reason === "previous_checkpoint_failed" ? "Зачёт предыдущего блока не сдан." : "Зачёт предыдущего блока должен быть закрыт.";
 }
 
+function shouldShowCatalog(route: Route, data: ReturnType<typeof useAppData>): boolean {
+  return route.screen === "courses" || !data.activeCourseId || Boolean(data.bundleError);
+}
 
+function isReadyData(data: ReturnType<typeof useAppData>): data is AppScreenData {
+  return !data.error && data.bundle !== null && data.appState !== null;
+}

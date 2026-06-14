@@ -46,6 +46,39 @@ describe("React learner flow", () => {
     expect(window.location.hash).toBe("#courses");
   });
 
+  it("shows loading when catalog is not loaded yet", () => {
+    mockUseAppData.mockReturnValue({
+      ...appData(),
+      catalog: null,
+      activeCourseId: null,
+      bundle: null,
+      appState: null,
+      loading: true,
+    });
+    window.location.hash = "#/nutrition/today";
+
+    render(<App />);
+
+    expect(screen.getByRole("status")).toHaveTextContent("Загрузка приложения");
+    expect(screen.queryByText("Курсы не найдены")).not.toBeInTheDocument();
+  });
+
+  it("falls back to the course catalog when no active course is selected", () => {
+    mockUseAppData.mockReturnValue({
+      ...appData(),
+      activeCourseId: null,
+      bundle: null,
+      appState: null,
+      loading: false,
+    });
+    window.location.hash = "#/nutrition/today";
+
+    render(<App />);
+
+    expect(screen.getByText("Выберите курс")).toBeInTheDocument();
+    expect(screen.queryByText("Курсы не найдены")).not.toBeInTheDocument();
+  });
+
   it("Учиться renders start state with one primary action, after-action and progress", () => {
     render(<TodayView bundle={bundle()} progress={{}} action={{ kind: "station", label: "Продолжить", reason: "Следующий доступный блок обучения.", moduleId: "M01" }} />);
     expect(screen.getAllByRole("button")).toHaveLength(1);
@@ -187,7 +220,7 @@ describe("React learner flow", () => {
     const saveProgress = vi.fn(async () => undefined);
     const saveState = vi.fn(async () => undefined);
     render(<StationView bundle={bundle()} module={moduleFixture()} step="check" progress={{}} appState={appState()} saveProgress={saveProgress} saveState={saveState} />);
-    const wrong = screen.getByRole("button", { name: /A/ });
+    const wrong = screen.getByRole("radio", { name: /A/ });
     fireEvent.click(wrong);
     fireEvent.click(wrong);
     await waitFor(() => expect(saveProgress).toHaveBeenCalledTimes(1));
@@ -525,7 +558,9 @@ function appData() {
     catalog: catalog(),
     activeCourseId: "nutrition" as const,
     error: null,
+    bundleError: null,
     exportData: vi.fn(async () => undefined),
+    loadCourse: vi.fn(async () => undefined),
     loading: false,
     profile: { startedAt: "2026-06-14T00:00:00.000Z" },
     progress: {},
