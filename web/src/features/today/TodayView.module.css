@@ -1,49 +1,181 @@
 .screen {
   display: grid;
   min-width: 0;
-  gap: var(--space-5);
+  gap: var(--space-6);
+}
+
+.stage {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(0, 1fr);
+  gap: var(--space-12);
+  align-items: center;
+  padding: var(--space-6) 0 var(--space-8);
+}
+
+.sessionCard {
+  display: grid;
+  gap: var(--space-4);
+  min-height: 680px;
+  padding: var(--space-5);
+  border: 2px solid var(--color-ink);
+  border-radius: 30px;
+  background: var(--color-paper);
+  box-shadow: 16px 16px 0 rgba(23, 23, 23, 0.28);
+}
+
+.sessionTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.kicker {
+  align-self: end;
+  margin-top: auto;
+  color: var(--color-accent);
 }
 
 .title {
   margin: 0;
-  max-width: var(--max-prose);
-  font-size: var(--text-display-lg);
-  line-height: var(--line-height-tight);
+  max-width: 100%;
+  color: var(--color-ink);
+  font-size: 2.7rem;
+  line-height: 0.96;
   letter-spacing: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: normal;
+  word-break: normal;
 }
 
-.card {
-  max-width: 680px;
+.actionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
 }
 
-.cardTitle {
-  display: block;
-  margin-bottom: var(--space-2);
-  font-size: var(--text-title-sm);
-  line-height: 1.25;
+.actionTile {
+  display: grid;
+  align-content: start;
+  gap: var(--space-1);
+  min-height: 104px;
+  padding: var(--space-3);
+  border: 2px solid var(--color-ink);
+  background: var(--color-sheet);
+  box-shadow: 4px 4px 0 var(--color-ink);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  text-transform: uppercase;
 }
 
-.cardDescription {
+.actionTile span,
+.actionTile strong {
+  font-size: var(--text-label);
+  line-height: 1.2;
+}
+
+.actionTileActive {
+  background: var(--color-accent);
+  color: var(--color-sheet);
+}
+
+.screen[data-state="checkpoint_ready"] .actionTileActive,
+.screen[data-state="training"] .actionTileActive {
+  background: var(--color-blue);
+}
+
+.screen[data-state="course_complete"] .actionTileActive {
+  background: var(--color-teal);
+}
+
+.timeBox {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 2px solid var(--color-ink);
+  background: var(--color-sheet);
+}
+
+.timeBox strong {
+  font-size: var(--text-title-lg);
+  line-height: 1;
+}
+
+.timeBox p {
   margin: 0;
   color: var(--color-muted);
   line-height: var(--line-height-body);
 }
 
-.cardContext {
-  display: block;
-  margin-top: var(--space-2);
-  color: var(--color-ink);
-  font-family: var(--font-mono);
-  font-size: var(--text-caption);
+.cta {
+  width: 100%;
+  min-height: 54px;
+  box-shadow: none;
 }
 
-.cta {
-  width: fit-content;
+.rulePanel {
+  display: grid;
+  align-content: center;
+  gap: var(--space-4);
+  min-height: 560px;
+  padding: var(--space-8);
+  background: var(--color-ink);
+  color: var(--color-sheet);
+}
+
+.ruleKicker {
+  color: var(--color-accent);
+}
+
+.ruleTitle {
+  max-width: 760px;
+  margin: 0;
+  color: var(--color-sheet);
+  font-size: 5.2rem;
+  font-weight: 700;
+  line-height: 0.9;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.ruleText {
+  max-width: 620px;
+  margin: 0;
+  color: rgba(255, 253, 248, 0.74);
+  font-size: var(--text-body-lg);
+  line-height: var(--line-height-body);
+  overflow-wrap: anywhere;
+}
+
+.cardContext {
+  margin: 0;
+  color: rgba(255, 253, 248, 0.64);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  overflow-wrap: anywhere;
+}
+
+.statusGrid {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(240px, 460px);
+  gap: var(--space-3);
+  align-items: start;
 }
 
 .afterAction {
+  display: grid;
+  gap: var(--space-2);
+  min-height: 100%;
   margin: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-rule-dark);
+  background: var(--color-sheet);
   color: var(--color-muted);
   line-height: var(--line-height-body);
 }
@@ -52,12 +184,20 @@
   color: var(--color-ink);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
+  text-transform: uppercase;
+}
+
+.afterAction span {
+  display: block;
 }
 
 .progress {
   display: grid;
   gap: var(--space-2);
-  max-width: 460px;
+  min-height: 100%;
+  padding: var(--space-4);
+  border: 1px solid var(--color-rule-dark);
+  background: var(--color-sheet);
   color: var(--color-muted);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
@@ -76,4 +216,80 @@
   color: var(--color-muted);
   font-family: var(--font-mono);
   font-size: var(--text-caption);
+}
+
+@media (max-width: 980px) {
+  .stage {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+  }
+
+  .rulePanel {
+    min-height: 0;
+  }
+
+  .ruleTitle {
+    font-size: 3.8rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .screen {
+    gap: var(--space-5);
+  }
+
+  .stage {
+    display: block;
+    padding: var(--space-2) 0 var(--space-5);
+  }
+
+  .sessionCard {
+    min-height: auto;
+    gap: var(--space-4);
+    padding: var(--space-4);
+    border-width: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .sessionTop {
+    display: none;
+  }
+
+  .kicker {
+    margin-top: 0;
+  }
+
+  .title {
+    font-size: 2.35rem;
+    line-height: 1;
+  }
+
+  .actionTile {
+    min-height: 96px;
+  }
+
+  .rulePanel {
+    display: none;
+  }
+
+  .statusGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 420px) {
+  .title {
+    font-size: 2.1rem;
+  }
+
+  .actionTile {
+    min-height: 88px;
+    padding: var(--space-2);
+  }
+
+  .timeBox {
+    padding: var(--space-3);
+  }
 }

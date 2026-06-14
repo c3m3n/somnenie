@@ -6,7 +6,6 @@ import type { CourseBundle, CourseId, CourseModule, ModuleFileName, ModuleProgre
 import { readerFilesFromManifest } from "../../content/api";
 import { navigate } from "../../ui/route";
 import { Button } from "../../ui/components/Button";
-import { Card } from "../../ui/components/Card";
 import { Kicker } from "../../ui/components/Kicker";
 import { ProgressBar } from "../../ui/components/ProgressBar";
 import { SafetyNote } from "../../ui/components/SafetyNote";
@@ -17,24 +16,53 @@ export function TodayView({ bundle, progress, action, lastSessionDate, sessions 
   const screen = buildLearningScreenCopy(action, bundle, progress);
   const streakLine = buildStreakLine(sessions);
   return (
-    <section className={styles.screen}>
-      <Kicker>Сегодня</Kicker>
-      <h2 className={styles.title}>{screen.title}</h2>
-      <Card className={styles.card}>
-        <strong className={styles.cardTitle}>{screen.cardTitle}</strong>
-        <p className={styles.cardDescription}>{screen.description}</p>
-        {screen.context ? <span className={styles.cardContext}>{screen.context}</span> : null}
-      </Card>
-      <Button variant="primary" size="large" className={styles.cta} onClick={() => runAction(action, courseId)}>
-        {iconFor(action.kind)}<span>{screen.primaryCta}</span>
-      </Button>
-      <p className={styles.afterAction}><strong>После этого:</strong> {screen.afterAction}</p>
-      <div className={styles.progress}>
-        <span>{screen.progressLabel}</span>
-        <ProgressBar max={bundle.modules.length} value={screen.completed} label="Прогресс маршрута" />
+    <section className={styles.screen} data-state={screen.state}>
+      <div className={styles.stage}>
+        <article className={styles.sessionCard} aria-labelledby="today-heading">
+          <header className={styles.sessionTop}>
+            <span>S</span>
+            <span>{screen.moduleId || "MENU"}</span>
+          </header>
+
+          <Kicker className={styles.kicker}>{screen.kicker}</Kicker>
+          <h2 id="today-heading" className={styles.title}>{screen.title}</h2>
+
+          <ol className={styles.actionGrid} aria-label="Режимы сессии">
+            {sessionTiles(screen.activeTile).map((tile) => (
+              <li key={tile.number} className={[styles.actionTile, tile.active ? styles.actionTileActive : ""].filter(Boolean).join(" ")} aria-current={tile.active ? "step" : undefined}>
+                <span>{tile.number}</span>
+                <strong>{tile.label}</strong>
+              </li>
+            ))}
+          </ol>
+
+          <div className={styles.timeBox}>
+            <strong>{screen.minutes} минут</strong>
+            <p>{screen.description}</p>
+          </div>
+
+          <Button variant="primary" size="large" className={styles.cta} onClick={() => runAction(action, courseId)}>
+            {iconFor(action.kind)}<span>{screen.primaryCta}</span>
+          </Button>
+        </article>
+
+        <aside className={styles.rulePanel} aria-label="Контекст сессии">
+          <Kicker className={styles.ruleKicker}>mobile rule</Kicker>
+          <p className={styles.ruleTitle}>{screen.ruleTitle}</p>
+          <p className={styles.ruleText}>{screen.cardTitle}</p>
+          {screen.context ? <p className={styles.cardContext}>{screen.context}</p> : null}
+        </aside>
       </div>
-      {streakLine ? <p className={styles.streak}>{streakLine}</p> : null}
-      {lastSessionDate ? <p className={styles.lastSession}>Последний раз: {lastSessionLabel(lastSessionDate)}</p> : null}
+
+      <div className={styles.statusGrid}>
+        <p className={styles.afterAction}><strong>После этого</strong><span>{screen.afterAction}</span></p>
+        <div className={styles.progress}>
+          <span>{screen.progressLabel}</span>
+          <ProgressBar max={bundle.modules.length} value={screen.completed} label="Прогресс маршрута" />
+        </div>
+        {streakLine ? <p className={styles.streak}>{streakLine}</p> : null}
+        {lastSessionDate ? <p className={styles.lastSession}>Последний раз: {lastSessionLabel(lastSessionDate)}</p> : null}
+      </div>
       <SafetyNote>
         Курс не заменяет профессиональную консультацию или индивидуальные рекомендации.
       </SafetyNote>
@@ -77,13 +105,18 @@ interface LearningScreenCopy {
   afterAction: string;
   progressLabel: string;
   completed: number;
+  activeTile: number;
+  kicker: string;
+  minutes: number;
+  moduleId?: string;
+  ruleTitle: string;
 }
 
 function buildLearningScreenCopy(action: TodayAction, bundle: CourseBundle, progress: ProgressMap): LearningScreenCopy {
   const completed = completedCount(bundle.modules, progress);
   const module = findModule(bundle, action.moduleId);
   const progressLabel = `Маршрут: ${completed} из ${bundle.modules.length} блоков завершено`;
-  const base = { bundle, completed, module, progress, progressLabel };
+  const base = { bundle, completed, module, progress, progressLabel, action };
 
   switch (action.kind) {
     case "remediation":
@@ -108,6 +141,7 @@ interface LearningScreenBase {
   module: CourseModule | null;
   progress: ProgressMap;
   progressLabel: string;
+  action: TodayAction;
 }
 
 function checkpointFailedCopy(base: LearningScreenBase): LearningScreenCopy {
@@ -121,6 +155,11 @@ function checkpointFailedCopy(base: LearningScreenBase): LearningScreenCopy {
     context: moduleLine(module),
     primaryCta: "Разобрать ошибки",
     afterAction: "можно будет пройти зачёт ещё раз.",
+    activeTile: 3,
+    kicker: kickerLine(module),
+    minutes: 8,
+    moduleId: module.id,
+    ruleTitle: "Ошибка становится материалом",
   };
 }
 
@@ -133,6 +172,10 @@ function trainingCopy(base: LearningScreenBase, count: number): LearningScreenCo
     description: "Закрепите то, что просело после зачётов или прошлых тренировок.",
     primaryCta: "Начать тренировку",
     afterAction: "можно продолжить маршрут.",
+    activeTile: 3,
+    kicker: "Сегодня / тренажёр",
+    minutes: 5,
+    ruleTitle: "Память работает короткими подходами",
   };
 }
 
@@ -145,6 +188,10 @@ function courseCompleteCopy(base: LearningScreenBase): LearningScreenCopy {
     description: "Можно открыть конспект или потренировать слабые места.",
     primaryCta: "Открыть конспект",
     afterAction: "вы вернётесь к собранной сути и прогрессу.",
+    activeTile: 4,
+    kicker: "Сегодня / итог",
+    minutes: 4,
+    ruleTitle: "Вывод закрывает петлю обучения",
   };
 }
 
@@ -159,6 +206,11 @@ function checkpointReadyCopy(base: LearningScreenBase): LearningScreenCopy {
     context: moduleLine(module),
     primaryCta: "Пройти зачёт",
     afterAction: "если зачёт сдан, откроется следующий блок.",
+    activeTile: 3,
+    kicker: kickerLine(module),
+    minutes: 10,
+    moduleId: module.id,
+    ruleTitle: "Проверка идёт сразу после идеи",
   };
 }
 
@@ -183,6 +235,11 @@ function firstStartCopy(base: LearningScreenBase, module: CourseModule): Learnin
     description: `Первый блок: ${module.id} · ${module.title}`,
     primaryCta: "Начать первый блок",
     afterAction: "пройдёте блок и откроете зачёт.",
+    activeTile: 1,
+    kicker: kickerLine(module),
+    minutes: 12,
+    moduleId: module.id,
+    ruleTitle: "Один экран, один вопрос, один следующий шаг",
   };
 }
 
@@ -197,6 +254,11 @@ function continueBlockCopy(base: LearningScreenBase, module: CourseModule): Lear
     context: started ? readerContextLine(base.bundle, base.progress[module.id]) : undefined,
     primaryCta: started ? "Продолжить" : "Начать блок",
     afterAction: "дойдёте до зачёта блока.",
+    activeTile: activeTileForAction(base.action),
+    kicker: kickerLine(module),
+    minutes: 12,
+    moduleId: module.id,
+    ruleTitle: started ? "Продолжение должно быть очевидным" : "Начало должно быть действием",
   };
 }
 
@@ -209,11 +271,37 @@ function fallbackStartCopy(base: LearningScreenBase, action: TodayAction): Learn
     description: normalizeCopy(action.reason),
     primaryCta: normalizeCopy(action.label),
     afterAction: "пройдёте блок и откроете зачёт.",
+    activeTile: activeTileForAction(action),
+    kicker: "Сегодня / маршрут",
+    minutes: 12,
+    ruleTitle: "Сегодняшняя сессия должна быть видна сразу",
   };
 }
 
 function moduleLine(module: CourseModule): string {
   return `${module.id} · ${module.title}`;
+}
+
+function kickerLine(module: CourseModule): string {
+  return `Сегодня / ${module.id}`;
+}
+
+function activeTileForAction(action: TodayAction): number {
+  if (action.kind === "remediation" || action.kind === "review") return 3;
+  if (action.kind === "journal") return 4;
+  if (action.step === "apply") return 2;
+  if (action.step === "check") return 3;
+  if (action.step === "anchor") return 4;
+  return 1;
+}
+
+function sessionTiles(activeTile: number) {
+  return [
+    { number: "01", label: "Идея", active: activeTile === 1 },
+    { number: "02", label: "Действие", active: activeTile === 2 },
+    { number: "03", label: "Зачёт", active: activeTile === 3 },
+    { number: "04", label: "Вывод", active: activeTile === 4 },
+  ];
 }
 
 function isFirstStart(module: CourseModule, modules: CourseModule[], progress: ProgressMap): boolean {

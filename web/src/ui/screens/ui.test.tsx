@@ -35,6 +35,17 @@ describe("React learner flow", () => {
     expect(screen.getByLabelText("Профиль")).toBeInTheDocument();
   });
 
+  it("app shell exposes a stable return link to the course catalog", () => {
+    window.location.hash = "#/nutrition/today";
+    render(<App />);
+
+    const catalogLink = screen.getByRole("link", { name: "К курсам" });
+    expect(catalogLink).toHaveAttribute("href", "#courses");
+
+    fireEvent.click(catalogLink);
+    expect(window.location.hash).toBe("#courses");
+  });
+
   it("Учиться renders start state with one primary action, after-action and progress", () => {
     render(<TodayView bundle={bundle()} progress={{}} action={{ kind: "station", label: "Продолжить", reason: "Следующий доступный блок обучения.", moduleId: "M01" }} />);
     expect(screen.getAllByRole("button")).toHaveLength(1);

@@ -80,6 +80,29 @@
   gap: var(--space-1);
 }
 
+.catalogSlot {
+  width: 86px;
+  min-height: 38px;
+}
+
+.catalogLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 38px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-rule-dark);
+  border-radius: var(--radius-sm);
+  background: var(--color-sheet);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
 .desktopNav {
   display: flex;
   flex-wrap: wrap;
@@ -107,6 +130,7 @@
     border-color var(--motion-duration) var(--motion-ease);
 }
 
+.catalogLink:focus-visible,
 .navItem:focus-visible,
 .iconButton:focus-visible {
   outline: 2px solid var(--color-focus);
@@ -167,6 +191,17 @@
 @media (max-width: 720px) {
   .topbar {
     grid-template-columns: auto minmax(0, 1fr) auto;
+    backdrop-filter: none;
+  }
+
+  .catalogSlot {
+    width: 38px;
+  }
+
+  .catalogLink {
+    width: auto;
+    min-height: 38px;
+    padding: 0 var(--space-2);
   }
 
   .desktopNav {
@@ -198,7 +233,10 @@
     min-width: 0;
     min-height: 46px;
     border-right: 0;
-    font-size: var(--text-label);
+    gap: 5px;
+    padding: 0 var(--space-1);
+    font-size: 0.68rem;
+    white-space: nowrap;
   }
 
   .main {
@@ -213,12 +251,13 @@
   }
 
   .navItem {
-    overflow-wrap: anywhere;
+    overflow: hidden;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .navItem,
+  .catalogLink,
   .iconButton,
   .skipLink {
     transition: none;

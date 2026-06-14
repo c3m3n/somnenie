@@ -19,17 +19,22 @@ export function Shell({ route, children, updateAvailable, saveError, onUpdate, m
     <div className={styles.appShell} role="application" aria-label="Приложение обучения">
       <a className={styles.skipLink} href="#main-content">Перейти к содержимому</a>
       <header className={styles.topbar}>
-        <a
-          href={routeHash({ screen: "today", courseId })}
-          className={styles.iconButton}
-          aria-label="Назад"
-          onClick={(event) => {
-            event.preventDefault();
-            goBack();
-          }}
-        >
-          <ArrowLeft size={18} />
-        </a>
+        {route.screen === "courses" ? (
+          <span className={styles.catalogSlot} aria-hidden="true" />
+        ) : (
+          <a
+            href={routeHash({ screen: "courses" })}
+            className={styles.catalogLink}
+            aria-label="К курсам"
+            onClick={(event) => {
+              event.preventDefault();
+              navigate({ screen: "courses" });
+            }}
+          >
+            <ArrowLeft size={18} />
+            <span>Курсы</span>
+          </a>
+        )}
         <div className={styles.brand}>
           <img src="/assets/generated/icon-today.png" alt="" />
           <div className={styles.brandText}>
@@ -82,11 +87,6 @@ function NavItem({ active, href, icon, label, onClick }: { active: boolean; href
       {icon}{label}
     </a>
   );
-}
-
-function goBack(): void {
-  if (window.history.length > 1) window.history.back();
-  else navigate({ screen: "today", courseId: "nutrition" });
 }
 
 function titleFor(route: Route): string {

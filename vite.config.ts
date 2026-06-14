@@ -58,6 +58,7 @@ function contentType(filePath: string): string {
   if (ext === ".json" || ext === ".webmanifest") return "application/json; charset=utf-8";
   if (ext === ".md") return "text/markdown; charset=utf-8";
   if (ext === ".png") return "image/png";
+  if (ext === ".svg") return "image/svg+xml; charset=utf-8";
   if (ext === ".woff2") return "font/woff2";
   return "application/octet-stream";
 }

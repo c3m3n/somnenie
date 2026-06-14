@@ -1,0 +1,251 @@
+.screen {
+  display: grid;
+  min-width: 0;
+  gap: var(--space-8);
+}
+
+.empty {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 680px;
+}
+
+.empty h2,
+.empty p {
+  margin: 0;
+}
+
+.hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(250px, 360px);
+  gap: clamp(var(--space-5), 5vw, var(--space-12));
+  align-items: stretch;
+  min-height: 320px;
+  padding: clamp(var(--space-4), 4vw, var(--space-8)) 0 var(--space-8);
+  border-bottom: 1px solid var(--color-rule-dark);
+}
+
+.hero::before {
+  content: "";
+  position: absolute;
+  right: min(28vw, 320px);
+  bottom: -1px;
+  left: 0;
+  height: 8px;
+  background: var(--color-ink);
+}
+
+.heroCopy {
+  display: grid;
+  align-content: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.title {
+  max-width: 780px;
+  margin: 0;
+  font-size: clamp(3rem, 10vw, 6.6rem);
+  line-height: 0.88;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.lead {
+  max-width: 610px;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: var(--text-body-lg);
+  line-height: var(--line-height-body);
+}
+
+.heroVisual {
+  position: relative;
+  min-height: 260px;
+  overflow: hidden;
+  border: 1px solid var(--color-ink);
+  background:
+    linear-gradient(90deg, transparent 0 49%, rgba(23, 23, 23, 0.1) 49% 50%, transparent 50%),
+    var(--color-sheet);
+}
+
+.heroVisual::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 34%;
+  background: var(--color-ink);
+}
+
+.visualLabel {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  z-index: 2;
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  font-size: var(--text-label);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.mark {
+  position: absolute;
+  right: clamp(-42px, -4vw, -20px);
+  bottom: clamp(-40px, -4vw, -22px);
+  width: min(88%, 300px);
+  height: auto;
+}
+
+.dot {
+  position: absolute;
+  z-index: 3;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--color-accent);
+}
+
+.dotOne {
+  top: 22%;
+  left: 18%;
+}
+
+.dotTwo {
+  top: 40%;
+  left: 42%;
+}
+
+.dotThree {
+  right: 20%;
+  bottom: 44%;
+}
+
+.dotFour {
+  right: 12%;
+  bottom: 18%;
+}
+
+.courseList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-3);
+}
+
+.courseCard {
+  display: grid;
+  align-content: start;
+  gap: var(--space-4);
+  min-height: 300px;
+  padding: clamp(var(--space-4), 2.8vw, var(--space-6));
+  border: 1px solid var(--color-rule-dark);
+  border-radius: var(--radius-sm);
+  background: var(--color-sheet);
+}
+
+.courseCard:nth-child(even) {
+  background: var(--color-ink);
+  color: var(--color-sheet);
+}
+
+.courseCard:nth-child(even) .courseDescription,
+.courseCard:nth-child(even) .courseIndex,
+.courseCard:nth-child(even) .cardMeta {
+  color: rgba(255, 253, 248, 0.74);
+}
+
+.cardHeader,
+.cardMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.courseIndex,
+.cardMeta {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  font-weight: 700;
+}
+
+.cardMeta span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.cardBody {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.courseTitle {
+  max-width: 520px;
+  font-size: clamp(1.55rem, 4vw, 2.7rem);
+  line-height: 0.98;
+}
+
+.courseDescription {
+  max-width: 520px;
+  margin: 0;
+  color: var(--color-muted);
+  line-height: var(--line-height-body);
+}
+
+.courseButton {
+  width: fit-content;
+  align-self: end;
+}
+
+.courseCard:nth-child(even) .courseButton {
+  border-color: var(--color-sheet);
+  background: var(--color-sheet);
+  color: var(--color-ink);
+  box-shadow: 5px 5px 0 rgba(214, 75, 60, 0.8);
+}
+
+@media (max-width: 720px) {
+  .screen {
+    gap: var(--space-6);
+  }
+
+  .hero {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding-top: var(--space-2);
+  }
+
+  .hero::before {
+    right: 24%;
+  }
+
+  .heroVisual {
+    min-height: 190px;
+  }
+
+  .title {
+    font-size: clamp(2.6rem, 17vw, 4.4rem);
+  }
+
+  .lead {
+    font-size: var(--text-body-md);
+  }
+}
+
+@media (max-width: 520px) {
+  .courseList {
+    grid-template-columns: 1fr;
+  }
+
+  .courseCard {
+    min-height: 260px;
+  }
+
+  .courseButton {
+    width: 100%;
+  }
+}
